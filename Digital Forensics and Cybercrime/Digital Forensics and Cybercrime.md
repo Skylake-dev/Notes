@@ -319,3 +319,126 @@ Called by your side, is the "friendly" part of the examination. Often it is prep
 Unfriendly or outright hostile. Refer to your report to answer questions. If possibile reply with yes/no, otherwise be very complex and difficult to understand. Never get angry, even if competency is called into question (it is basically standard procedure).
 
 Remember to never hide things that you know if you are asked, perjury is a crime!
+
+## Fraud analysis and detection
+FRAUD: an uncommon, well considered, imperceptibly concealed, time evolving and carefully organized crime with the objective of personal or financial gain.  
+Frauds impact the whole society -> social phenomenon
+
+- uncommon: only a minority of the cases/transaction are fraudolent which only a small part is knwon  
+This makes more difficult to detect and to learn from historical cases
+- well considered and concealed: fraudsters try to remain unnoticed and covered. Frauds do not behave differently from legitimate activity
+- time evolving: adapt and refine methods to remain hidden. Also fraud detection need to continously be updated (adversary setting)
+- carefully organized crimes: fraudsters do not operate independently and involve complex and organized structures. Frauds are not isolated events
+
+Why are frauds committed?  
+Basic driver: potential monetary gain
+"fraud triangle"
+OPPORTUNITY
+MOTIVATION
+RATIONALIZATION
+The element we can control is the opportunity: we need to reduce the potential attack surface to discourage attacks
+
+#### Categories
+- banking and credit card frauds unautorhorized taking of someons's credit
+  - application fraud: obtain new credit cards using fake/stolen identities
+  - behavioural fraud: obtain a legitimate card details and use them
+- insurance fraud: both from the seller (sell fake policies from non existent companies) and buyer perspective (exaggerate claims, falsified medical history)
+- corruption: misuse of entrusted power for personal gain
+- counterfeit: create fake products to be passed as genuine
+- product warranty fraud: claim compensation based on a warranty
+- healthcare fraud: typical in US
+- telecommunication frauds:
+  - cloning: clone phone number 
+  - superposition: fraudolent usage of legitemate account
+  - phishing through phone
+- money laundering
+- click frauds: increase ad click-through rates to gain money, can be manual or automated
+- identity theft: disguise as someone else using stolen credentials
+- tax evasion
+- plagiarism
+
+#### Fraud impact
+A typical organization loses 5% of its revenue due to frauds
+Frauds is costing the UK 73 £ a year. Credit cards companies lose 7 cents every 100 $ of transactions.
+
+Frauds are a big problem therefore we need to have an up t date infrastructure and detection mechanism.
+
+### Anti-frauds strategies
+There are two main category of techniques:
+- DETECTION: recognize and discover fraudolent activity
+- PREVENTION: avoid or reduce frauds (example, enforce 2FA on payments, see PSD2 european regulation)  
+
+These two categories are complementary but they must not be used independently. A good fraud detection system is a combination of both. Since the fraud evolve also our mechanisms need to evolve (cat and mouse game)
+new prevention system -> fraudsters adapt -> detection power reduced  
+new detection system -> fraudsters adapt -> impacts prevention power
+
+#### Approaches
+EXPERT BASED  
+Use specific knowledge of fraud analysts to build rule-based systems. This approach is extremely time consuming and expensive since it requires manual investigation of suspicious cases. The advantage is that expert analysts can uncover new fraud patterns.  
+Challenges:
+- fraudsters learn rules and circumvent them
+- not automatically signalled if new frauds appear  
+A rule based engine must be continuously monitored and update to stay effective.
+
+AUTOMATED  
+Trying to find ways to automate the analysis of frauds to detecte fraudolent ones. Modern approach, often based on machine learning.
+
+IN any case a good system there has to be a combination of expert based and automated parts.
+
+### Fraud management
+What to do when frauds have been detected and confirmed? What measures do we employ?
+- corrective measures
+correct the consequences of the fraud (e.g. compensate the victim) and perform retrospective screening, go to past transaction and inspect for the newly discovered fraud.
+The sooner these measure are taken, the better
+- preventive measures
+investigate the mechanisms of the fraud and update the expert based rule system and adjust the detection system
+
+NOTE: fraudolent patterns become easier to detect the more time has passed, because the more a technique is used the more data about it accumulates making it easier to see and learn from data
+
+data driven fraud detection is surging in recent years because they have many advantages
+- precision: can inspect more data and uncover frauds enhancing detection capabilities. Ask to experts only for very suspicious cases.
+- operational and cost efficiency: can enforce time constraint on processing time which is impossible to do manually.
+
+### Fraud detection techniques
+There are two major complementary approaches:
+- unsupervised learning (descriptive analysis): do not require dataset to be labelled and learn from historical observations. This can detect frauds if they behave differently from normal behaviour -> useful to find new patterns. Basically it builds a model of the behaviour and looks for deviations but maybe have many false positives (or false negatives if frauds are able to blend in well)
+- supervised learning (predictive analysis): dataset is labelled (fraud/non fraud), can build directly the models for fraudolent and non fraudolent transactions. The problem is that the model for frauds will be based on small amounts of data (frauds are uncommon)
+
+General evolution of fraud detection in an organization
+1. expert based rule engine
+2. unsupervised learning
+3. supervised learning
+
+All these approaches must work in concert to yield best performance.
+
+#### Social network analysis
+Extend the detection ability by learning characteristics of frausd in a network of linked entities. Using extra informations in the analysis that is the relationship between entities to uncover behavioural patterns.
+
+### Fraud management cycle
+![fraud_management_cycle](assets/fraud_management_cycle.png)  
+This shows the feedback loop to update the detection model with the newly discovered patterns. the frequency of the update depends on several factors:
+- volatility of fraud behaviour
+- detection power of current model
+- required effort
+- possible downtimes  
+The last point can be avoided using a model that can learn online using a reinforcement learning technique.
+
+#### Fraud analytical process
+There are many steps to take in analysing fraud data  
+![fraud_analytical_process](assets/fraud_analytical_process.png)  
+Preprocessing is the longer and most important part because the performance of the resulting model depends entirely on how good the data it was trained on was. This part involves selecting the data to use in traing, clean them of inconsistent values or outliers, transform data to select the features we are interested in. Then we can build the model using the technique we selected and proceed to validate the resulting model by measuring its performance on known patterns and testing its ability to detect a new pattern.  
+Charateristics to evaluate:
+- statistical accurancy and significance: need to make sure that it can generalize well and does not overfit the historical data
+- interpretability: can we tell why the model flag a certain transaction? It is important to understand the reason behind the model behaviour. Different models have different grades of interpretability
+  - white box: can be easily inspected to extract the motivation (e.g. decision trees)
+  - black box: complex models, not clear how they flag (e.g. neural networks). Usually yields higher performances but require more work (=cost) from the expert to inspect the different case.
+- operational efficiency: measure time and effort needed to collect and inspect transaction data and evaluate it. Very important when there are strict temporal requirements to evaluate data.
+
+Fraud management is a problem of risk management, we always need to evaluate the risks and balance the reduction of vulnerabilities and potential damage with the costs (cost-benefit analysis), both direct (management, operational, equipment) and indirect (less usability, slower performance, reduce productivity of users, less privacy)  
+MORE MONEY does not translate directly into MORE SECURITY  
+Another important thing to keep in mind is that often sensitive data such as transactions need to comply with some regulation about how they can be used and stored
+
+#### Recap of fraud management challenges
+- skewness of data: finding frauds in the dataset is like finding a needle in a haystack making it difficult to learn a model
+- operational efficiency: there are time constraint to reach a decision about a specific transaction and they can be very strict
+- big data: need to be able handle the huge amount of data that needs to be analyzed, both to build the model and the data to evaluate. The model should not take too long to build or be updated
