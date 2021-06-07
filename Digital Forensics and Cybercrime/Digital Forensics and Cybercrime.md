@@ -442,3 +442,238 @@ Another important thing to keep in mind is that often sensitive data such as tra
 - skewness of data: finding frauds in the dataset is like finding a needle in a haystack making it difficult to learn a model
 - operational efficiency: there are time constraint to reach a decision about a specific transaction and they can be very strict
 - big data: need to be able handle the huge amount of data that needs to be analyzed, both to build the model and the data to evaluate. The model should not take too long to build or be updated
+
+## Machine learning for fraud detection
+General overview of the possible techniques used in fraud detection.
+### Data collection, sampling and preprocessing
+Real data is usually very dirty (inconsistency, missing values, duplicate data) and needs to be filtered prorperly.
+>messy data will yield messy analytical models  
+Data may come from many different sources:
+- structural/unstructured data
+- transactional data
+- contextual or network infomation  
+From transactional data when can extract aggregated parameters (averages, spending trends, min/max values) and especially extract the RFM parameters (recency, frequency and monetary value)
+
+Types of data:
+- continous: data elements defined on an interval
+- categorical: values are extracted from a finite set of possiblities
+  - nominal: no specific order
+  - ordinal: i can specify an ordering between the different values
+  - binary: very useful for flag values (e.g. 2FA yes/no, success/fail)
+
+#### Sampling
+Take a subset of the data to build the model.  
+WHY? we want the model to correctly represent reality and predict the future. Because of this, to avoid bias, we often need to focus only on the most recent data to model only current user behaviour (ex. in 2020 spending patterns changed due to the pandemic). It is important to find the optimal timing windows, a trade off between:
+- lots of data to get a robust model
+- recent data to be more representative
+
+Example:  
+I have 12 months of credit card data, what can i select in order to be representative? keep in mind:
+- spending pattern changes throughout the year (e.g. christmas, vacations,..)
+- different types of items are purchased during the year  
+
+How can i deal with this?
+- build a model for each month -> very expensive to build and maintain
+- average on the entire year -> lower performances usually (higher variance)
+
+Main point: the choiche of the sample directly impacts the capabilities of the model that i am going to build.
+
+##### Stratified sampling
+Tries to maintain the pattern that are already present in the dataset also in the sample (same % of frauds, same product variety, etc...)
+
+#### Visual data exploration
+Try to get insights on the patterns/distribution among the sample by plotting them from different perspectives (amount distribution, distribution through the day, transactions per user,....) 
+
+CLUSTERING ANALYSIS: check if data can be grouped into clusters (ex. PCA or hierarchical clustering, see later for more explaination)  
+This is very important because an expert analyst can spot differences between fraud/non frauds or spot inconsistencies/problem with the dataset
+
+#### Dealing with missing values
+Missing calues in the dataset can be due to several reasons:
+- not applicable field
+- not disclosed (often to comply with regulation)
+- errors/corruption
+
+Some techniques can deal with these values automatically but usually additionally preprocessing is needed. We can have different approaches to dela with those values, all require first to evaluate if there is a correlation between the missing values and fraud behaviour (i.e. we cannot discard them outright, true also for outliers):
+- replace with different data
+- delete the data -> THIS ASSUMES THAT IT IS IRRELEVANT
+- keep the data -> can be linked to fraud so it is better to keep the data element in the model building
+
+#### Outliers
+Extreme values dissimilar from the rest of the population. We can divide them in two categories:
+- valid -> extreme value but it is "correct" (e.g. transaction with high amount for the CEO)
+- invalid -> example: age of 300 years  
+There are techniques to find them (Z-score for univariate, clustering or regression for multivariate)
+
+Once they have been identified we need to deal with them according to their nature:
+- valid outliers: can be treated the same as a missing value
+- invalid outliers: impose upper and lower limit and "resize" the values to fit the chosen scale.
+
+In any case we need to be really careful to deal with them.
+
+NOTE: not all invalid values are outliers and can go unnoticed if they are not specifically looked out for. This is the case with data inconsistencies (e.g. category:child, birth date:01/01/1980 is clearly wrong). For this reason there needs to be a set of rules and checks, often written by expert analysts, to catch them.
+
+#### Standardizing data
+In order to avoid bias we need to scale all values of the different variables on a similar scale (z-score, min/max standardization)
+
+#### Categorization
+Transform all the features to make them comparable:
+- divide continuous variables into ranges
+- take the frequency of values for categorical data
+
+Different techniques can be used to categorize:
+- equal interval binning
+- equal frequency binning
+- chi-squared analysis
+
+#### Variable selection
+Normally in a model for fraud detection only 10/15 variables are used. How can we choose them among all the possible ones?
+- filters: try to remove features that are redundant using statistical indicators in the preprocessing phase
+- wrapper: keep all features, build a model and evaluate performance. Then we play with the features to see which ones impacts performance and remove the non relevant ones
+- use PCA (principal component analysis) to build new independet features that are a combination of the original variables and contain the relevant information of the dataset. 
+  - advantage is that the principal components are less than the original variables (dimensionality reduction)
+  - disadvantage, makes it not interpretable
+
+### Descriptive analytics (unsupervised learning)
+MEMO: aims at finding frauds as deviation from the historical average behaviour:
+- average behaviour of the user
+- behaviour of the average user
+
+Can identify new patterns in frauds.  
+The real challenge is in building those averages:
+- how do we sample?
+- how to deal with evolution of user (spending patterns evolve over time)
+- outliers
+- frauds try to mimick normal behaviour
+
+Basic mechanism: statistical outliers detection
+
+#### Break-point analysis (intra account)
+Detect sudden changes in the account behaviour:
+1. define a time window that you want to analyze
+2. split the window in 2 parts
+3. compare the new part with the old behaviour. We select a metric to evaluate whether the new transactions are anomalous.
+
+Problem: many false positive for occasional unexpected/seasonal expenses of the account.
+
+#### Peer group analysis (inter account)
+Compare the behaviour of an account against its peers. This poses 2 problems
+- how to group peers?  
+  - exploit business knowledge
+  - define a similarity metric  
+  We need to carefully balance the number of peers in eache group in order not to bee too sensitive to noise (too small) or too insensitive to local irregularities (too big).
+- how to evaluate against peers?  
+Through statistical tests or distance metrics.
+
+This approach yields two major advantage:
+- not as many false positives for seasonal expenses
+- mitigate problem of new user with no previous data (== i don't have a model for them yet)
+
+Break point analysis and peer group analysis are complementary techniques but they only deal with local anomalies rather than global ones.
+
+#### Association rules
+Tries to detect frequently occurring relationships between items. Need to have a database of transaction with associated items. Born to analyze market baskets and determine which items to place near on the shelves.  
+INPUT: a database D of transaction associated with some items I  
+OUTPUT: set of rules in the form of implication  
+`X ⇒ Y where X ⊂ I, Y ⊂ I, X ∩ Y = Ø`  
+The idea is to model which items occur toghether frequently. To do this we define:
+- support(X) -> ratio between transaction containg x and total number of transaction
+- confidence(X->Y) -> also noted as P(Y|X) is defined by the ratio of support(X ∪ Y) over support (X)
+
+We need to specify a threshold for both of these value after which we consider them relevant
+
+#### Clustering
+Try to split the dataset in groups called clusters that:
+- maximize homogeneity inside the cluster
+- maximize etherogeneity outside of clusters
+Then we can find anomalies by looking for small, less dense cluster far away from the big dense cluster (which represent the norm)
+
+In order to group data we need to define a metric to evaluate the distance between the points in the dataset. This depends largely on the type of data, there are many options:
+- euclidean distance (basic one)
+- manhattand distance
+- melahanobis distance
+
+Also remember to standardize data to avoid bias for variables with high values.
+
+##### Hierarchical clustering
+Aggregate/divide iteratibely data into clusters.  
+![hierarchical_clustering](assets/hierarchical_clustering.png)  
+I need to be able to evaluate distance between single points as well as between clusters, there are different approaches to do it, distinguished by the points chosen to measure distance (of course choosing one over the other may yield totally different results):
+- single linkage -> closest points in the clusters
+- complete linkage -> furthest point in the clusters
+- average linkage -> average distance between all points in the two clusters
+- centroid method -> compute a centroid for eache cluster and measure the distance between centroids
+
+We can use visual tools to see where to stop in the aggregation/division (dendogram or screen plot)
+
+The advantage of hierarchical clustering is that we do not have to decide the number of clusters *a priori* but can be automatically decided given a threshold. The disadvantage is that this does not scale well on large datasets and the interpretation is up to the expert's knowlegde.
+
+##### Non hierarchical clustering
+- K-MEANS
+  - select k random seeds
+  - assign elements based on distance from the seeds (called centroids)
+  - compute new centroids and recomput clusters
+  - repeat until it remain unchanged  
+  Tthe disadvantage here is that we have to determine the number of clusters (K) at the beginning so we may have to tweak it later. It is also sensitive to outliers and the result depend on the initial seed selection
+- SELF ORGANIZING MAPS (SOM)  
+Allow to visualize and automatically cluster high dimensional data to a low dimensional space using a 2 layers feed forward neural network. This is a great advantage to make it easy to visualize and understand the result + i do not have to specify the number of clusters initially. However there are still some limitations because it is hard to compare result across different SOMs and expert knowledge is needed to decide the size of the map properly.
+- SEMI-SUPERVISED CLUSTERING  
+Perform clustering but integrates beforhand extra knowledge in the data (e.g. "no fraud in this dataset"). We can also put constraints about the clusters at different level (e.g. pre-classifying some points, minimum separation between clusters, balanced clusters)  
+- One-class SVMs  
+Use a linear optimization problem to separate outliers  
+
+##### Evaluating clusters
+It is not easy and there is no universal methods. An approach maybe measuring the sum of squared errors (SSE) or visualizing the clusters to compare the distribuition of the variables in the different clusters.
+
+WHAT TO KEEP IN MIND: even applying all these techniques we still cannot be sure that the clusters that were found are the correct ones or not
+
+### Predictive analytics (supervised learning)
+Aims to build one analytical model predicting a target value, whose nature determine the technique used:
+- regression for continous target
+- classification for discrete target
+
+#### Linear regression
+Estimates the target value as a weighted sum of the input variables. The weights are the things that needs to be learned, usually by trying to minimize the minumum square error of the data from the linear model (find the best fitting line)
+
+#### Logistic regression
+We apply a bounding function, like a sigmoid and try to model along that. Data is classified in the different categories if the value of the bounding function goes over a certain threshold, define a linear decision boundary to separete the two classes.  
+Of course this wuold work only if the two classes are linearly separable.
+
+#### Decision trees
+Specify a series of splitting decision to classify fraudolent data. The idea is basically to pose a series of yes/no question at the end of which the transaction is classified. This can be structured as a tree where in each node there is a question (splitting decision) and the leaves contain the labels for fraud or non fraud, for example  
+![decision_tree](assets/decision_tree.png)  
+
+The goodness of the model depends on many factors:
+- splitting decisions -> how do we decide where to split? The idea is trying to minimize the impurity in the datased (entropy gain, gini index)
+- stopping decisions -> when do i stop splitting? too much splitting can lead to overfitting and poor generalization performance (try to avoid this by using 70% of data for training and 30% for validation and minimize misclassification error in the validation set)
+- leaves assignement -> how do i assign the labels to the leaves? 
+
+The main advantage of decision trees is that they are completely white box, their decision are very clear and can be inspected easily. they can also be extended to have probability values in the leaves instead of 0/1 values.  
+Trees are widely used also to perform variable selection (the ones that appear at the top are the most important)
+
+#### Neural networks (NN)
+Can model very complex patterns and decision boundaries in the dataset and are trained by optimizing a cost function. The number of hidden neurons to be used depends on the complexity of the patterns that we want to identify.  
+This approach has two main problems:
+- local minima: the cost function is not convex so the algorightm may end up in a local minimum of the function instead of the true optimum.
+- black box: they are completely non interprateble, opaque mathematical relation.
+  - there are some ways to extract some information (rule extraction procedures)
+
+#### Support vector machines (SVM)
+Deals with the shortcomings of NN, these are based on linear programming. The idea is to find the separation plane to classify the data by maximizing the different classes of data. Can also model non linearly separable classes with some tweaks or by using kernel function to map to another space where they are linearly separables. Solves the local minima problem but has still the same problems of interpretability, so we need to extract rules from them.
+
+#### Ensemble methods
+Combine different models to exploi the benefits of them. Typically used toghether with decision trees, these techniques are (see ML notes for details):
+- bagging
+- boosting reweight data sample according to classificaiton error -> higher error means that it will get a higher weight in the next iteration (keep attention on "difficult" details) -> be careful not to overfit
+- random forest <- best performant method in fraud detection application, create a "forest" of decision trees
+
+#### Evaluate predictive models
+Two major decisions to make:
+- how to divide the dataset?
+  - splitting in training and validation set (70/30 generally) -> it is a strict separation, using validation data to train will get you overfitting
+  - using cross-validation, especially useful if we have small dataset to "expand" them
+- parameters to evaluate performance:
+  - false positives=FP, false negative=FN, true positive=TP, true negative=TN
+  - classification accurancy -> (TP+TN) / (TP+FP+FN+TN) correctly classified observations
+  - classification error -> (FP+FN) / (TP+FP+FN+TN) misclassified observations
+  - specificity -> TN / (FP+TN) percentage of correctle classified non -fraudsters
+  - precision -> TP / (TP+FP) percentage of true positive (how many fraudsters are actually fraudsters)
