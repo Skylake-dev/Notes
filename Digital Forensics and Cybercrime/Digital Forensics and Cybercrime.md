@@ -174,8 +174,7 @@ Rarely use windows directly because it tampers a lot with the drives and there i
 
 To ensure repeatability and validation we should know how the tools we use work and that it is teoretically be reproduced by hands. It would be better to use open source software (not necessarily released with the source code but there needs to be the possibility to inspect its source code to check it)  
 
-Common tasks in forensics analysis:
-- retrieving deleted data: carving   
+A common tasks in forensic analysis is to retrieve deleted data by  carving.    
 We can examine the bitstream image of the drive and look for sectors containing deleted data. (see how data is stored in a HDD). the carving technique consist of scanning the entire drive and look for file headers and footers of known file types. This way it is possible to retrieve files even when the original metadata to reach them have been deleted.  
 Moreover since the OS allocates files in clusters which are composed by many disk sector there can be some "slack space" in the cluster that contains data from the previous file that was written on the cluster. This data maybe retrievable if it was a simple format like text, json or html. We can also try to match what we find against a specific file that we are looking for (if we find a 512 byte chunk that correspond bit by bit with another file that we are looking fore then we can be reasonably sure that the file was there)  
 Tools for carving:
@@ -234,6 +233,7 @@ This lead manufacturers to optimize the duration and performance of the drive us
 - data encryption
 - wear leveling (move data around the disk to wear all cells at the same rate)
 - bad blocks handling (cells that have consumed all writing cycles)  
+
 All of this is done directly by the FTL chip and it is transparent from the perspective of the OS. This means that the FTL can act independetly from the OS, as soon as it is powered on it can start to change and there is no way to bypass it by software.  
 In theory we can read the NAND flash directly but it is extremely costly and time consuming and destroyes the drive. Even in this case, because of trimming, we cannot retrieve deleted data --> we lose carving.  
 SSDs are also difficult to hash reliably because the FTL can sometimes reply with random data for unallocated blocks for performance optimization or because it is a cheap FTL.
@@ -677,3 +677,70 @@ Two major decisions to make:
   - classification error -> (FP+FN) / (TP+FP+FN+TN) misclassified observations
   - specificity -> TN / (FP+TN) percentage of correctle classified non -fraudsters
   - precision -> TP / (TP+FP) percentage of true positive (how many fraudsters are actually fraudsters)
+
+## Mobile forensics
+Recover, extract and analyze evidence from a mobile device under a  forensically sound approach. This usually mean to leave the evidence untouched and unmodified by working on a copy of the media. In the case of mobile devices this becomes very difficult because:
+- memory is soldered on the phone -> have to destroy to access it and it is still difficult
+- it is not possible to boot from a different OS under normal conditions
+- memory is often encrypted and the keys can be stored in the device itself in some dedicated chip
+
+This means that in many case it is necessary to interact directly with the phone to access the data, potentially modifying the evidence. For this reason it is extremely important to document every action that was taken on the device and try to minimize modification. It is common to use exploits (both at a software and hardware level) to gain root access to the device or bypass codes/fingerprints.
+
+It's evident that dealing with mobile phones is more challenging compared to a pc:
+- market fragmentation: there are many different manufacturers each one may use some proprietary chips
+- cloud plays a big part: large portion of data accessed through a phone is not stored directly on the phone
+- encryption
+- authentication bypass (often offered by third party services through zero-day exploits)
+- variety of application with many different database structure (there are tools to parse common apps data)
+
+### Guidelines to collect evidence on mobile devices
+Many guidelines have been prepared:
+- [SWGDE](https://www.swgde.org/documents/published)
+- [ISO/IEC 27037:2017](https://www.iso.org/standard/44381.html)
+- [NIST](https://www.nist.gov/publications/guidelines-mobile-device-forensics)
+
+We will briefly go over the first one.
+
+#### Collection, preservation and handling
+- remember to document all actions taken on the device
+  - state in which device was found
+  - identifiers of the device
+  - if it is damaged/in liquid/...
+  - take pictures of the scene
+- take related items
+  - charger
+  - packaging/notes (useful to determine the exact model)
+  - paired devices (can help in unlocking)
+- refer to graph for preserving evidence (similar approach for iOS devices)  
+![preservation_of_mobile_evidence](assets/preservation_of_mobile_evidence.png)  
+It is very important to keep the device on if it is found already on because if we turn it off it can be difficult to unlock it again. Also extremely important to keep disconnected from all networks to prevent someone from the outside from wiping the phone.  
+- do not try to guess the passcode at random -> can lead to the phone wiping itself
+- if the device was powered on and unlocked at least once it is usually easier to get access to it, so this is an important thing to look for
+
+#### Extraction of data
+- identify the exact device (e.g. IMEI number). This usually dictates what tools and exploits are available.
+- use proper tools to extract data. Make sure to use reputable and approved tools for example:
+  - belkasoft
+  - cellebrite
+  - grayshift
+  - ...
+- check warranty status -> can be useful to determine since when the phone was in use
+- extraction methods (we aim at dumping the whole internal memory of the device):
+  - physical non invasive: use exploit at os or chipset level to gain root privileges (ideal scenario)
+  - physical invasive: physically disconnect memory from phone and read it on external equipment (very complex and often destroy the device)
+  - logical: can only access to certain files or folders (better than nothing)
+  - file system: extract all file system information but not a complete dump
+  - manual: often used if the device is found unlocked, interact directly with the device to extract/document data
+
+Remember also to check for:
+- external memory like an SD card
+- possible backups on cloud services
+
+What types of data can be extracted?
+- call logs, contact
+- messages from apps databases
+- images
+- geolocation information
+- tools looks for files with mismatched/missing extension (can come from cached data)
+- timeline for events
+- authentication tokens for accounts  
