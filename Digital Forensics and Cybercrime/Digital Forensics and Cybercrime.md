@@ -744,3 +744,50 @@ What types of data can be extracted?
 - tools looks for files with mismatched/missing extension (can come from cached data)
 - timeline for events
 - authentication tokens for accounts  
+
+## Cloud forensics
+RECALL:
+- private cloud, controlled and used by one company, easier to access but we do not deal with those
+- public cloud, offer services to third parties and enables those to run on the infrastructure:
+  - IaaS Infrastructure as a service, get the virtual machines hosted by someone
+  - PaaS Platform as a service, get the platform (OS, DBMS, ..)
+  - SaaS Software as a service, use directly a software no access to os or other
+
+We will deal with public cloud because they poses significantly more challenges than private clouds
+
+#### Acquisition
+In cloud there is no direct access to metal, so it is not possibile to get the drive directly. The space allocated to a VM may be spread across different drives. Cloud providers do not keep all logs or make them accessible to customer
+- IaaS, network/os logs available only to provider
+- PaaS, customer may have application logs
+- SaaS, only the service provider has log
+
+Moreover, data in cloud is often transactional, which means that it does not exist at rest but it is there only in the constext of a specific interaction or execution, for example dynamic pages generated on the fly by social network or the association between certain ads on certain pages because this may also depend by the specific user who is visiting it. Often it is very difficult if not impossible to reconstruct what page the user saw if they did not took picture of it. 
+
+Acquiring a specific page is not trivial since many pages are composed of different components coming from different servers that may be controlled by many different entities (e.g. ad banners are usually served by third parties and the site owner often does not control what exact ads are displayed and the ad provider himself might not know why a certain ad was served)
+
+Remember to record immediately the "attribution" data:
+- IP
+- whois domain
+- connectivity providers
+
+These info may change over time and there is not history of who was assigned at a certain moment in time.
+
+### Analysis
+Many analysis techniques are not available in cloud environment because direct access to metal is not feasible:
+- cannot look for deleted files on disk
+- metadata often not accessible
+- investigation of hypervisor compromises is basically impossible (but are also extremely rare and often outside of the trust boundary)
+
+### Attribution
+Already a difficult challenge in cyberspace (e.g. IP spoofing) becomes more difficult in cloud environment. Determining who is behind a certain VM in the cloud is difficult because payment info that may help in identification may be stolen.
+
+### Legal issues
+- LOCATION:
+  -  extremely important to determine under which jurisdiction the case should be processed but it is difficult to determine because a single page may get data from all over the world
+- SEARCH AND SEIZURE
+  - How to do it for data outside of the country? What if it is stored in many datacenters across the world? What about obstacle removal?
+- CLOUDS OF CLOUDS
+  - many cloud providers are based on services of other cloud providers so who is the actual service provider that should be target by the court order to access data?
+
+### Duality: forensically enabled clouds and cloud enabled forensics
+Some cloud services evolved over time, also to comply with regulation like GDPR, to store some log data or ensure data locality. Also with the growing size of data to analyze in investigation experts have started using cloud services for their infrastructure capabilities. This also poses challenges because it means that we are sharing the evidence with the cloud provider and questions how can the analysis be repeated by other experts.
