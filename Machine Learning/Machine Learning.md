@@ -190,7 +190,7 @@ We want to approximate `f(`**`x`**`)` with `y(`**`x`**`, `**`w`**`)`
 If the noise `ε` is gaussian with `0` mean and variance `σ^2` we can write the likelihood function given `N` samples  
 ![likelihood_function](assets/likelihood_function.png)  
 Our objective now is to find the parameters that maximize the likelihood. We can compute it in two steps:
-- compute log-likelihood
+- compute log-likelihood  
 ![log_likelihood](assets/log_likelihood.png)
 - put gradient = 0 and solve for `w`
 ![ML_optimal](assets/ML_optimal.png)
@@ -245,6 +245,50 @@ where `||`**`w`**`||1` is the sum of the norms of the weights.
 
 The disadvantage is that we no more have a closed form solution.
 The advantage w.r.t. to ridge is that for some `λ` some values of the weights can be put to 0. Lasso performs feature selction and is able to yield sparse models.
+
+### Bayesian linear regression
+In contrast with the approaches seen before, adds prior information to the problem. Also it does not compute the optimal weights but yields a probability distribution for them starting from a prior distribution that encodes our prior knwoledge about the problem. After observing the data we combine what we have observed with our prior and compute our posterior distribution for the parameters.
+
+This allow to also have the uncertainty about our decision directly encoded in our posterior.
+
+The posterior distribution is obtained using the bayes rule:  
+![bayesian_posterior](assets/bayesian_posterior.png)  
+where:
+- `p(`**`w`**`|D)` is the posterior probability of the parameters **`w`** given the dataset `D`
+- `p(D|`**`w`**`)` is the likelihood of observing `D` given **`w`**
+- `p(`**`w`**`)` is the prior distribution of the parameters
+- `p(D)` is a normalization factor (marginal likelihood)
+
+We want to obtain the most probable value for the weights given the data that we have -> Maximum A Posteriori (MAP).
+
+NOTE: if the prior distribution does not bring any knowledge (i.e. uniform distribution) then it is equivalent to the maximum likelihood approach.
+
+What is the advantage?  
+Thanks to the prior we can avoid overfitting and there is no need to regularize, the prior act as a regularizer.
+
+#### Gaussian prior
+Using a gaussian prior is very useful in a scenario when we have sequential data (prior -> new data -> posterior -> use posterior as new prior -> new data -> new posterior -> ...) because this ensures that the posterior will also be a gaussian (so i can iterate the process indefinitely). If the prior and posterior are distributions in the same family we say that the prior is a *conjugate prior* and this allows to have a closed form solution:  
+![closed_form_bayesian](assets/closed_form_bayesian.png)  
+As we can see:
+- **`wN`**, the mean of the new posterior, depends on the mean of the prior and the OLS solution, in particular if we choose a prior with 0 mean and variance this approaches reduces to ridge regression.
+- with infinite variance (uniform distribution) it is reduced to ML.
+
+The more data we have the less the prior becomes relevant in determining the posterior distribution (for lots of data it is usually preferred to use ML since it is cheaper to compute BUT yields a point prediction instead).
+
+#### Posterior predictive distribution
+In the gaussian case, the posterior predictive distibution is also a gaussian (the distribution of our prediction, obtained for instance by performing a weighted average of the outcome of all the models based on their posterior):  
+![posterior_predictive_distibution](assets/posterior_predictive_distribution.png)  
+And the uncertainty is given by  
+![bayesian_prediction_Uncertainty](assets/bayesian_prediction_Uncertainty.png)  
+where:
+- `σ^2` is the noise in the target value
+- the second term is the uncertainty associated to our parameters value
+
+The good news is that in the limit of infinite samples the second term goes to 0, so the variance of our prediction depends only on the noise in the target value.
+
+#### Challenges
+- specify a suitable prior distribution and suitable model
+- computational cost for the posterior distribution if we do not have gaussian distribution (no closed form, approximations like gaussian approximation or monte carlo integration)
 
 ## Linear classification
 
