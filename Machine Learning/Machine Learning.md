@@ -378,7 +378,24 @@ Then we can apply again a maximum likelihood approach to find the weights obtain
 The percetron can be seen as a particular case of logistic regression where the sigmoid becomes a step function. Both algorithms use the same update rule. The advantage of using logistic regression is that we can obtain a result even if the samples are not linearly separable (altough there will be some misclassification).
 
 ## No free lunch theorems
+First some notation:
+- `ACCg(L)` = generalization accuracy of learner `L` (its accuracy over non-training samples)
+- `F` = set of **all** possible concepts `y = f(x)`
 
+THEOREM  
+For any learner `L` the average accuracy over all possible concepts is 0.5 -> cannot perform better than random guessing. In formula  
+![no_free_lunch_theorem](assets/no_free_lunch_theorem.png)  
+What is the problem?  
+We are considering accuracy over **all** possible concepts! If all functions have the same probability (i am trying to learning *any* function with the same probability) i have no hope of learning because it means that the patterns that i see in the data maybe not related at all to what happens in other points. 
+
+Machine learning can only work if generalization of the problem is possibile -> there is some structure in the data that i can learn. If i cannot propagate what i learn in one point to other points then it's not possible to learn.
+
+COROLLARY:  
+For any two learners `L1`, `L2`  
+if there exist a problem s.t. `ACCg(L1)` > `ACCg(L2)`   
+then there existis a problem s.t `ACCg(L2)` > `ACCg(L1)`  
+
+This means that there is no one technique that is always superior to another, the correct (best) technique to use depends on the problem. Do not expect your favourite learner to always be the best :^).
 
 ## Bias-Variance trade off
 
