@@ -291,7 +291,91 @@ The good news is that in the limit of infinite samples the second term goes to 0
 - computational cost for the posterior distribution if we do not have gaussian distribution (no closed form, approximations like gaussian approximation or monte carlo integration)
 
 ## Linear classification
+Goal: assign an input `x` into one of the `k` discrete classes `Ck`. Typically each input is assigned to only one class.
 
+To achieve this the input space is divided into regions whose boundaries are called *decision boundaries* or *decision surfaces*. For classification we would like to use a non-linear function:  
+![non_linear_classification_model](assets/non_linear_classification_model.png)  
+We call this **generalized linear model** because the expression of the decision surfaces remains linear (`y(`**`x`**`, `**`w`**`) = constant` that solving for x yields the hyperplane equation of the decision surface).
+
+#### Notation
+- In 2 class problems we assume `t ∈ {0, 1}` where `t = 0` represents the negative class and `t = 1` represent the positive class (we can interprete `t` as the probability of the positive class)
+- if there are `K` classes we can use:
+  - one-hot encoding
+  - probability vector (extension of one-hot)
+
+### Approaches
+Similarly to regression we can have different approaches:
+- probabilistic, models the conditional distribution `p(Ck|x)` and uses it to make optimal decision. We can distinguish in:
+  - discriminative, models it directly
+  - generative, models the conditional densities `p(`**`x`**`|Ck)`and then computes the conditional distribution using bayes rule (not treated in this course)
+- discriminant function (direct approach), build a function that directly maps input to classes, does not output a probability value of an input belonging to other classes
+
+### Discriminant function
+We start with the 2 classes case using a linear model(spoiler alert: not a good idea to use a linear model):
+- we pick a linear model (e.g. the same as logistic regression)
+- explicitate the boundary
+  - assign to `C1` if `y(`**`x`**`) >= 0`
+  - assign to `C2` otherwise
+- if we compute the parameters of our model we obtain that it is orthogonal to the decision surface.
+
+What if i have`K` classes?
+- ONE-VERSUS-THE-REST
+  - `K-1` classifiers, each classifies if it belongs to one class or all the others. Can lead to ambiguous points
+- ONE-VERSUS-ONE
+   - `K(K-1) / 2` classifiers, one for each pair of classes, leads to similar problems of ambiguous
+
+How do we solve this ambiguitly?  
+Assign the class based on the largest value(remember that the output represents the probability). the advantage in doing this is that the decision boundaries are singly connected and convex.
+
+#### Least squares for classification
+The idea is to use linear regression for each target class using K models.
+
+PROBLEMS:
+- outliers: very sensitive to outliers because it will try to "bend" the linear model towards those outliers to reduce the squared error, moving the decision surface and causing misclassification.
+- non-gaussian distribution in the target noise, since linear regression
+
+#### Fixed basis function
+As seen for regression, we do not have to find linear boundaries in the input space but we can define a feature space in which the boundaries are linear, obtained by transforming the input using vectors of basis functions `Φ(`**`x`**`)`
+
+#### Perceptron
+Oldest approach to classification, it is a two class model  
+![perceptron](assets/perceptron.png)  
+where +1 correspond to class `C1` and -1 to `C2`.  
+The idea is to find the separating plane by minimizing the sum of the distance of the misclassified points from the decision boundary.  
+The loss function to be minimized is the following  
+![perceptron_loss_function](assets/perceptron_loss_function.png)  
+where:
+- `M` is the set of misclassified points
+- 0 error is given to correctly classified points
+
+This can be optimized using gradient descent  
+![perceptron_gradient_descent](assets/perceptron_gradient_descent.png)  
+The value of the learning rate `α` is not relevant since the separating plane does not change with the value of `w` (is a vector orthogonal to the plane), so we can put `α = 1` (the opposite from regression where `α` had to respect certain conditions). 
+
+The alghorithm iterates over all the points until all the points are correctly classified. It is guaranteed to converge if the points are linearly separable (but if they aren't it never stops, it is semidecidable -> cannot distinguish between non separable and slowly convergence by running the algorithm). If there are more than one solutions the one that is found depends on the order in which we inspect the points.  
+
+### Probabilistic discriminative model: logistic regression
+We want to learn the probability for a certain element to belong to a certain class. We start with the 2 classes scenario:  
+![sigmoid_logistic_regression](assets/sigmoid_logistic_regression.png)  
+the probability of belonging to the second class is given by  
+`p(C2|Φ) = 1 - p(C1|Φ)`  
+We use the non-linear [sigmoid function](https://en.wikipedia.org/wiki/Sigmoid_function), also known as logistic function, hence the name. As we said before, the model is non linear in **`w`** but if we put a threshold on the probabilty to have a linear decision surface.
+
+#### Maximum likelihood for logistic regression
+To train the parameters of the logistic regression we use maximum likelihood, by finding the weights that maximize the likelihood of getting the right label:  
+![maximum_likelihood_logistic_regression](assets/maximum_likelihood_logistic_regression.png)  
+Using the same approache we saw before we take the log likelihood(cross-entropy error function) and find the maximum by imposing gradient = 0.  
+![cross_entropy_error_function](assets/cross_entropy_error_function.png)  
+![cross_entropy_gradient](assets/cross_entropy_gradient.png)  
+It has similar structure to the SSE but since the sigmoid function is non linear there is no closed form solution. However the function is still convex and can be optimized using the gradient descent technique.
+
+MULTICLASS CASE  
+We represent the posterior probabilities using a *softmax* transormation where the probability of belonging to each class is given by:  
+![softmax_multiclass_logistic_regression](assets/softmax_multiclass_logistic_regression.png)  
+Then we can apply again a maximum likelihood approach to find the weights obtaining a similar result, the only difference is that i have weights for each class so i have multiple gradients to compute.
+
+### Comparison perceptron vs logistic regression
+The percetron can be seen as a particular case of logistic regression where the sigmoid becomes a step function. Both algorithms use the same update rule. The advantage of using logistic regression is that we can obtain a result even if the samples are not linearly separable (altough there will be some misclassification).
 
 ## No free lunch theorems
 
