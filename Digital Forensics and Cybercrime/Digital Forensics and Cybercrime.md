@@ -84,7 +84,7 @@ For example in the USA there is the concept of chain of custody that can determi
 #### Daubert standard in US
 EXPERT WITNESS: expert qualified by knowledge, skill, experience, training or education.  
 An expert witness may testify if:
-- his scientific, technical or other specialized knowledge will help the trier of fact to understande the evidence or to determine a fact in issue
+- his scientific, technical or other specialized knowledge will help the trier of fact to understand the evidence or to determine a fact in issue
 - the testimony is based on sufficient facts or data
 - the testimony is the product of reliable principles and methods
 - the expert has reliably applied those principles and methods to the facts of the case
@@ -116,16 +116,16 @@ We will deal with them in order.
 
 ### Source acquisition
 NOTE: bear in mind that these techniques were developed in the US with the US legal framework in mind.  
-The main point is that digital evidence is brittle. If it is modified there is no way to tell (not tamper evident) and theoretically it can also be created (a perfect fake)  
+The main point is that digital evidence is brittle. If it is modified there is no way to tell (not tamper evident) and theoretically it can also be created (a perfect fake).  
 For these reason we need at least to ensure that when we collect digital evidence we are not modifying it in the process and no modifications occur after the acquisition.  
 This is done using hashes. 
 Hashes are used as a "digital seal" on the evidence to make sure that it has not been modified **since the moment the hash was calculated.** This is very important because it doesn't mean that it was not modified before, also the hash by itself cannot help us tell what was modified.
 Hashes should alse be kept correctly, preferrably sealed in writing or digitally signed.
 
-To acquire data often linux based tools are used or embedded devices that perform the copy. The copy that we want is a bit by bit copy of the whole drive (bitstream image) in order not to loose any information that may be present
+To acquire data often linux based tools are used or embedded devices that perform the copy. The copy that we want is a bit by bit copy of the whole drive (bitstream image) in order not to lose any information that may be present
 
 General approach:
-- disconnect media from orignal machine if possible
+- disconnect media from orignal machine, if possible
 - use a write blocker to ensure no modification
 - compute the hash of the source  
 `dd if=/dev/sda conv=noerror,sync | sha256su`
@@ -134,7 +134,7 @@ General approach:
 - compute hash of the source and copy to compare them (yes we need to recompute the original to ensure no modification happened)  
 `dd if=/dev/sda conv=noerror,sync | sha256sum`
 `sha256sum /tmp/acquisition.img`
-It can be good to also compute SHA-1 and MD5 hashes for redundancy
+It can be good to also compute SHA-1 and MD5 hashes for redundancy.
 
 Challenges:
 - TIME
@@ -146,14 +146,14 @@ Challenges:
 
 #### Variants
 - booting from live distributions  
-Useful for some machines like laptops with non-standard interfaces or too difficult to disassemble properly. RAID arrays can also be accessed this way if they are managed by hardware controllers. we of course need to use a proper forensic distribution (e.g. Tsurugi, BackBox)
+Useful for some machines like laptops with non-standard interfaces or too difficult to disassemble properly. RAID arrays can also be accessed this way if they are managed by hardware controllers. We of course need to use a proper forensic distribution (e.g. Tsurugi, BackBox)
 - system is powered on  
 A system cannot always be turned off (critical systems) or we do not want to turn it off (live analysis of an intrusion). Keep in mind also that shutting down a machine may tamper with our evidence for example in the case of a fileless attacks. Another case is when disks are encrypted at rest so if we find them turned on we want to keep them on in order to access them. In this cases we first need to disconnect it from the network (cuts off a potential intruder) and save information in "volatility order":
   - dump memory
   - save runtime information: process info, network info
   - disk acquisition  
   NOTE: document all the steps since each command may alter the state
-- live network analysis
+- live network analysis  
 Observe network traffic of a compromised machine to gather information about the author of the attack without accessing directly the machine itself in order not to make the attacker suspicious.
 
 Further challenges:
@@ -172,18 +172,20 @@ Tools:
 
 Rarely use windows directly because it tampers a lot with the drives and there is no native support for other FS. There are anyway tools for windows to perform certain operation (e.g. drive acquisition through encase). In some case it is not possibile to use SAMBA and we need to run the windows VM in non persistent mode.
 
-To ensure repeatability and validation we should know how the tools we use work and that it is teoretically be reproduced by hands. It would be better to use open source software (not necessarily released with the source code but there needs to be the possibility to inspect its source code to check it)  
+To ensure repeatability and validation we should know how the tools we use work and that it is teoretically be reproduced by hands. It would be better to use open source software (not necessarily released with the source code but there needs to be the possibility to inspect its source code to check it).  
 
 A common tasks in forensic analysis is to retrieve deleted data by  carving.    
-We can examine the bitstream image of the drive and look for sectors containing deleted data. (see how data is stored in a HDD). the carving technique consist of scanning the entire drive and look for file headers and footers of known file types. This way it is possible to retrieve files even when the original metadata to reach them have been deleted.  
-Moreover since the OS allocates files in clusters which are composed by many disk sector there can be some "slack space" in the cluster that contains data from the previous file that was written on the cluster. This data maybe retrievable if it was a simple format like text, json or html. We can also try to match what we find against a specific file that we are looking for (if we find a 512 byte chunk that correspond bit by bit with another file that we are looking fore then we can be reasonably sure that the file was there)  
+We can examine the bitstream image of the drive and look for sectors containing deleted data. (see how data is stored in a HDD). The carving technique consists of scanning the entire drive and look for file headers and footers of known file types. This way it is possible to retrieve files even when the original metadata to reach them have been deleted.  
+Moreover since the OS allocates files in clusters which are composed by many disk sector there can be some "slack space" in the cluster that contains data from the previous file that was written on the cluster. This data maybe retrievable if it was a simple format like text, json or html.  
+![slack_space](assets/slack_space.png)  
+We can also try to match what we find against a specific file that we are looking for (if we find a 512 byte chunk that correspond bit by bit with another file that we are looking fore then we can be reasonably sure that the file was there)  
 Tools for carving:
-  - sleuth kit (autopsy for graphical interface) to analyze drive images, recover files, create timelines
+  - sleuth kit ([autopsy](https://www.autopsy.com) for graphical interface) to analyze drive images, recover files, create timelines
   - gpart, testdisk: for partition recovery
   - photorec: to retrieve deleted photos
 
 Remember that this can only give a positive confirmation  
-The file is here  NOT ~~The file was not here before~~
+The file is here  NOT The file was not here before
 
 #### Anti-forensics techniques
 Aimed at creating confusion in the analyst, lead them off track or defeat the tools that he uses. There are two types of techniques:
@@ -211,7 +213,7 @@ Hide data in places where it normally is not placed, for example inside file sys
 - write in inodes marked as bad blocks (RuneFS)
 
 LOG ANALYSIS (~T)  
-Relies on the fact that logs are analyzed by automated tools. Insert something in the logs to make them fail to recognize patterns or try to exploit them
+Relies on the fact that logs are analyzed by automated tools. Insert something in the logs to make them fail to recognize patterns or try to exploit them.
 
 PARTITION TABLES TRICKS (T)  
 - misaligned partition, may be missed by the analyst
@@ -239,19 +241,19 @@ In theory we can read the NAND flash directly but it is extremely costly and tim
 SSDs are also difficult to hash reliably because the FTL can sometimes reply with random data for unallocated blocks for performance optimization or because it is a cheap FTL.
 
 ### Evaluation
-In this phase we need to match evidence elements (facts) wiht the required elements to support or negate a legal theoay. Cooperation is required between the expert and lawyer.  
+In this phase we need to match evidence elements (facts) with the required elements to support or negate a legal theoay. Cooperation is required between the expert and lawyer.  
 What to evaluate:
 - elements that support the indictment
 - possible alternative explaination
 - analyze what can be said, what can't be said and what further experiments would be needed to say more  
-  - This last point is particularly important because we should assess toghether with the lawyer what we want to analyze and what risks does this involve for our client. For example if i'm defending someone accused of illegally accessing a system. If his laptop has been seized and not yet analyzed we need to discuss with the lawyer if we want to analyze it or not that the opponent may have it analyzed (remember that it is an adversarial setting)
+  - This last point is particularly important because we should assess toghether with the lawyer what we want to analyze and what risks does this involve for our client. For example if i'm defending someone accused of illegally accessing a system. If his laptop has been seized and not yet analyzed we need to discuss with the lawyer if we want to analyze it or not that the opponent may have it analyzed (remember that it is an adversarial setting).
 
 #### Relationship with the different entities
 RELATIONSHIP WITH LAWYER:
 - lawyers own the choice of the defense strategy
   - they may ask for suggestion
 - lawyers own relationship with the client
-  - never tarnish the trust relation with the client
+  - never tarnish the trust relationship with the client
 - lawyers do not dictate what to write
   - must NOT lie -> expert witness can commit perjury if he does
   - maybe asked to omit things as long as it is not the same as lying
@@ -313,7 +315,7 @@ Model it on a scientific report but also structure as an "obstacle course" with 
 ### Testimony as a expert witness
 In many jurisdiction expert witnesses provides a sworn testimony and can commit perjury and cannot "hide" behind professional secrecy. The examination usually has two phases:
 - direct examination  
-Called by your side, is the "friendly" part of the examination. Often it is prepared in advance with the lawyer. The approach during this phase is to take your time and explain everithing to the judge being very clear and helpful. In Italy it is also possible for the judge to ask questions of their own, be prepared.
+Called by your side, is the "friendly" part of the examination. Often it is prepared in advance with the lawyer. The approach during this phase is to take your time and explain everything to the judge being very clear and helpful. In Italy it is also possible for the judge to ask questions of their own, be prepared.
 
 - cross examination  
 Unfriendly or outright hostile. Refer to your report to answer questions. If possibile reply with yes/no, otherwise be very complex and difficult to understand. Never get angry, even if competency is called into question (it is basically standard procedure).
@@ -328,18 +330,18 @@ Frauds impact the whole society -> social phenomenon
 This makes more difficult to detect and to learn from historical cases
 - well considered and concealed: fraudsters try to remain unnoticed and covered. Frauds do not behave differently from legitimate activity
 - time evolving: adapt and refine methods to remain hidden. Also fraud detection need to continously be updated (adversary setting)
-- carefully organized crimes: fraudsters do not operate independently and involve complex and organized structures. Frauds are not isolated events
+- carefully organized crimes: fraudsters do not operate independently and involve complex and organized structures. Frauds are not isolated events.
 
 Why are frauds committed?  
 Basic driver: potential monetary gain
-"fraud triangle"
-OPPORTUNITY
-MOTIVATION
-RATIONALIZATION
+"fraud triangle"  
+OPPORTUNITY  
+MOTIVATION  
+RATIONALIZATION  
 The element we can control is the opportunity: we need to reduce the potential attack surface to discourage attacks
 
 #### Categories
-- banking and credit card frauds unautorhorized taking of someons's credit
+- banking and credit card frauds: unautorhorized taking of someons's credit
   - application fraud: obtain new credit cards using fake/stolen identities
   - behavioural fraud: obtain a legitimate card details and use them
 - insurance fraud: both from the seller (sell fake policies from non existent companies) and buyer perspective (exaggerate claims, falsified medical history)
@@ -358,10 +360,10 @@ The element we can control is the opportunity: we need to reduce the potential a
 - plagiarism
 
 #### Fraud impact
-A typical organization loses 5% of its revenue due to frauds
-Frauds is costing the UK 73 £ a year. Credit cards companies lose 7 cents every 100 $ of transactions.
+A typical organization loses 5% of its revenue due to frauds.
+Frauds are costing the UK 73 £ a year. Credit cards companies lose 7 cents every 100 $ of transactions.
 
-Frauds are a big problem therefore we need to have an up t date infrastructure and detection mechanism.
+Frauds are a big problem therefore we need to have an up t odate infrastructure and detection mechanism.
 
 ### Anti-frauds strategies
 There are two main category of techniques:
@@ -383,15 +385,15 @@ A rule based engine must be continuously monitored and update to stay effective.
 AUTOMATED  
 Trying to find ways to automate the analysis of frauds to detecte fraudolent ones. Modern approach, often based on machine learning.
 
-IN any case a good system there has to be a combination of expert based and automated parts.
+In any case a good system there has to be a combination of expert based and automated parts.
 
 ### Fraud management
 What to do when frauds have been detected and confirmed? What measures do we employ?
 - corrective measures
 correct the consequences of the fraud (e.g. compensate the victim) and perform retrospective screening, go to past transaction and inspect for the newly discovered fraud.
-The sooner these measure are taken, the better
+The sooner these measure are taken, the better.
 - preventive measures
-investigate the mechanisms of the fraud and update the expert based rule system and adjust the detection system
+investigate the mechanisms of the fraud and update the expert based rule system and adjust the detection system.
 
 NOTE: fraudolent patterns become easier to detect the more time has passed, because the more a technique is used the more data about it accumulates making it easier to see and learn from data
 
@@ -401,22 +403,22 @@ data driven fraud detection is surging in recent years because they have many ad
 
 ### Fraud detection techniques
 There are two major complementary approaches:
-- unsupervised learning (descriptive analysis): do not require dataset to be labelled and learn from historical observations. This can detect frauds if they behave differently from normal behaviour -> useful to find new patterns. Basically it builds a model of the behaviour and looks for deviations but maybe have many false positives (or false negatives if frauds are able to blend in well)
-- supervised learning (predictive analysis): dataset is labelled (fraud/non fraud), can build directly the models for fraudolent and non fraudolent transactions. The problem is that the model for frauds will be based on small amounts of data (frauds are uncommon)
+- unsupervised learning (descriptive analysis): do not require dataset to be labelled and learn from historical observations. This can detect frauds if they behave differently from normal behaviour -> useful to find new patterns. Basically it builds a model of the behaviour and looks for deviations but maybe have many false positives (or false negatives if frauds are able to blend in well).
+- supervised learning (predictive analysis): dataset is labelled (fraud/non fraud), can build directly the models for fraudolent and non fraudolent transactions. The problem is that the model for frauds will be based on small amounts of data (frauds are uncommon).
 
 General evolution of fraud detection in an organization
 1. expert based rule engine
 2. unsupervised learning
 3. supervised learning
 
-All these approaches must work in concert to yield best performance.
+All these approaches must work in concert to yield the best performance.
 
 #### Social network analysis
-Extend the detection ability by learning characteristics of frausd in a network of linked entities. Using extra informations in the analysis that is the relationship between entities to uncover behavioural patterns.
+Extend the detection ability by learning characteristics of frauds in a network of linked entities. Using extra informations in the analysis that is the relationship between entities to uncover behavioural patterns.
 
 ### Fraud management cycle
 ![fraud_management_cycle](assets/fraud_management_cycle.png)  
-This shows the feedback loop to update the detection model with the newly discovered patterns. the frequency of the update depends on several factors:
+This shows the feedback loop to update the detection model with the newly discovered patterns. The frequency of the update depends on several factors:
 - volatility of fraud behaviour
 - detection power of current model
 - required effort
@@ -424,9 +426,9 @@ This shows the feedback loop to update the detection model with the newly discov
 The last point can be avoided using a model that can learn online using a reinforcement learning technique.
 
 #### Fraud analytical process
-There are many steps to take in analysing fraud data  
+There are many steps to take in analysing fraud data.  
 ![fraud_analytical_process](assets/fraud_analytical_process.png)  
-Preprocessing is the longer and most important part because the performance of the resulting model depends entirely on how good the data it was trained on was. This part involves selecting the data to use in traing, clean them of inconsistent values or outliers, transform data to select the features we are interested in. Then we can build the model using the technique we selected and proceed to validate the resulting model by measuring its performance on known patterns and testing its ability to detect a new pattern.  
+Preprocessing is the longer and most important part because the performance of the resulting model depends entirely on how good the data it was trained on was. This part involves selecting the data to use in training, clean them of inconsistent values or outliers, transform data to select the features we are interested in. Then we can build the model using the technique we selected and proceed to validate the resulting model by measuring its performance on known patterns and testing its ability to detect a new pattern.  
 Charateristics to evaluate:
 - statistical accurancy and significance: need to make sure that it can generalize well and does not overfit the historical data
 - interpretability: can we tell why the model flag a certain transaction? It is important to understand the reason behind the model behaviour. Different models have different grades of interpretability
@@ -434,9 +436,9 @@ Charateristics to evaluate:
   - black box: complex models, not clear how they flag (e.g. neural networks). Usually yields higher performances but require more work (=cost) from the expert to inspect the different case.
 - operational efficiency: measure time and effort needed to collect and inspect transaction data and evaluate it. Very important when there are strict temporal requirements to evaluate data.
 
-Fraud management is a problem of risk management, we always need to evaluate the risks and balance the reduction of vulnerabilities and potential damage with the costs (cost-benefit analysis), both direct (management, operational, equipment) and indirect (less usability, slower performance, reduce productivity of users, less privacy)  
+Fraud management is a problem of risk management, we always need to evaluate the risks and balance the reduction of vulnerabilities and potential damage with the costs (cost-benefit analysis), both direct (management, operational, equipment) and indirect (less usability, slower performance, reduce productivity of users, less privacy).  
 MORE MONEY does not translate directly into MORE SECURITY  
-Another important thing to keep in mind is that often sensitive data such as transactions need to comply with some regulation about how they can be used and stored
+Another important thing to keep in mind is that often sensitive data such as transactions need to comply with some regulation about how they can be used and stored.
 
 #### Recap of fraud management challenges
 - skewness of data: finding frauds in the dataset is like finding a needle in a haystack making it difficult to learn a model
@@ -447,12 +449,13 @@ Another important thing to keep in mind is that often sensitive data such as tra
 General overview of the possible techniques used in fraud detection.
 ### Data collection, sampling and preprocessing
 Real data is usually very dirty (inconsistency, missing values, duplicate data) and needs to be filtered prorperly.
->messy data will yield messy analytical models  
+>messy data will yield messy analytical models.
+
 Data may come from many different sources:
 - structural/unstructured data
 - transactional data
 - contextual or network infomation  
-From transactional data when can extract aggregated parameters (averages, spending trends, min/max values) and especially extract the RFM parameters (recency, frequency and monetary value)
+From transactional data when can extract aggregated parameters (averages, spending trends, min/max values) and especially extract the RFM parameters (recency, frequency and monetary value).
 
 Types of data:
 - continous: data elements defined on an interval
@@ -479,13 +482,13 @@ How can i deal with this?
 Main point: the choiche of the sample directly impacts the capabilities of the model that i am going to build.
 
 ##### Stratified sampling
-Tries to maintain the pattern that are already present in the dataset also in the sample (same % of frauds, same product variety, etc...)
+Tries to maintain the pattern that are already present in the dataset also in the sample (same % of frauds, same product variety, etc...).
 
 #### Visual data exploration
-Try to get insights on the patterns/distribution among the sample by plotting them from different perspectives (amount distribution, distribution through the day, transactions per user,....) 
+Try to get insights on the patterns/distribution among the sample by plotting them from different perspectives (amount distribution, distribution through the day, transactions per user,....) .
 
-CLUSTERING ANALYSIS: check if data can be grouped into clusters (ex. PCA or hierarchical clustering, see later for more explaination)  
-This is very important because an expert analyst can spot differences between fraud/non frauds or spot inconsistencies/problem with the dataset
+CLUSTERING ANALYSIS: check if data can be grouped into clusters (ex. PCA or hierarchical clustering, see later for more explaination).  
+This is very important because an expert analyst can spot differences between fraud/non frauds or spot inconsistencies/problem with the dataset.
 
 #### Dealing with missing values
 Missing calues in the dataset can be due to several reasons:
@@ -493,7 +496,7 @@ Missing calues in the dataset can be due to several reasons:
 - not disclosed (often to comply with regulation)
 - errors/corruption
 
-Some techniques can deal with these values automatically but usually additionally preprocessing is needed. We can have different approaches to dela with those values, all require first to evaluate if there is a correlation between the missing values and fraud behaviour (i.e. we cannot discard them outright, true also for outliers):
+Some techniques can deal with these values automatically but usually additionally preprocessing is needed. We can have different approaches to deal with those values, all require first to evaluate if there is a correlation between the missing values and fraud behaviour (i.e. we cannot discard them outright, true also for outliers):
 - replace with different data
 - delete the data -> THIS ASSUMES THAT IT IS IRRELEVANT
 - keep the data -> can be linked to fraud so it is better to keep the data element in the model building
@@ -502,7 +505,7 @@ Some techniques can deal with these values automatically but usually additionall
 Extreme values dissimilar from the rest of the population. We can divide them in two categories:
 - valid -> extreme value but it is "correct" (e.g. transaction with high amount for the CEO)
 - invalid -> example: age of 300 years  
-There are techniques to find them (Z-score for univariate, clustering or regression for multivariate)
+There are techniques to find them (Z-score for univariate, clustering or regression for multivariate).
 
 Once they have been identified we need to deal with them according to their nature:
 - valid outliers: can be treated the same as a missing value
@@ -513,7 +516,7 @@ In any case we need to be really careful to deal with them.
 NOTE: not all invalid values are outliers and can go unnoticed if they are not specifically looked out for. This is the case with data inconsistencies (e.g. category:child, birth date:01/01/1980 is clearly wrong). For this reason there needs to be a set of rules and checks, often written by expert analysts, to catch them.
 
 #### Standardizing data
-In order to avoid bias we need to scale all values of the different variables on a similar scale (z-score, min/max standardization)
+In order to avoid bias we need to scale all values of the different variables on a similar scale (z-score, min/max standardization).
 
 #### Categorization
 Transform all the features to make them comparable:
@@ -528,7 +531,7 @@ Different techniques can be used to categorize:
 #### Variable selection
 Normally in a model for fraud detection only 10/15 variables are used. How can we choose them among all the possible ones?
 - filters: try to remove features that are redundant using statistical indicators in the preprocessing phase
-- wrapper: keep all features, build a model and evaluate performance. Then we play with the features to see which ones impacts performance and remove the non relevant ones
+- wrapper: keep all features, build a model and evaluate performance. Then we play with the features to see which ones impacts performance and remove the non relevant ones.
 - use PCA (principal component analysis) to build new independet features that are a combination of the original variables and contain the relevant information of the dataset. 
   - advantage is that the principal components are less than the original variables (dimensionality reduction)
   - disadvantage, makes it not interpretable
@@ -585,7 +588,7 @@ We need to specify a threshold for both of these value after which we consider t
 Try to split the dataset in groups called clusters that:
 - maximize homogeneity inside the cluster
 - maximize etherogeneity outside of clusters
-Then we can find anomalies by looking for small, less dense cluster far away from the big dense cluster (which represent the norm)
+Then we can find anomalies by looking for small, less dense cluster far away from the big dense cluster (which represent the norm).
 
 In order to group data we need to define a metric to evaluate the distance between the points in the dataset. This depends largely on the type of data, there are many options:
 - euclidean distance (basic one)
@@ -624,7 +627,7 @@ Use a linear optimization problem to separate outliers
 ##### Evaluating clusters
 It is not easy and there is no universal methods. An approach maybe measuring the sum of squared errors (SSE) or visualizing the clusters to compare the distribuition of the variables in the different clusters.
 
-WHAT TO KEEP IN MIND: even applying all these techniques we still cannot be sure that the clusters that were found are the correct ones or not
+WHAT TO KEEP IN MIND: even applying all these techniques we still cannot be sure that the clusters that were found are the correct ones or not.
 
 ### Predictive analytics (supervised learning)
 Aims to build one analytical model predicting a target value, whose nature determine the technique used:
@@ -632,7 +635,7 @@ Aims to build one analytical model predicting a target value, whose nature deter
 - classification for discrete target
 
 #### Linear regression
-Estimates the target value as a weighted sum of the input variables. The weights are the things that needs to be learned, usually by trying to minimize the minumum square error of the data from the linear model (find the best fitting line)
+Estimates the target value as a weighted sum of the input variables. The weights are the things that needs to be learned, usually by trying to minimize the minumum square error of the data from the linear model (find the best fitting line).
 
 #### Logistic regression
 We apply a bounding function, like a sigmoid and try to model along that. Data is classified in the different categories if the value of the bounding function goes over a certain threshold, define a linear decision boundary to separete the two classes.  
@@ -647,8 +650,8 @@ The goodness of the model depends on many factors:
 - stopping decisions -> when do i stop splitting? too much splitting can lead to overfitting and poor generalization performance (try to avoid this by using 70% of data for training and 30% for validation and minimize misclassification error in the validation set)
 - leaves assignement -> how do i assign the labels to the leaves? 
 
-The main advantage of decision trees is that they are completely white box, their decision are very clear and can be inspected easily. they can also be extended to have probability values in the leaves instead of 0/1 values.  
-Trees are widely used also to perform variable selection (the ones that appear at the top are the most important)
+The main advantage of decision trees is that they are completely white box, their decision are very clear and can be inspected easily. They can also be extended to have probability values in the leaves instead of 0/1 values.  
+Trees are widely used also to perform variable selection (the ones that appear at the top are the most important).
 
 #### Neural networks (NN)
 Can model very complex patterns and decision boundaries in the dataset and are trained by optimizing a cost function. The number of hidden neurons to be used depends on the complexity of the patterns that we want to identify.  
@@ -661,9 +664,9 @@ This approach has two main problems:
 Deals with the shortcomings of NN, these are based on linear programming. The idea is to find the separation plane to classify the data by maximizing the different classes of data. Can also model non linearly separable classes with some tweaks or by using kernel function to map to another space where they are linearly separables. Solves the local minima problem but has still the same problems of interpretability, so we need to extract rules from them.
 
 #### Ensemble methods
-Combine different models to exploi the benefits of them. Typically used toghether with decision trees, these techniques are (see ML notes for details):
-- bagging
-- boosting reweight data sample according to classificaiton error -> higher error means that it will get a higher weight in the next iteration (keep attention on "difficult" details) -> be careful not to overfit
+Combine different models to exploit the benefits of them. Typically used toghether with decision trees, these techniques are (see ML notes for details):
+- bagging: average predictions of different models.
+- boosting: reweight data sample according to classificaiton error -> higher error means that it will get a higher weight in the next iteration (keep attention on "difficult" details) -> be careful not to overfit
 - random forest <- best performant method in fraud detection application, create a "forest" of decision trees
 
 #### Evaluate predictive models
@@ -763,7 +766,7 @@ In cloud there is no direct access to metal, so it is not possibile to get the d
 
 Moreover, data in cloud is often transactional, which means that it does not exist at rest but it is there only in the constext of a specific interaction or execution, for example dynamic pages generated on the fly by social network or the association between certain ads on certain pages because this may also depend by the specific user who is visiting it. Often it is very difficult if not impossible to reconstruct what page the user saw if they did not took picture of it. 
 
-Acquiring a specific page is not trivial since many pages are composed of different components coming from different servers that may be controlled by many different entities (e.g. ad banners are usually served by third parties and the site owner often does not control what exact ads are displayed and the ad provider himself might not know why a certain ad was served)
+Acquiring a specific page is not trivial since many pages are composed of different components coming from different servers that may be controlled by many different entities (e.g. ad banners are usually served by third parties and the site owner often does not control what exact ads are displayed and the ad provider himself might not know why a certain ad was served).
 
 Remember to record immediately the "attribution" data:
 - IP
