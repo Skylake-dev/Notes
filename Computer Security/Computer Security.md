@@ -249,10 +249,26 @@ This approach present more challenges than the traditional approach:
 - single point of trust
 - difficult to get it right, complex flow to follow
 
-
-
 ## Introduction to software security
+Good software engineering means meeting the requirements:  
+FUNCTIONAL:
+- software must do what it is supposed to  
 
+NON FUNCTIONAL:
+- usability
+- safety
+- security
+
+Creating inherently secure application is hard and often is a skill that programmers lack because they were not taught about it. An unmet specification is a bug, a unmet *security* specification leads to a vulnerability. 
+
+In the early 2000s reporting vulnerabilites to company was not a good experience since they often [treated with hostility](https://marc.info/?l=vuln-dev&m=95602682515862&w=2) or threatened with lawsuits. So the only way to receive attention was to publish the vulnerability in the wild and force the vendor to fix it in order not to have it used against its user. This is what we call *full disclosure*.  
+![vulnerability_full_disclosure](assets/vulnerability_full_disclosure.png)  
+Of course `te`, `td` and `t0` can happen in different order. Anyways the objective is to minimize the windows of exposure, ideally:
+- the vendor finds the vulnerability
+- the vendor patches the vulnerability
+- vulnerability disclosed
+
+This is why nowadays companies use *bug bounty* programs to encourage hackers and researches to share the vulnerabilities that they find in order to have them patched as quickly as possible (*coordinated disclosure*). Big companies often have an internal group dedicated to finding vulnerabilities in their products.
 
 ## Buffer overflows
 
