@@ -271,7 +271,165 @@ Of course `te`, `td` and `t0` can happen in different order. Anyways the objecti
 This is why nowadays companies use *bug bounty* programs to encourage hackers and researches to share the vulnerabilities that they find in order to have them patched as quickly as possible (*coordinated disclosure*). Big companies often have an internal group dedicated to finding vulnerabilities in their products.
 
 ## Buffer overflows
+The concepts here are shared basically across all architectures and OSes. We will consider a 32 bit x86 architecture. See [appendix](#Appendix:-x86-assembly-crash-course) for information about x86 stack and calling conventions
 
+Let's start with an example:  
+```C
+[...]
+int foo()
+{
+  int c = 14;
+  char buf[8];
+  gets(buf);  //careful here
+  c = (a + b) * c;
+  return c;
+}
+
+void main(int argc, char *argv[]) 
+{
+  [...]
+  foo(5, 6);
+}
+
+```
+What happens if we insert more than 8 characters into the buffer `buf`?  
+
+```bash
+$ ./vulnerable_executable
+ABCDEFGHIJKLMNOPQRSTUV
+```
+Look at the stack to see what happens (high addresses at the top).
+
+![buffer_overflow_example](assets/buffer_overflow_example.png)
+
+The saved EIP that was on the stack has been rewritten because the input was longer than the length of the buffer and there were no checks on its size or the number of chars read. This caused the buffer to *overflow* and overwrite what was on the stack. What happens now that the return address has been corrupted?
+
+```bash
+$ ./vulnerable_executable
+ABCDEFGHIJKLMNOPQRSTUV
+Segmentation fault
+```
+The segmentation fault happens because "STUV" is not a valid address to jump to so the OS kills the program.  
+We can exploit this vulnerability to hijack the control flow of the program by overwriting the saved EIP (sEIP for short) with another address that points to some code that we wrote. How to do this?
+- we need to jump to a valid memory address
+- there needs to be valid code at that address
+
+The basic method that we will see is *stack smashing*, we place the code that we want to run directly inside of the buffer and rewrite the return address with the address of the buffer itself.
+
+### Stack smashing
+How do we get the address of the buffer?  
+We cannot get it precisely but we can estimate it by reading the value of ESP from a debugger. That value may differ of some words from the real value because of the presence of the debugger so we have a problem of precision: to have code executed we need to jump in the exact byte.  
+The solution to this is to put before our code a so called *NOP sled*, a sequence of NOP instruction where we can jump and "slide" towards our code. This does not require byte-precision since the NOP instruction is a single byte so no matter where in the word we jump it will always be decoded correctly.
+
+![buffer_overflow_scheme](assets/buffer_overflow_scheme.png)
+
+Now we need to decide what to put on the buffer to be executed. In this example we try to open a shell (which is why historically it is called shellcode) and close the program. In general we can put code to do [anything](http://shell-storm.org/shellcode/).  
+To do this we use tha system call `execve` that we will invoke using and interrupt (`int 0x80` on Linux) after preparing its parameters. To obtain the assembly for the shellcode we first write the program in C and compile it. Then we disassemble it and pick the relevant parts. What we want to execute is this:
+
+```C
+int main() 
+{
+  char* hack[2];
+  hack[0] = "bin/sh"; //the name of the program we want to open
+  hack[1] = NULL; //the parameters to pass to the shell
+  execve(hack[0], &hack, &hack[1]); //system call
+}
+```
+
+Once compiled, if we inspect the result we find something like this:  
+![building_shellcode](assets/building_shellcode.png)  
+
+We need to prepare the stack properly for the exploit to work:
+- put somewhere in memory the string `/bin/sh` terminated with a `\0`
+- address of that string somewhere in memory, the "argv[0]" to pass
+- all of this followed by a `NULL` to pass the arguments (we do not want to pass arguments)
+
+![stack_preparation_for_execve](assets/stack_preparation_for_execve.png)
+
+Everything is parametrized w.r.t. ADDRESS, that is where we put our string in memory. In this case though we need to know it exactly we cannot take a guess. We can use a trick called *jump and call*. Remember at this point we are already executing code so we can have the machine to tell the address by doing:
+- put a `call` instruction before our string in memory. The `call` pushes on the stack the address of the next instruction, that is the position of our string.
+- at the beginning of the shellcode, jump to our call using a relative offset. We can compute it precisely because we know how long the shellcode is.
+- after thet jump we can pop the address
+
+```C
+jmp offset-to-call  //jump to the call
+pop esi  //pops the address of "/bin/sh"
+[shellcode]
+call offset-to-pop  //calls to pop
+.string "/bin/sh"
+```
+
+Now we have the shellcode and we are able to execute it. There is still a small problem because there are some 0 bytes in our code. This is not a problem per se, the issue is that we are injecting the code using a string manipulation function of C so when it reaches a 0 byte it interprets it as `\0` and terminates reading.  
+We need to rewrite the shellcode in an equivalent way but avoiding putting in bytes that are all 0. Fortunately this is not particularly difficult, we can use some tricks:
+- use some `jmp short` instead of `jmp`
+- if we need to write some 0, do this by xoring something with itself, like `xor eax, eax     mov [esi+7], eax` that puts 0 in eax and then puts it at esi+7
+
+The idea is that we can almost always equivalent code but without 0, so it is just something to look for not a real issue.  
+The resulting shellcode is:
+
+```C
+char shellcode[] =
+"\xeb\x1f\x5e\x89\x76\x08\x31\xc0\x88\x46\x07\x89\x46\x0c\xb0\x0b"
+"\x89\xf3\x8d\x4e\x08\x8d\x56\x0c\xcd\x80\x31\xdb\x89\xd8\x40\xcd"
+"\x80\xe8\xdc\xff\xff\xff/bin/sh";
+```
+
+Now we can put the nop sled and the guessed address and give this in input to our program. The code is portable, it doesn't need anything except to guess the correct address to jump to.
+
+Just one note: to actually input it to the program we need to write the actual hexadecimal values (that could be non printable characters). To do so we can use a helper program for example:
+
+```bash
+echo "our_shellcode" | ./vulnerable_executable
+```
+or
+```bash
+python -c "print 'our_shellcode'" | ./vulnerable_executable
+```
+
+### Alternative techniques
+This is just a schematic list, not treated in this course
+- ENVIRONMENT VARIABLES  
+We can put our code in environmentaò variables and have it loaded on launch.  Then we can overwrite the return address with the address of the environment varible we set.
+  - Advantages
+    - easy to implement beacuse we are not constrained by the space
+    - easy to target because we can know the exact address
+  - Disadvantages:
+    - we can only exploit if we have access to the machine and set the env
+    - a wise program may wipe env. variables that he does not need
+    - memory must be marked as executable (more on this in [mitigation section](#mitigations))
+- BUILT-IN, EXISTING FUNCITONS  
+Point the return address to some code that is already present in memory like other function or some library function.
+  - Advantages:
+    - works remotely and reliably
+    - no need for executable stack
+  - Disadvantages:
+    - need to prepare the stack carefully
+    - more difficult to do properly
+
+There can also be practical problem that make the exploitation difficult or impossible, for example the buffer could be too small to fit all of our shellcode + NOP sled.
+
+### Mitigations
+We can implement some defense at different levels:
+
+#### Source code level
+- use languages with memory management like Java
+- use safer libraries that check the boundaries of buffers (`strncpy`, `strncat`, etc allow to specify the maximum length to read)
+- educate developers not to introduce such vulnerabilities
+- use tools to find vulnerabilities in the source
+
+#### Compiler level
+- warnings about unsafe behaviour
+- randomization of the ordering of stack variables
+- embed stack protection measures
+
+The last one is the most successful in stopping these attacks and is based on the concept of *canary*. The basic idea is:
+- between the local variables and the saved registers sEBP adn sEIP, put a canary word of random data chosen at each execution
+- before returning, check that the canary is still the same.  
+The canary can also be xored with those values to ensure they are not modified by means other than a simple buffer overflow.
+
+#### OS level
+- mark the stack as non executable. Today this is widely supported at a hw level thanks to the [NX bit](https://en.wikipedia.org/wiki/NX_bit). Can be bypassed by some technique that relies on built-in function or code that is already present (return oriented programming).
+- use Address Space Layout Randomization (ASLR) that relocates the stack and other section of the code at the start of the program by a different amount each time. With offset in the order of some MBs makes it impossible to correctly guess the address to jump to.
 
 ## Format string bugs
 
@@ -300,3 +458,99 @@ This is why nowadays companies use *bug bounty* programs to encourage hackers an
 ## Malicious software
 
 ## Appendix: x86 assembly crash course
+Basics for the x86 architecture that we will use. The architecture was born in 1976 for 16 bits and was later expanded to 32 bit (1985) and 64 bits (2003). It's a CISC design and has variable length instructions. It is present basically in every desktop/laptop and server in the world.
+
+### Registers
+- general purpose EAX, EBX, ECX, EDX  
+They can also be referenced partly in 8 bit or 16 bit  
+![x86_registers](assets/x86_registers.png)
+- for string funcitons: ESI, EDI
+- base pointer EBP
+- stack pointer ESP
+- instruction pointer EIP, can't be accessed directly
+- program status and control EFLAGS, each bit has a specific meaning and is used to signal some condition (e.g. overflow, carry, parity,...)
+
+### Syntax
+There are two main types of syntax:
+- intel
+- AT&T
+
+For example: 
+- move the value 0 to register EAX (basically EAX = 0).
+  - intel `mov eax , 0h`
+  - AT&T `mov $0x0, %eax`
+- move the value 0 to the address contained in EBX + 4.
+  - intel `mov DWORD PTR [ebx+4h],0h` (DWORD PTR is optional)
+  - AT&T `movl $0x0,0x4(%ebx)`
+
+We have different operations:
+- mov to move data
+- arithmetics: add, sub, mul, div, cmp, test
+- control flow: jmp, j (can be to an absolute address or using and offset)
+- nop: no operation, does nothing opcode: `0x90`
+- interrupt: int, call, sysenter
+
+### Endianness
+Convention that specify in which order the bytes of a data word are lined up sequentially in memory. There are two main types:
+- LITTLE ENDIAN, the least significant
+byte is stored in the smallest address.  
+![little_endian](assets/little_endian.png)
+- BIG ENDIAN, the most significant
+byte of the word is stored in the
+smallest address.  
+![big_endian](assets/big_endian.png)  
+
+x86 is little endian.
+
+### Program layout
+How the different sections of the binary are mapped into memory. We will deal with ELF binaries. The main sections are
+- .text, contains the executable code
+- .data, contains initialized data
+- .bss, contains allocated but uninitialized data, zeroed at the beginning.
+
+![program_layout](assets/program_layout.png)  
+Stack and Heap are dinamically allocated during the exectuion of the program:
+- stack contains the frames of the functions as well as local variables
+- heap contains dinamically allocated data (e.g. malloc)
+
+### Stack
+LIFO data structure used to manage function calls and local variables. The register ESP always points at the top of the stack while EBP points at the base of the current frame (function invocation).
+
+INSTRUCTIONS:
+- push, decreases ESP and places the value passed at the top of the stack (example `push EAX`, `push 0h`)
+- pop, copy to the specified register the value at the top of the stack and increases ESP (example `pop EBP`)
+
+The important thing to remember is that the stach grows from high addresses to low addresses so increasing ESP actually means reducing the stack and viceversa. Variables on the stack are instead allocated from low to high address (e.g. a 64 char string will start at a low address and end in a high address)
+
+### Functions
+At assembly level they are managed using two instructions:
+- call, pushes EIP on the stack and jumps to the specified function
+- ret, pops EIP from the stack
+
+We call stack frame the area on the stack allocated to a specific function.
+
+#### Entering a function
+We need to setup the stack frame:
+- `push EBP`  to save the current function base pointer
+- `mov EBP, ESP`  to change frame
+
+To exit a function we do the opposite:
+- `move ESP, EBP`  move stack pointer to where we saved the previous EBP
+- `pop EBP `  restore caller's frame
+
+But how do we pass parameters to the function? How do we preserve registers across function calls? We need calling conventions (ABI, Application Binary Interface)
+
+#### _cdecl calling convention
+- ARGUMENTS: passed by the caller by placing them on the stack, right to left order
+- CLEANUP: caller removes the parameters after the function completes
+- RETURN VALUE: put by the callee in EAX
+- CALLER SAVED REGISTERS: EAX, ECX, EDX  
+
+![_cdecl](assets/_cdecl.png)
+
+### Tools
+- objdump: display information about a binary
+  - `-d` to disassemble
+  - `-M intel` display assembly with intel syntax
+- gdb: debugger, can inspect code at runtime and disassemble it
+  - useful extension: pwndbg
