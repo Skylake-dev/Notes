@@ -159,6 +159,96 @@ Since digital signature cannot be destryoed once they are issued we need ways to
 All this process assumes that the root CA is a trusted element and all the intermediate CAs have not been compromised. If they are, there is no automatic way to tell.
 
 ## Authentication
+Authentication is the act of proving that a certain entity is actually who it says to be. There are 3 main mechanism to perform authentication that involve using:
+- something you KNOW (*to know factor*): pin, password
+- something you HAVE (*to have factor*): door key, smart card
+- something you ARE (*to be factor*): face, voice, fingerprints
+
+We see briefly how they work and their advantages/disadvantages.
+
+### To know factor
+Each user know a secret that he needs to provide when he wants to log in.
+
+Advantages:
+- low cost
+- ease of deployment
+- low technical barrier
+
+Disadvantages and mitigations against those:
+- can be stolen --> change it frequently
+- can be guessed --> make it not connected to the user
+- can be cracked (bruteforced) --> ensure that it is long and complex enough to make it unfeasible
+
+However those countermeasures have a cost, they impact on the usability and user experience. Also we cannot expect all user to remeber long and complex password (they are going to write on sticky notes and make it easier to be stolen).
+
+#### Secure password exchange
+- use mutual authentication to ensure that we are sending the information to the correct place
+- use a challenge-response scheme
+- random data with each request to avoid replay attacks
+
+#### Secure password storage
+If we have an archive of passwords we need to protect it against attackers that may want to stel it. First thing is to **never** store passwords in plain text. We always need to at least hash it using a strong cryptographic hash function and preferrably salt it with a random salt (see [salting](https://en.wikipedia.org/wiki/Password_salting)) to avoid the use of rainbow tables. Additionally we need to be careful in password recovery schemes not to leak secrets (we should not be able to if we only have hash). The most effective way is to send a link to log in the user on a verified email address and have him change the password immediately on login.
+
+### To have factor
+The user needs to have a specific object in order to authenticate.
+
+Advantages:
+- relatively low cost
+- provides good security
+- humans are less likely to hand out a key or leave it under the monitor like a password
+
+Disadvantages and mitigations against those:
+- harder to deploy --> none
+- can be lost or stolen --> use toghether with another factor
+
+Some examples of this are:
+- OTP generators: small devices containing a secret key for the user that are given by the organization. The general approach is tu generate some numeric codes pseudorandomly using the secret key and the current time. Today we use a software version of these based on TOTP that are generally easier to deploy and manage.
+- smart cards: a physical card containing a CPU and some non volatile memory that contains the private key of the user. When a smart card is connected to a reader it boots up and authenticates itself using a challenge-response mechanism. The advantage of using it is that the smart card can perform operations like signing without the private key ever leaving the card (can only be retrieved by physically destroying the card -> tamper evident)
+- static OTP list: cheaper alternative for OTP that is also easier to implement, maybe used in a transition phase. Basically the OTP are printed on a card and the authentication system asks for a specific one each time. The drawback is that they can be stolen without the user noticing (e.g. take a photo).
+
+### To be factor
+Use some specific characteristics of the user to authenticate.
+
+Advantages:
+- high level of security (if implemented correctly...)
+- no extra hw to carry around, no need to remember things
+
+Disadvantages and mitigations against those:
+- hard to deploy --> none
+- non deterministic matching --> see FAR and FRR
+- can sometimes be cloned --> none
+- bio-characteristics change --> re-measure over time
+- privacy sensitive --> secure the process
+- consider user with disabilities --> need alternatives (weaker?)
+
+### False Acceptance Rate (FAR) and False Rejection Rate (FRR)
+- FAR is basically false positives. A user is accepted even if he was not the correct one. Represent a security problem.
+- FRR represents the false negatives. A user is rejected even if he was the correct one. Impacts usability.
+
+Since we cannot get rid of both at the same time we need to correctly balance between the two:
+- High FAR -> Low FRR, good user experienc but not secure
+- High FRR -> Low FAR, good security but usability nightmare  
+![FAR_FRR_graph](assets/FAR_FRR_graph.png)
+
+### Single sign-on
+Goal: authenticate seamlessly a user across multiple domains using and identity provider. The advantage from the user point of view is obvious: he only needs to authenticate once and will be logged in all every service. The mechanism basically works like this:
+- for the first login, the user is redirected to the identity provider
+- log in to the identity provider
+- the identity provider confirm to the website the identiy of the user
+- in all subsequent logins:
+  - the website contacts the identiy provider
+  - since the user already logged in, the identiy provider confirms the user identity to the website
+  - the website logs the user in
+
+Some protocols that implements this are OAuth2 and shibboleth. Many services allow to use this method (e.g. log in with Google/Facebook).
+
+NOTE: there can be privacy concerns if the identity provider is someone like Facebook for example because this would allow to track the user activity across the websites that he visits that have Facebook integrations (e.g. like button) for advertisement purposes.
+
+This approach present more challenges than the traditional approach:
+- single point of failure
+- single point of trust
+- difficult to get it right, complex flow to follow
+
 
 
 ## Introduction to software security
