@@ -10,7 +10,7 @@ We can classify threats according to different categories:
 - generic vs targeted
 - financially motivated vs other motivations
 
-Financially motivated threats are the most common and i a way easier to deal with because we need to make an attack not economically convenient to prevent them. Other motivations may be more difficult to predict and can include a variety of different actors from a grudged employee to a state sponsored attack.
+Financially motivated threats are the most common and in a way easier to deal with because we need to make an attack not economically convenient to prevent them. Other motivations may be more difficult to predict and can include a variety of different actors from a grudged employee to a state sponsored attack.
 
 While for a single attack the threat that can potentially deal more damage is an internal specific threat, for society as a whole the external generic are the one that cause more damage because in the end it's a numbers game (for examples, social engineering attacks)
 >The attackers' job is to make one person in the company to click on one link. The security's job is to get every person in the company not to click on any link.
@@ -60,7 +60,7 @@ Usages:
 
 What are the advantages?
 #### Bitcoin is pseudo-anonymous  
-Each entity can create as many keys as he wants and they are not directly correlated to him. There are anyways things to look for because since the whole history of transaction is public they can be analyzed and correlate different addresses togheter to get the tree of entities involved (we still don't know who is behind an address but we knwo that several addresses belong to the same person/entity)  
+Each entity can create as many keys as he wants and they are not directly correlated to him. There are anyways things to look for because since the whole history of transaction is public they can be analyzed and correlate different addresses togheter to get the tree of entities involved (we still don't know who is behind an address but we knwo that several addresses belong to the same person/entity).  
 example:
 - multiple inputs to a transaction
 - new address generated to gather the unspent amount of a transaction
@@ -122,7 +122,7 @@ This is done using hashes.
 Hashes are used as a "digital seal" on the evidence to make sure that it has not been modified **since the moment the hash was calculated.** This is very important because it doesn't mean that it was not modified before, also the hash by itself cannot help us tell what was modified.
 Hashes should alse be kept correctly, preferrably sealed in writing or digitally signed.
 
-To acquire data often linux based tools are used or embedded devices that perform the copy. The copy that we want is a bit by bit copy of the whole drive (bitstream image) in order not to lose any information that may be present
+To acquire data often linux based tools are used or embedded devices that perform the copy. The copy that we want is a bit by bit copy of the whole drive (bitstream image) in order not to lose any information that may be present.
 
 General approach:
 - disconnect media from orignal machine, if possible
@@ -296,6 +296,7 @@ Writing the report is extremely important because it will be analyzed by the cou
 - be simple without being simplistic (don't make people feel stupid)
 - explain why what you are writing is relavant, preferrably before starting the discussion of the experiment (give motivation to make the efforto to read and understand)
 - remeber to explore possible alternatives and defend against possible counter-measures (defensive writing)  
+
 What not to do:
 - be overly technical, you will be ignored
 - use innuendos or sarcasm
@@ -370,7 +371,7 @@ There are two main category of techniques:
 - DETECTION: recognize and discover fraudolent activity
 - PREVENTION: avoid or reduce frauds (example, enforce 2FA on payments, see PSD2 european regulation)  
 
-These two categories are complementary but they must not be used independently. A good fraud detection system is a combination of both. Since the fraud evolve also our mechanisms need to evolve (cat and mouse game)
+These two categories are complementary but they must not be used independently. A good fraud detection system is a combination of both. Since the fraud evolve also our mechanisms need to evolve (cat and mouse game).  
 new prevention system -> fraudsters adapt -> detection power reduced  
 new detection system -> fraudsters adapt -> impacts prevention power
 
@@ -508,8 +509,8 @@ Extreme values dissimilar from the rest of the population. We can divide them in
 There are techniques to find them (Z-score for univariate, clustering or regression for multivariate).
 
 Once they have been identified we need to deal with them according to their nature:
-- valid outliers: can be treated the same as a missing value
-- invalid outliers: impose upper and lower limit and "resize" the values to fit the chosen scale.
+- invalid outliers: can be treated the same as a missing value
+- valid outliers: impose upper and lower limit and "resize" the values to fit the chosen scale.
 
 In any case we need to be really careful to deal with them.
 
@@ -582,7 +583,7 @@ The idea is to model which items occur toghether frequently. To do this we defin
 - support(X) -> ratio between transaction containg x and total number of transaction
 - confidence(X->Y) -> also noted as P(Y|X) is defined by the ratio of support(X ∪ Y) over support (X)
 
-We need to specify a threshold for both of these value after which we consider them relevant
+We need to specify a threshold for both of these value after which we consider them relevant.
 
 #### Clustering
 Try to split the dataset in groups called clusters that:
@@ -598,7 +599,7 @@ In order to group data we need to define a metric to evaluate the distance betwe
 Also remember to standardize data to avoid bias for variables with high values.
 
 ##### Hierarchical clustering
-Aggregate/divide iteratibely data into clusters.  
+Aggregate/divide iteratively data into clusters.  
 ![hierarchical_clustering](assets/hierarchical_clustering.png)  
 I need to be able to evaluate distance between single points as well as between clusters, there are different approaches to do it, distinguished by the points chosen to measure distance (of course choosing one over the other may yield totally different results):
 - single linkage -> closest points in the clusters
@@ -606,7 +607,7 @@ I need to be able to evaluate distance between single points as well as between 
 - average linkage -> average distance between all points in the two clusters
 - centroid method -> compute a centroid for eache cluster and measure the distance between centroids
 
-We can use visual tools to see where to stop in the aggregation/division (dendogram or screen plot)
+We can use visual tools to see where to stop in the aggregation/division (dendogram or screen plot).
 
 The advantage of hierarchical clustering is that we do not have to decide the number of clusters *a priori* but can be automatically decided given a threshold. The disadvantage is that this does not scale well on large datasets and the interpretation is up to the expert's knowlegde.
 
@@ -616,13 +617,13 @@ The advantage of hierarchical clustering is that we do not have to decide the nu
   - assign elements based on distance from the seeds (called centroids)
   - compute new centroids and recomput clusters
   - repeat until it remain unchanged  
-  Tthe disadvantage here is that we have to determine the number of clusters (K) at the beginning so we may have to tweak it later. It is also sensitive to outliers and the result depend on the initial seed selection
+  The disadvantage here is that we have to determine the number of clusters (K) at the beginning so we may have to tweak it later. It is also sensitive to outliers and the result depend on the initial seed selection.
 - SELF ORGANIZING MAPS (SOM)  
 Allow to visualize and automatically cluster high dimensional data to a low dimensional space using a 2 layers feed forward neural network. This is a great advantage to make it easy to visualize and understand the result + i do not have to specify the number of clusters initially. However there are still some limitations because it is hard to compare result across different SOMs and expert knowledge is needed to decide the size of the map properly.
 - SEMI-SUPERVISED CLUSTERING  
-Perform clustering but integrates beforhand extra knowledge in the data (e.g. "no fraud in this dataset"). We can also put constraints about the clusters at different level (e.g. pre-classifying some points, minimum separation between clusters, balanced clusters)  
+Perform clustering but integrates beforhand extra knowledge in the data (e.g. "no fraud in this dataset"). We can also put constraints about the clusters at different level (e.g. pre-classifying some points, minimum separation between clusters, balanced clusters).  
 - One-class SVMs  
-Use a linear optimization problem to separate outliers  
+Use a linear optimization problem to separate outliers  .
 
 ##### Evaluating clusters
 It is not easy and there is no universal methods. An approach maybe measuring the sum of squared errors (SSE) or visualizing the clusters to compare the distribuition of the variables in the different clusters.
@@ -759,7 +760,7 @@ RECALL:
 We will deal with public cloud because they poses significantly more challenges than private clouds
 
 #### Acquisition
-In cloud there is no direct access to metal, so it is not possibile to get the drive directly. The space allocated to a VM may be spread across different drives. Cloud providers do not keep all logs or make them accessible to customer
+In cloud there is no direct access to metal, so it is not possibile to get the drive directly. The space allocated to a VM may be spread across different drives. Cloud providers may not keep all logs or make them accessible to customer:
 - IaaS, network/os logs available only to provider
 - PaaS, customer may have application logs
 - SaaS, only the service provider has log
