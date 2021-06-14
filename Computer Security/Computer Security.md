@@ -432,7 +432,130 @@ The canary can also be xored with those values to ensure they are not modified b
 - use Address Space Layout Randomization (ASLR) that relocates the stack and other section of the code at the start of the program by a different amount each time. With offset in the order of some MBs makes it impossible to correctly guess the address to jump to.
 
 ## Format string bugs
+Format strings are a way to specify to a print function how a string should be formatted. They are present in basically any programming language.  
+The basic mechanism is to specify which items to substitute in the string using place holders with specific meaning and passing to the print function the values to put. Because of this print function are variadic functions, they can accept in input an indefinite number of arguments.  
+Example:
+```C
+void main()
+{
+  int i = 10;
+  printf("%x, %d", i , i); //"%x, %d" is the format string
+}
+```
+When executed this gives as output:
+```bash
+$ ./format_string_example
+a, 10   #%x means hexadecimal, %d is integer
+```
+How can we use this mechanism to make the program do something else? If the format string is not specified then funny things can happen:
+```C
+void test(char* arg)
+{
+  char buf[256];
+  snprintf(buf, 250, arg);
+  printf("buffer: %s", buf);
+}
 
+int main(int argc, char* argv[])
+{
+  test(argv[1]); //pass the first parameter received from command line
+  return 0;
+}
+```
+If we execute this and input a format string to it
+```bash
+$ ./vulnerable_format_string "%x %x %x"
+buffer: b7ff0ae0 66663762 30656130
+```
+What happened here?  
+The function `snprintf` is a formatted print on a string. Since the argument that was passed was `"%x %x %x"` it interprets it as a format string and looks for the parameters that should correspond to each `%x` on the stack. But no parameters were passed, so the function picks the value that it finds there where it expected to find parameters. There is an **information leakage** from the stack.  
+![format_string_and_stack](assets/format_string_and_stack.png)  
+Note that the format string itself is also on the stack because it was passed as a parameter. This means that if we get the correct offset we can read it too.  
+We can choose precisely how many words to go back in the stack because we can specify in the format string which parameter to place in a certain position using the syntax:  
+`%N$x  //read the Nth parameter and interpret it as hex`
+
+FIRST RESULT: we can read the stack and we can read what we put on the stack at an arbitrary offset.
+
+The second things is that there also is the possibility to write to a specified position by using a special placeholder in the format string:  
+`%n  //write in the address pointed by the corresponding argument the number of characters written so far`  
+Example:  
+```C
+int i = 0;
+prinft("hello%n", &i);
+//now i = 5
+```
+
+We can exploit this to change some memory cells (for example a return address...):
+- place the address of the cell that we want to change (*target*) on the stack in a string
+- find it using for example `%x` (using the trick to go up for whatever we want)
+- once found, replace the corresponding `%x` with `%n`
+
+NOTE: as seen before, to write hexadecimal character we can use a helper program like having python to print them for us:
+```bash
+./vulnerable_format_string "`python -c 'print "\xcc\xf6\xff\xbf%2$n"'`"
+```
+
+We have now two issues:
+- how do we find the address to modify?
+- how do we write an arbitrary number to that address?
+
+For the first issue, we assume that we have a target address, more on this [later](#A-word-on-the-target-address).
+
+For the second we can use properties of the formatted printing. In fact, we can specify a certain padding to the amount of characters that we want to write:  
+`%50c  //prints a char using 50 spaces --> counts as 50 chars`  
+The only problem with this approach is that in order to overwrite an address with another address (32 bit) we would need billions of chars of padding, which is not feasible because we are probably going to saturate the memory or crash the program (remember that the format string is expanded in memory somewhere before being printed).
+
+We can overcome this issue by dividing the single 32 bit write in two separate 16 bits writes using only one format string. What we need is:
+- the two target addresses, which are two bytes apart
+- the displacement on the stack of these two target (let's call them `pos` and `pos+1` since we will place them in two adjacent words) . We can find these values by inspecting the stack using `%$Nx` incrementing `N` until we read our address (can be done by a script). 
+![format_string_target_displacement](assets/format_string_target_displacement.png)
+- do some math to compute what to put in the padding values
+
+The structure of our format string will be something like this:  
+`<target><target+2>%<lower_value>c%pos$n<higher_value>c%pos+1$n`  
+Where:
+- `target` and `target+2` are the two position in which we are going to write
+- `pos` and `pos+1` are the displacements
+- `lower_value` and `higher_value` are the two 16 bits value that we will compose to make to whole 32 bit address
+
+How do we compute those value? It is not as simple ad dividing the 32 bit in two 16 bit halves and write them independently because we write them using %n that is only able to write the total number of characters written so far.  
+Suppose that we want to write the value `0x45434241` at the address `0xbffff6cc`. What we have to to is
+- separate in half and convert to decimal  
+  - `0x4543` -> 17731
+  - `0x4241` -> 16961
+- since the value written by `%n` can only increment, we need to first write the smaller value and then bigger one. So the two writes will be done as follow:
+  - first we write 16961 - 8, where 8 is the number of bytes written so far (the two target addresses) `%16953c`
+  -  second we neet to write the remaining chars to get to 17731 --> 17731 - 16961 = 770  `%770c` or `%00770c` to maintain the same structure (leading 0s are ignored)
+- the two target addresses are
+  - `0xbffff6cc`
+  - `0xbffff6cc + 2 = 0xbffff6ce`
+
+So our format string becomes:  
+`\xcc\xf6\xff\xbf\xce\xf6\xff\xbf%16953c%pos$hn%00770c%pos+1$hn`  
+NOTE: we used `%hn` instead of `%n` because we are writing 16 bits instead of 32 and we do not want to overwrite the two following bytes with 0s.
+
+SECOND RESULT: we can write an arbitrary 32 bit value at an arbitrary address of the program that we are exploiting.
+
+This method works in general, we only need to be careful about the displacements and the order of the writes, the general structure of the string to write a 32 bit value is:  
+`<target><target+2>%<lower_part-len(printed)>c%pos$n<higher_part-low_part>c%pos+1$n`  
+We may have to swap the two targets if the two writes needs to be swapped (e.g. i want to write a value where the first half is smaller than the second half like `0x08049698`).
+
+### A word on the target address
+So far we have assumed that we had a target address to write to, but we did not talk about how to find it. It could be any address in the memory of the program that we are exploiting, for example:
+- saved EIP of a function to change the control flow of the program
+- Global Offset Table (GOT)
+- function pointers
+- exception handlers
+
+### A word on countermeasures
+Memory protection seen in the buffer overflow section can be applied here to help preventing the exploitation by making it difficult to find the target address (ASLR) or impossible to modify return addresses without being noticed (XOR canary). Also compilers warns when we use a format string without fixing the format string itself.
+
+### Ingredients for a format string bug
+- have a variadic function
+  - variable number of parameters
+  - resolved at runtime
+- placeholders to read/write to arbitrary locations
+- the abilty to control those placeholders
 
 ## Web vulnerabilities
 
