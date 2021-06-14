@@ -610,8 +610,7 @@ Example:
 Source code server side  
 ```php
 <?php
-$var = $HTTP['variable_name']; //retrieve content from request's
-variable
+$var = $HTTP['variable_name']; //retrieve content from request's variable
 echo $var; //print variable in the response
 ?>
 ```
@@ -682,10 +681,139 @@ The problems at the moment with this approach are that:
 - policies needs to be written and update manually for each page and may slow down development
 
 ### SQL injection
+Code injection technique used to modify or retrieve data from SQL databases.  
+Consider a web app with a simple login page:  
+![login_page](assets/login_page.png)  
+Suppose that tha backend code, in order to check if the user exists and the password is correct, does somthing like this:  
+```java
+public void onLogon(Field txtUser, Field txtPassword) {
+  SqlCommand cmd = new SqlCommand(String.Format("SELECT * FROM Users 
+                                    WHERE username='{0}'
+                                    AND password='{1}';",
+                                txtUser.Text, txtPassword.Text));
+SqlDataReader reader = cmd.ExecuteReader();
+}
+```
 
+Looking at the query we can see that it accepts user input as is and uses it to build the query --> the user can modify the structure of the query!  
+For example, if the user puts int the `txtUser` field field something like `username'; --` when the query is build it will be like:  
+`SELECT * FROM Users WHERE username='username'; --'AND password='not_relevant';`  
+This will execute only up untile the semicolon because `--` in SQL generally means comment (there can be different syntax for different DBMSs, like `#` for MySql). The result is that the user is logged in as `username` without knowing the password.  
+Note that this procedure can be done for every existing user --> an attacker can log in pretending to be whoever he wants, provided that he knows its username.
 
-### Cross-site request forgery
+There are other things that an attacker can do:
+- display the content of the table e.g. `username OR 1=1;--` will return true for every user
+- perform other queries using the `UNION` statement, for example:  
+`SELECT name, phone, address FROM Users WHERE Id=‘’ UNION ALL SELECT name creditCardNumber,CCV2 from CreditCardTable;--’;`  
+This will show the results from another table! It works provided that the fields that we are trying to extract are the same number and type as the original query.
+- tamper with `INSERT INTO` to modify tables.
+- also we can perform *blind injections* when we are not able to retrieve directly the data. They can always return some information that we can use to infer data (e.g. the page shows different error message based on what was returned)
 
+Also in this case we need to filter our input in. In this case is the `'` character that causes problems. How do we filter?
+- first, as always, design a whitelist
+  - alphanumeric a-zA-Z0-9 and "." for the username
+  - we don't really want to filter a password to avoid reducing the keyspace, we can rely on escaping (note that this is not an issue if the passwords are stored properly because they are going to be hashed before putting them in the query)
+- what can we blacklist?
+  - `;--` for sure
+  - `AND`, `OR`? we can but those can be rewritten in many equivalent ways (remember `<script>`?)
+
+#### SQL injection prevention
+- properly sanitize input
+- use **prepared statements** instead of building queries by string concatenation (pls do this, ty) if the language allows (almost all do), like
+```php
+$stmt = $db->prepare(SELECT * FROM users WHERE username = ? AND password = ?” )
+$stmt -> execute(array($username,$psw));
+```
+- limit query privilegies, not all queries needs to be run with administrator rights. This limits the damage in case a vulnerablility is found.
+- do not use table name as field name to avoid revealing information
+
+### Recap: XSS and SQLI
+These vulnerabilities are there because we have conflicting requirements:
+- functional requirement: mix code and data (e.g. comments on a page, use input to perform queries)
+- security requirement: never mix code and data!
+
+So if some routine inadvertedly reacts to data treating it as some control sequence we have a vulnerability.
+
+### Other possible vulnerabilities
+
+- Information leakages
+  - too detailed error messages
+  - debug traces in production website -> the attacker can infer what backend we have
+  - side-channels, for example distinguishing between "user not found" and "wrong password", reveal more information than what they should.  
+All of these may not translate directly into an attack, but they give potential attackers more information that they can use.
+- URL parameter tampering  
+If the parameters in the URL are trusted by the application, they can be altered to receive data that we weren't supposed to receive (never trust user input).
+- Path traversal  
+An attacker is able to navigate in the folders through the URL.  
+![path_traversal](assets/path_traversal.png)  
+
+### Password security and recovery schemes
+As said before, never store passwords in plain text. Every application currently on the internet should store password by salting and hashing.  
+Password reset schemes also need attention because they are basically alternative ways to log in and they should be properly secured:
+- send to verified email link to reset password
+- (WEAK) send temporary password
+- (WEAK) ask security question, often easy to guess. It is fine to use them as a sort of "captcha" to block password reset request from others.
+
+We also need to protect against possible bruteforcing attacks on the password:
+- naive approach --> block after `N` attempts. This has two major problem
+  - the attacker can do *reverse bruteforcing*, instead of trying all attempts on one account he can try `N-1` attempts on all accounts
+  - the attacker can exploit this to lock the victim out of his account
+- block IPs behind many failed attempts
+  - not a good idea because it can be exploited for DoS
+  - due to NAT and proxies, many different users may be behind a certain IP
+
+Compromise solution:  
+do not limit the number of attempts per account or IP but "throttle" them using captchas to slow down the attacker and prevent automated requests while alerting the user of the failed attempts.
+
+### Cookies
+Solution developed to make HTTP somewhat stateful. The basic idea is to have the web server store a small text file (containing an id or some preferences settings) on the browser of the user that visisted the website in order to recognize it later.  
+This idea was (and is) also abused to track a specific user across website (for instance, for advertisement purposed).  
+Cookies are also used to store sessions for the users in order not to have them log in each time. This poses other problems because it can lead to sessions being stolen or created if the mechanism that builds the random tokens is predictable.
+
+There are also issues with sessions that each developer needs to address:
+- what to do in case of multiple concurrent sessions? (different tabs for example)
+- when to invalidate sessions?
+- how to keep track and store them on the server?
+- how to handle an expired session?
+
+### Cross-Site Request Forgery (CSRF)
+Attack that forces the user to execute unwanted actions on a web application in which he is currently authenticated using ambient credentials (e.g. cookies). See [here](https://owasp.org/www-community/attacks/csrf) for detailed info.  
+
+Concepts:
+- cookies are used to manage sessions
+- all request originating from the browser carry the associated cookies --> cookies are ambient credentials: sent automatically at each request.
+- malicious request are routed to the web application through the victim's browser (along with its credentials that are stored in the cookies).
+- the web app cannot distinguish if the request came from the victim or it was forced by someone else
+
+This can have very negative impact, for example the request can be sent to the home banking system to transfer some money (if the user is logged in).  
+
+How are these attacks performed?
+- create a malicious web page
+- insert a form in the page that sends the request to the target website (e.g. bank website)
+- when the user visit the malicious website the request is sent
+- if the user was logged in then the request will go through as legitimate since its cookies were sent along with the request by the browser
+
+MITIGATIONS  
+Use random tokens associated with each request and do not store them in cookies:
+- the web page before sending the form inserts a random token, regenerated at each request
+- when the user fills in the form, check that the random token is still there
+- an attacker needs to guess the token to have the request go through (that's why we need it to be random)
+
+Example:  
+the page that arrives on the browser should be something like:  
+```html
+<form class="form-signin" method="post">
+<h3 class="form-signin-heading">Transfer money</h3>
+[...]
+<input type="number" id="inputAmount" name="amt" class="form-control"
+placeholder="Amount" required>
+<input type="hidden" value="9GiKZU6HoR" name="csrf_token">
+<button class="btn btn-lg btn-primary btn-block" type="submit">Confirm</button>
+</form>
+```  
+The CSRF-token is the value that needs to be random and changed at each request.
+
+Another mitigation is to use Same-Site Cookies. Specify in the cookie that it should not be sent along a request if the request was generated from a different website than the one that set the cookie.
 
 ## Network protocl attacks
 
