@@ -557,11 +557,129 @@ Memory protection seen in the buffer overflow section can be applied here to hel
 - placeholders to read/write to arbitrary locations
 - the abilty to control those placeholders
 
-## Web vulnerabilities
+## Web applications vulnerabilities
+Web applications are the current paradigm for delivering software. The basic structure of a web app is the following:  
+![web_application_architecture](assets/web_application_architecture.png)  
+This is a general scheme, some parts may overlap (e.g. web server and database on same machine).  
+There are things that we need to be careful about when developing a web app:
+- often they are exposed to the public internet
+- built on top of HTTP that is stateless:
+  - need to emulate a "state" on top of it
+  - implement authentication
+- the HTTP client is by definition **not trustworthy** but it is an active part in the application flow
 
+For the last reason, we need to carefully filter and validate what comes from the client (cannot validate input on the client side). The problem is that often developers see the client as a cooperative part of the application and may overlook some things (e.g. that the request comes from the correct page, it could be crafted by someone).
 
-### Cross site scripting
+How do we filter? There are basically 3 approaches:
+- whitelisting: only allow through what we expect
+- blacklist: discard known-bad stuff
+- escaping: transfrom potentially harmful characters into something equivalent but not dangerous (e.g. the "<" character maybe interpreted as the start of an HTML tag, substitute with &lt\;)
 
+The general rule is to go with whitelisting if possible because it is easier and safer, then proceed to blacklist/escaping if needed.
+
+Example: filtering a phone number.  
+- start by designing a whitelist:
+  - numbers 0-9 and some symbols like "(", ")", "+", "-"
+    - e.g. +39123456789, 481-5784-9842, ... 
+- do we need to blacklist something?
+  - probably not, it depends on the backend. If some of these characters may be misinterpreted by the backend we need either to remove them or escape them.
+
+### Cross site scripting (XSS)
+Vulnerability by means of which client-side code can be injected into a page (e.g. javascript). There are three types:
+- Stored XSS
+- Reflected XSS
+- DOM-based XSS
+
+#### Stored XSS
+The attacker input is stored on the target server's database, for example in a forum message or in a comment. 
+Other people that visit the same page will load the malicious code from the server and if there are no measures to make the data safe to render in the browser the malicious code will execute.
+
+Example:
+- write a comment on a page.
+```html
+<script>alert('XSS');</script>
+```
+- the comment is stored in the database of the server.
+- when other users load the comment their browser will interpret it as html code and execute it.
+
+#### Reflected XSS
+The attacker input is returned by the web app to the users in a response. Since the response includes the malicious input it will execute on the victim's browser.  
+The difference from before is that the malicious code is not stored on the server, it simply bounces back in a response because the page includes elements constructed from the use input.
+
+Example:  
+Source code server side  
+```php
+<?php
+$var = $HTTP['variable_name']; //retrieve content from request's
+variable
+echo $var; //print variable in the response
+?>
+```
+An attacker can craft a malicious link to perform the request and inject the code  
+`http://example.com/?variable_name=<script>alert('XSS');</script>`  
+When the victim clicks on this link the script will execute.
+
+#### DOM-based XSS
+The malicious payload never leaves the browser, so the server is not able to see those attacks (although it's still the developer's fault for not implementing the page correctly).  
+The script is executed directly client side exploiting some scripts that modify the DOM environment.
+
+Example:
+Page source code contains this  
+```html
+....
+<script>
+document.write("<b>Current URL</b> : " + document.baseURI);
+</script>
+....
+```  
+The attacker can craft a link using the page anchors used to navigate the page:  
+`http://www.example.com/test.html#<script>alert('XSS);</script>`  
+The script in the page will pick what comes after the `#` and write it in the page when it's loaded allowing the malicious code to execute.
+
+#### Dangers of XSS
+It is true that client-side code executed in the browser is sandboxed and cannot do anything to directly harm the machine (except for possible vulnerabilities in the browser javascript engine), but a script in a page can tamper with data and cookies saved for that domain:
+- cookie theft
+- session hijacking
+- manipulation of transaction (e.g. substitute form fields)
+- drive-by downloads
+
+XSS effectively bypasses the Same-Origin Policy (SOP), where client-side code loaded from a certain origin can only access and modify elements from that same orgin (e.g. javascript from google.com can only access elements created by google.com).
+
+#### Protecting agains XSS
+How do we filter user data in order to make it harmless? Consider the example of comments on a page.  
+As we said, the first thing is to design a whitelist for the characters that we want to allow:
+- allow alpahnumeric characters a-zA-Z0-9 and punctuation symbols ".", ",", "!", "?", "(", ")", " ", ...
+
+This basically solves the problem because with this set of characters is not possible to inject javascript. But this also limits what a user could write. What if we wanted to allow all characters, in particular "<" and ">".  
+Adding this two characters complicates things because it is now possible to write html tags, so we need to make sure that those are not misinterpreted as actual code.  
+We can start to blacklist stuff that may be misinterpreted, but things get out of control fast:
+- blacklisting `<script>` is not enough
+  - similar attributes can contain javascript code `<iframe>`, `<applet>`, ...
+  - event handlers inside other tags e.g. `<img src=wrong_src onerror=my_code>`, there is a long list of those
+- ok, blacklist every single one of them
+  - need to keep up with the evolution of html and different browsers support/implementation
+  - there is still more
+- we can put `javascript` in a URL schema e.g. `<iframe src=javascript:alert('oh no');>`
+- javascript can be written divided on two lines
+  - the browser will strip `CR` and `LF` but our blacklist will fail
+- even if we account for this, null entities can be added in the middle on the word and the script will execute anyways e.g. `java&#09;script:code_here`
+- those entities can be written in many ways
+  - add zeroes `<IFRAME SRC=javasc&#000010;ript:alert('JavaScript Executed');>`
+  - ...
+- do i have to continue?
+
+TL;DR blacklisting is not a good approach to this.
+
+With escaping we are luckier because it is a bit more effective, for instance we can make these substitutions
+- < -> &lt\;
+- \> -> &gt\;
+- & -> &amp\;
+
+The definitive solution is to use Content Security Policy (CSP). Basically we define *a priori* which part of the page can contain code and which are not to be interpreted as code, from where it is allowed to load scripts or send form actions, etc.
+
+The problems at the moment with this approach are that:
+- implementation is up to the browser
+- policies needs to be written and update manually for each page and may slow down development
 
 ### SQL injection
 
