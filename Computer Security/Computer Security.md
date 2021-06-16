@@ -226,7 +226,7 @@ Disadvantages and mitigations against those:
 - FRR represents the false negatives. A user is rejected even if he was the correct one. Impacts usability.
 
 Since we cannot get rid of both at the same time we need to correctly balance between the two:
-- High FAR -> Low FRR, good user experienc but not secure
+- High FAR -> Low FRR, good user experience but not secure
 - High FRR -> Low FAR, good security but usability nightmare  
 ![FAR_FRR_graph](assets/FAR_FRR_graph.png)
 
@@ -1062,7 +1062,81 @@ Implemented in many protocols like OpenVPN.
 Implements security and authentication directly at an IP level.
 
 ## Network security protocols
+Try to solve the issue of securing remote connections:
+- problems of remoteness (in general not only over internet)
+  - trust factor between parties
+  - use of sensitive data (e.g. payment info)
+  - not atomicity of transaction
+- internet specific problem
+  - authentication
+  - confidentiality
+- needs to be transparent or no one will use them
 
+### SSL/TLS
+SSL, Secure Socket Layer, originally developed by Netscape for securing communication by using a layer of encryption at the transport level. Standardized later by the IETF with the name of TLS, Transport Layer Security. The current version is 1.3 (1.2 can still be used, below is insecure).
+
+TLS enforces:
+- confidentiality and integrity of communication
+- the authentication of the server
+- [optional] the authenticaiton of the user  
+
+TLS uses a combination of symmetric (encrypt messages) and asymmetric encryption (key exchange) for performance reason.
+
+The TLS handshake works like this:
+- client sends the cipher suites that it supports and some random data  
+This allows TLS to be flexible w.r.t. the cipher to use (the protocol specifies a minimal set of ciphers that everyone should implement).
+- the server chooses the cipher to use and sends its certificate + some other random data
+- client checks the certificate. If it matches, the client chooses a *pre-master secret* and sends it to the server by encrypting it with its public key. Optionally the client can now send his certificate to authenticate itself (rarely happens).
+- the shared secret is computed by combining the random data exchanged before (known publicly) and the pre-master key (only known to client and server). The specific method used depends on the selected cipher.
+
+The random data is used to avoid [replay attacks](https://en.wikipedia.org/wiki/Replay_attack) and is very typical in all communication security protocols.
+
+#### TLS and MITM
+Is TLS resilient to MITM?
+- can see messages but does not have the key to decrypt them
+- an attacker can send a fake certificate, but the verification process in the client should prevent this (need to compromise CA and build a fake certificate)
+
+So yes, TLS is resilient to MITM attack by design, assuming that there is no misconfiguration (e.g. accepting fake certificates).
+
+#### Advantages and disadvantages
+Advantages:
+- protects trasmission confidentiality and integrity
+- ensure authentication of server and optionally the client
+
+Disadvantages:
+- no protection before and after the transaction, only protects communication
+  - trojan on clients can gets data
+  - compromised server can leak data
+  - dishonest merchant can use payment info to overcharge
+- relies on the PKI infrastructure
+- not foolproof (e.g. client accepts certificate from random CA)
+
+#### Extension to compensate PKI limitations
+- [HSTS](https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security), HTTP Strict Transport Security  
+Defend against *SSL stripping* by forcing the connection to happen only over HTTPS, not allowing plain HTTP connections to not trusted websites.
+- Certificate pinning [DEPRECATED]  
+Website can specify which CAs are trusted to verify the certificate.
+- Certificate transparency  
+CA send logs of every issued certificate and browser can refuse to accept certificates that have not been logged, even if it is valid. Defend against certificate misissuance. Owners of websites can also check if certificates are issued for somthing they manage. [Example](https://crt.sh).
+
+### SET
+Joint effort of VISA and Mastercard developed to protect transactions.  
+Approach:
+- cardholder only sends to the merchant only the order information
+- payment information are sent only to payment gateway  
+
+All of this while still assuring that both parties can verify the data and protecting against overcharging on the merchant side.  
+SPOILER: SET has failed, even if technically is more secure than paying over TLS, we will see why.
+
+The mechanism used is called *dual signature*:
+![SET_dual_signature](assets/SET_dual_signature.png)  
+This way we can divide order information and payment information and send those only to the payment gateway. The verification process works as follows:  
+![SET_verification](assets/SET_verification.png)  
+
+Why did this fail?  
+Need to send every cardholder a pair of public/private key (not transparent). If we put this side by side with paying over TLS people will always choose this because is more convenient.
+
+Nowadays the approach used to make transactions more secure is to have the customer redirected to his bank website to perform the payment and then the bank confirms the payment to the merchant.
 
 ## Malicious software
 
