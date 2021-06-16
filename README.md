@@ -7,7 +7,7 @@ These notes are still a work in progress and are updated as i go through the lec
 Status: 🟩 = completed, 🟨 = in progress, 🟥 = to be started.  
 As of now, i plan on doing them for the following courses:
 - 🟩 Digital Forensics and Cybercrime, teachers Stefano Zanero and Michele Carminati
-- 🟨 Computer Security, teacher Stefano Zanero
+- 🟩 Computer Security, teacher Stefano Zanero
 - 🟨 Machine Learning, teachers Marcello Restelli and Francesco Trovò
 
 ### Commit messages
