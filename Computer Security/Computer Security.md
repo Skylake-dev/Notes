@@ -1139,6 +1139,139 @@ Need to send every cardholder a pair of public/private key (not transparent). If
 Nowadays the approach used to make transactions more secure is to have the customer redirected to his bank website to perform the payment and then the bank confirms the payment to the merchant.
 
 ## Malicious software
+Malicious software (malware) is code intentionally written to violate a security policy. There are different types of malware:
+- VIRUS: self replicate by infecting other files or programs but it is not a standalone program by itself.
+- WORMS: programs that self propagate by exploiting vulnerabilities or social engineering.
+- TROJAN: apparently benign program that hide a malicious program or functionality and allow remote control.
+- RANSOMWARE: encrypts data on the computer of the victim and asks for a ransom to have the key to decrypt it.
+
+Theoretical result:  
+it is not possible to build a program detects if a virus can propagate or not.  
+This means that anti-malware software need to use a blacklisting approach, they cannot (always, there are some heuristics to do it) detect directly but need to block known malware samples.
+
+### Malware lifecycle
+Reproduce, infect, stay hidden, run payload.  
+Many malware nowadays do not self propagate but are diffused via e-mail or drive-by download in order to remain hidden. Malware wants to remain hidden because it is often used to create botnets.
+
+#### Infection techniques
+Viruses can be divided on the basis of their infection technique:
+- boot viruses: infect the boot sectors of disks by overwriting the MBR. This allows to load the virus in memory before the OS.
+- file infectors
+  - overwrite program
+  - parasitic virus: change entry point
+  - cavity virus: inject code in unused sections of the program
+- macro viruses: use macro functionality of documents to execute code. These are very effective because we share documents every day and are also very difficult to remove because the virus remains in the document and it is sufficient that a single infected copy of the document remains around to restart the infection when it's opened.
+
+Worms use many different approaches to diffuse:
+- email, also once a machine is infected send the worm to all contacts of the victims.
+- social networks, modern variation of the diffusion via email
+- mass scanners: diffuse by sending the worm to random IP addresses. This approach became more and more effective the more the internet became "crowded" (nowadays basically every IPv4 address will find something). Optimization are used to speed up the diffusion:
+  - preload some target addresses to infect
+  - check first for close by addresses
+  - divide the scanning space among all copies
+- UDP based worms ([SLAMMER](https://en.wikipedia.org/wiki/SQL_Slammer)) can propagate very fast and saturate bandwidth.
+
+Worms often exploit many vulnerabilities to diffuse and modern ones are completely memory resident, they do not store anything on the disk.
+
+How do we protect against worms?  
+- patch the vulnerabilities that the worms use since worms often used known vulnerabilities --> need to patch fast
+- update quickly antivirus signatures for new worms
+- anomaly detection, try to detect anomalous behaviour in a network, maybe used to trigger automatic signature generation  
+
+However since the mid 2000s we saw a decline in the use of worms that rapidly diffuse, even if they are still possible (there have been "wormable" vulnerabilities even after), so why did those attack stop?  
+- lack of motivation, cybercriminal need the internet infrastructure to work in order to carry out their activities (the main driver shifted more and more toward monetary gain)
+- cyberterrorism does not have the same psychological impact as real attacks  
+
+#### Botnets
+Born in order to manage IRC chats, often placed to compromised machines that were connected permanently to the internet. With time the role exchanged and the IRC chat was used to send commands to the bots on the compromised machines.  
+These *botnets* can be used to carry out DDoS attacks.  
+
+Example of a bot functionalities ([Phatbot](https://en.wikipedia.org/wiki/Agobot)):  
+- harvest contacts
+- get key presses
+- account info
+- take screenshots
+- sniff network traffic
+- download file
+- run commands
+- ...
+
+Threats posed by botnets:  
+- for the infected host
+  - information theft
+  - identity theft
+  - financial data
+- for the whole internet
+  - spamming
+  - DDoS
+  - support infrastructure for other illegal activities
+
+### Anti-malware
+- signature based detection
+  - database of known malware samples to check against
+  - often use wildcards or regex
+- heuristics
+  - code execution starts from the last section
+  - incorrect header size
+  - suspicious section names
+  - patched import address table
+- behavioural detection
+  - write to boot record
+  - reduces some security settings
+
+ANALYSIS
+We have two main ways of analysing malware:
+- static: disassemble and decompile the executable and analyze the code directly
+  - allow to check the whole code (dormant code)
+  - obfuscation techniques makes this difficult
+- dynamic: let it run in a sandbox and observe its behaviour
+  - defeat the obfuscation
+  - enables automation of analysis
+  - some techniques allow to detect the sandbox and the malware will not run
+
+Not everything needs an antivirus. Systems that do not need to do general computing can resort to whitelisting: only designed code can run on the device (e.g. Apple devices). The compromise is to use whitelisting for OS components.
+
+### Virus obfuscation techniques
+Try to hide malware in order to make it difficult to detect.
+
+- entry point obfuscation: hijack control of the program later.
+- polymorphism: change layout of the malware at every infection by encrypting it with a different key. Then a decription engine will decrypt and execute it (anti-malware can look for this engine).
+- metamorphism: create different versions of the code that looks different but have the same behaviour.
+  - insert nops
+  - reorder sections
+  - insert useless instructions
+- event triggered: do not do anything until it receives a command from its C&C server.
+- anti-sandbox
+  - dormant period in which they don't do anything 
+  - try to evade the sandbox
+- packing: similar to polymorphism but more advanced.  
+Encrypt the malware and use a decryption routine to run the malware. This routine also checks for debuggers or if it is a virtual environement. If it detects some analysis technique it will not unpack the malware.
+
+### Rootkits
+Enable privileged access to a machine while staying hidden from the sysadmin. There are two categories:
+- user level
+  - swap some utilities with compromised version that hide the presence of the rootkit.
+  - easier to build but also to detect.  
+  We can use cross-layer examination -> look for mismatch in the data reported at different level.  
+  Example: search for a file. Use ls, ask the kernel, check the drive itself. If the information does not match we can determine if some utility is lying to us.
+- kernel space
+  - make the kernel itself lie to make it impossible to detect (from that machine, i would need to analyze it in another machine).
+  - very difficult to build, uses drivers (windows) or kernel modules (linux), but it works only with monolithic kernels.
+  - example: syscall hijacking --> intercept system calls and redirect them to compromised versions.
+    - change the function directly
+    - filter their output (easier)
+  
+#### Recognize rootkits
+- intuition of the sysasmin
+- post-mortem on a different system
+- cross-layers examination
+- use a trusted computing base. The typical way to do it is called *tripwire*: store hashes of the executables on a server or some non-writable media and check against the executables that you have.
+
+#### BIOS level rootkits
+There are very advanced techniques that theoretically can allow an attacker to put its rootkit in the bios itself or in the firmware of other components (like video cards or network interfaces). It is even possible to use pieces of codes that are already in the BIOS and doesn't need to change anything except for some specific memory location (Brossard's Rakshasa). There are also rootkits that act as hypervisors. 
+
+All these rootkits are basically undetectetable and impossible to remove, the only way to do it is to change hw.  
+The point is that for the vast majority of people this is outside the threat model. We cannot be absolutely certain that a machine has not been trojanized (although in many cases it probably isn't).
 
 ## Appendix: x86 assembly crash course
 Basics for the x86 architecture that we will use. The architecture was born in 1976 for 16 bits and was later expanded to 32 bit (1985) and 64 bits (2003). It's a CISC design and has variable length instructions. It is present basically in every desktop/laptop and server in the world.
