@@ -815,8 +815,149 @@ The CSRF-token is the value that needs to be random and changed at each request.
 
 Another mitigation is to use Same-Site Cookies. Specify in the cookie that it should not be sent along a request if the request was generated from a different website than the one that set the cookie.
 
-## Network protocl attacks
+## Network protocol attacks
+We can distinguish 3 main types of attacks:
+- Denial of Service (DoS): make a service unavailable (against availability)
+- Sniffing: abusive reading of network packets (against confidentiality)
+- Spoofing: forging of network packets (against integrity and authenticity)
 
+### Denial of service (DoS)
+There are two sub-types for this attack:
+- killer-packets: malicious packets crafted in specifically to make the application/OS that reads them to crash or become unresponsive.
+- flooding: sending tons of requests to choke the connection to the service.
+
+Some examples from the past of killer packets are:
+- ping of death (1997)  
+Sending a malformed ICMP echo request that exceeds the maximum legal size. The normal size would be 56 bytes, but the maximum theoretical size of a packet is 65535 bytes. However no computer system was designed to handle such huge packet. The attack was very simple:
+  - send large ping `ping -s 65527`
+  - when the target machine tries to build the response it will include the content of the request
+  - adding the header will exceed the maximum size causing a buffer overflow
+  - the machine would crash
+- teardrop  
+Fragmented packets with overlapping offsets that can have the kernel crash when reassembled.
+- land attack  
+Windows 95 bug, sending a packet with source IP = destination IP and the SYN flag set to the target machine would lock up the entire TCP/IP stack. This was fixed but reappeared later in windows XP SP2.
+
+These killer packets attacks work because:
+- incomplete protocol specifications, do not say how to handle special cases
+- programmers tested agains reasonable cases
+
+It was actually considered good practice not to be too strict in accepting packets that were not strictly formatted to increase intercompatibility between different TCP/IP stacks. See [here](https://en.wikipedia.org/wiki/Robustness_principle).  
+>"be conservative in what you do, be liberal in what you accept from others"    Postel
+
+The second category of DoS attacks is flooding. This cannot really be avoided, if the attacker has more bandwidth than the server he is trying to attack it will become unreachable.  
+Where is the security problem here, if it cannot be avoided? If there is a way for the attacker to multiply his effort in doing the attack, e.g. the attacker uses `x` amount of resources but consumes `Nx` resources on the server. We want to take away the possibility of having that multiplier.
+
+Example: SYN flood  
+Exploits the three way handshake of TCP. The idea is:
+- attacker: sends a lot of SYN packets with spoofed source IP and never acks them
+  - resources used: bandwidth
+- server: needs to reply with SYN-ACK and store in a queue all pending connections
+  - resources used: bandwidth + memory
+
+Once the queue to store half opened connections is full, other requests from legitimate users are dropped. The multiplier here is that the server also needs to use memory to store the connections and this becomes the limiting factor.  
+The problem here, as we said before, is that this attack cannot really be avoided because it is exactly how TCP is supposed to work. We can only try to mitigate it by taking away the multiplier (store connections in memory).
+
+Mitigation: [SYN-COOKIES](https://en.wikipedia.org/wiki/SYN_cookies)  
+The information about the half open connection is not stored but is encoded in the sequence number sent back in the SYN-ACK response. Once the server receives the ACK it is able to reconstruct to which connection it belonged, avoiding the use of a queue.
+
+#### Distributed DoS (DDoS)
+In this case the attacker can control a large number of machines (e.g. a botnet) and have them send requests to a target server to consume its bandwidth. The multiplier is in those machines that the attacker controls, sending one packet/command will be multiplied by the number of machines.
+
+Example: Smurf  
+The attacker sends a broadcast ping to a network using as source address the spoofed IP address of the target. All the machine will reply to the ping flooding the target server. If there is a suffcient number of machines doing this the server bandwidth will be saturated and it would become unreachable.  
+Also in this case we can see that there is nothing wrong with this behaviour, it is the expected behaviour of ping packets.
+
+Mitigation:  
+Since there is no reason to ping the broadcast address of a network from outside that network it would be better to configure routers to drop broadcast packets from the outside. Basically all routers are configured like this by default.
+
+NOTE: the victim cannot do anything to prevent this, the misconfigured routers are the ones that need to be fixed. This is a *public health problem*: the misconfigured routers do not strictly need to update the configuration because the attack is not impacting them, there is no return in doing this, but their behaviour may put others in danger.
+
+Many protocols on the internet have characteristics that make them suitable for DoS and DDoS attacks (they have some built in multiplier):
+- DNS
+- NTP
+- NetBIOS
+- ...
+
+We cannot really get rid of these protocols or deeply changing them right away since many are founding components of the internet. The main takeaway here is that flooding attacks cannot be eliminated completely.
+
+### Sniffing and spoofing
+Often used in combination, here some examples.
+
+#### ARP spoofing  
+Spoof the MAC address of an ARP reply. Since there is no check, the machine who made the ARP request will trust the first answer that comes, also poisoning the ARP cache with the address of the attacker. Now the attacker can use this to pretend being someone else.  
+Possible mitigations are:
+- include a random nonce in each request
+- anomaly detection: if someone is constantly sending out ARP replies is weird.
+- address conflict: the correct reply will eventually reach the host that could notice the conflict and alert the user.  
+
+Why are those measures not taken?
+- simplicity is key since ARP is a basic functionality in every network communication
+- local network is supposed to be safe enough
+- historical reasons (different scenarios, different trade-offs between security and costs)
+
+#### MAC flooding
+Fill the [CAM table](https://en.wikipedia.org/wiki/Forwarding_information_base) of switches by sending tons of spoofed packets. The objective is to make them behave as hubs and broadcast every packet. Used to be able to read packets in different sections of the network.  
+Mitigation:  
+Port security, tell the switch roughly how many hosts are supposed to be connected to some port and refuse to save more addresses.
+
+#### Spanning Tree Protocol (SPT) abuse
+The [BPDU](https://en.wikipedia.org/wiki/Bridge_Protocol_Data_Unit) packets used by switches to build the spanning tree are not authenticated for intercompatibility reasons and so they can be forged or manipulated to change the shape of the tree. This can allow an attacker to redirect packets to section of the network that he can listen to.
+
+#### IP address spoofing
+Since the source IP of a packet is not authenticated it can be modified by an attacker:
+- UDP/ICMP: easy because there is no concept of connection and each packet is independent from the previous ones. The attacker only needs a way to see the replies because they will be sent to the spoofed host. If it is not possible then it's called *blind spoofing*
+- TCP (blind): more complex because it involves guessing the sequence numbers in order to complete the handshake blindly (demonstrated to be possible with wrong implementation of the randomness of sequence number).
+- TCP hijacking: if the attacker can sniff the packets he can take over a conversation by:
+  - disrupting one of the hosts connection
+  - replying to the other using the correct sequence number
+  - the victim replies to the attacker  
+  ![TCP_hijack](assets/TCP_hijack.png)
+
+#### Man in the middle (MITM)
+Broad category of attacks where the attacker is able to impersonate the server w.r.t. the client and viceversa. Must always be aware of this possibility (e.g. what happens if the attacker is able to ARP spoof the address of the default gateway?).  
+We can have two types: half and full duplex.  
+![MITM_half_and_full_duplex](assets/MITM_half_and_full_duplex.png)  
+
+#### DNS cache poisoning
+The objective is to poison the cache of a non authoritative name server to have a symbolic name associated with an IP chosen by the attacker.  
+The basic mechanism is:
+- attacker makes a recursive quey to the victim's DNS server
+- the victim DNS server (the non authoritative one) contacts the authoritative server
+- the attacker impersonates the authoritative server and replies with the address that he wants
+  - needs to sniff the query id somehow
+  - needs to reply first
+- the victim trusts the answer and stores it in the DNS cache (*poisoned*)
+
+From now on all client asking to resolve DNS to that compromised server will be redirected to the attacker.
+
+The query id can be sniffed or guessed if the mechanism that generates it is predictable (2008 Kaminsky).
+
+#### DHCP poisoning
+DHCP is another unauthenticated protocol since it needs to work without any configuration. The attacker can spoof the DHCP answer to manipulate the information sent to the client:
+- IP address assigned
+- DNS server
+- default gateway
+
+Of course the attacker needs to be on the local network and reply first.
+
+#### ICMP redirect
+There is a message in ICMP called *redirect* that is used by routers to communicate to hosts the existance of a better route for a certain destination and have them update their routing table with the new gateway for that route.  
+An attacker can forge those messages and:
+- redirect the host to another malicious gateway
+- perform a denial of service attack
+- establishing an half duplex MITM
+
+Also in this case the attacker needs to be on the same network. Modern OS ignore by defualt ICMP redirect messages.
+
+#### Route mangling
+Similar concept of altering the spanning tree but for routers. Attacker can advertise better routes for certain traffic and having it redirected to those routes. Can also happen by accident if some service provider routers are configured incorrectly (e.g. advertise very cheap routes). [More here](https://en.wikipedia.org/wiki/BGP_hijacking).
+
+#### Conclusions
+- certain attacks exploit wrong implementation of network protocols
+- denial of service attacks are always possible if the attacker has enough bandwidth
+- network attacks can happen at different layers
+- they are made possible by the lack of strong authentication (often because it is not possible to implement it if we want the protocol to work in a convenient way)
 
 ## Secure network architectures
 
