@@ -639,7 +639,135 @@ We can express the PAC bound using the VC dimension
 This function can be used to do model selection by minimizing it, choose the `H` that minimize the upper bound to the true error (Structural Risk Minimization).
 
 ## Kernel methods
+Dual version of parametric methods, the work in the sample space instead of the feature space This are called *memory based methods* because the training data is used in prediction, making them fast to learn but slow to predict (because of this they are not suitable for real time application).  
+The equivalent of finding good feature is finding the correct similarity function between the data.
 
+Goal:  
+capture non linear relationships in the data by mapping the input to a bigger feature space bu avoid to actually compute it.
+
+Kernel methods are ideal if we want to work in a large feature space (even number of features > number of samples) because they allow to avoid computing those explicitly.
+
+Example  
+If we want to consider polynomial features, their number grow exponentially with the degree of the polynomial. Not considering overfitting here, the computational power required to compute them can be prohibitive. Kernel methods allow to avoid this computation, i do not have to expand the input into features because the kernel does this implicitly (computationally efficient). How is that possible? We need to define *kernel functions*.
+
+### Kernel functions
+Measure the similarity between samples in the input space (they are symmetric functions).  
+
+![kernel_function](assets/kernel_function.png)
+
+To be a valid kernel function it needs to be possible to express them as the scalar product of the feature vector. This does not mean then i have to compute them this way but only that they are need to be equivalent to a scalar product between feature vectors. The idea is to find efficient ways to compute them to avoid the feature expansion.
+
+To perform the prediction, each sample is weighted by the similarity between that sample and the new observation that we are trying to predict.
+
+Example of kernel functions are:
+- stationary kernel, only depends on the difference between the samples    
+![stationary_kernel](assets/stationary_kernel.png)  
+- homogeneus kernel, only on the magnitude of the distance between points  
+![homogeneus_kernel](assets/homogeneus_kernel.png)  
+
+KERNEL TRICK  
+If we can find a kernel that is faster to compute than the scalar product of feature vectors, we can substitute the kernel to those product and obtain a faster algorithm (*dual representation*).  
+The advantages are:
+- can build complex model with few data
+- allow for high dimensional or infinite feature space
+- can be applied to non numerical values [symbolic kernels](#Kernels-on-symbolic-data)
+
+The drawback is that the prediction phase then needs to work on the samples:
+- slower
+- need to store the samples
+- not suitable for big data
+
+### Dual representation
+We will see this for ridge regression as an example.
+
+First, let's define the **Gram matrix**:
+
+![Gram_matrix](assets/Gram_matrix.png)  
+where each component is  
+![gram_matrix_component](assets/gram_matrix_component.png)  
+
+It is a symmetric matrix of all the similarities between our samples.
+
+Now we can write the dual of the ridge regression problem.  
+We want to minimize the regularized SSE  
+![loss_function_ridge_regression](assets/loss_function_ridge_regression.png)  
+- calculate gradient w.r.t. **`w`** and equal it to `0`, obtaining  
+![minimize_regularized_SSE_w_r_t_the_weight_w](assets/minimize_regularized_SSE_w_r_t_the_weight_w.png)  
+- substitute **`w`** in the loss function  
+![dual_representation_ridge_loss](assets/dual_representation_ridge_loss.png)  
+- we can rewrite it using the Gram matrix  
+![dual_representation_ridge_loss_with_gram_matrix](assets/dual_representation_ridge_loss_with_gram_matrix.png)  
+
+Solving for our new variables **`a`** we obtain:  
+
+![dual_ridge_solution](assets/dual_ridge_solution.png)
+
+The rewritten version of ridge regression using kernels has a complexity that is independent from the number of fetures, it only depends on the number of samples.
+
+To perform the prediction now we substitute **`a`** into the linear regression model:
+
+![ridge_regression_prediction_with_kernels](assets/ridge_regression_prediction_with_kernels.png)  
+where `k(`**`x`**`)^T` is the vector of the similarities between the samples and the new observation.
+
+As we see the prediction is a linear combination of the target values of the samples. The advantage is that we can use an arbitrary large feature space (even infinite) and, if we are able to find it, use a kernel function that is faster to compute.
+
+The problem now is: how do we build kernel functions?
+
+### Building kernels
+MEMO: we need to ensure that we find a valid kernel (can be computed as a scalar product between feature vectors).
+
+Our kernel function needs to encode some kind of similarity, the basic idea is:
+- if two inputs are close, their two target will be close
+- if two inputs are distant, their target will be different 
+
+The more a sample is similar to our observation, the more weight they will have in the final prediction.
+
+We can construct kernels directly and them prove that they are equivalent to a scalar product, for example  
+
+![example_kernel](assets/example_kernel.png)
+
+We can expand it and rearrange terms to show that this is equivalent to a scalar product  
+
+![proof_valid_kernel](assets/proof_valid_kernel.png)
+
+Where is the advantage?
+- kernel: 2 multiplications + 1 squaring
+- features: compute 6 features + 9 multiplications
+
+As we see the kernel is much faster to compute than the feature.  
+It can be shown that thiis kernel can be expanded:
+- `(x^T*z + c)^2` includes constant, linear and second order terms
+- `(x^T*z + c)^p` all terms up to degree `p` (*polynomial kernel*) 
+
+The function is very quick to compute and allows to work in a huge feature space.
+
+There are specific conditions that allow to prove that a kernel is valid in a more convenient way:
+
+NECESSARY AND SUFFICIENT CONDITION  
+When the Gram matrix is positive semidefinite for any set of samples we are guaranteed that the `k(x, x')` is a (valid) kernel.
+
+Mercer's theorem:  
+Any continuous, symmetric, positive semi-definite kernel function
+`k(x, y)` can be expressed as a dot product (scalar product) in a high-dimensional space.
+
+This makes it easier to build a "personalized" kernel for a specific problem and make sure that it is valid. Also, new kernels can be built from simpler ones exploiting the properties of positive semidefinite matrixes. These are the rules to transform kernels ensuring that they remain valid:  
+
+![kernel_transformation_rules](assets/kernel_transformation_rules.png)
+
+We apply these rule to prove that a commonly used kernel, the *gaussian kernel*, is a valid kernel.
+
+The gaussian kernel is  
+![gaussian_kernel](assets/gaussian_kernel.png)  
+- we can rewrite the norm using scalar products  
+![norm_as_scalar_products](assets/norm_as_scalar_products.png)  
+- substitute in the gaussian kernel  
+![gaussian_kernel_with_scalar_products](assets/gaussian_kernel_with_scalar_products.png)
+- using the second and the fourth rule and knowing that the linear kernel `k(x, x') = x^T*x'` is valid, we see that the gaussian kernel is valid.
+
+#### Kernels on symbolic data
+We can extend kernel to symbolic data like graphs, sets or something else. The important thing is that we somehow encode the similarity of two object in the kernel. For instance, suppose `A1` and `A2` are sets, we can define a kernel function like this:  
+
+![symbolic_kernel_example](assets/symbolic_kernel_example.png)
 
 ## Support Vector Machines (SVM)
 
