@@ -959,6 +959,34 @@ where:
 - "inside the margin" is between the dashed line and the separating plane (there is one region that is inside the margin for each class)
 - "outside the margin" on the other side
 
+## Introduction to Reinforcement Learning (RL)
+Concerned with sequential decision making problems to accumulate utility through our actions.  
+The goal is to maximize the cumulative reward. Actions may have long term consequences and reward may be delayed (sacrifice immediate reward to gain more long term utility).  
+We can model our problem in the following way:  
+![RL_agent_environment_interface](assets/RL_agent_environment_interface.png)  
+We consider a discrete time scenario, at each time step `t` the agent:
+- executes action `a_t`
+- receives observation `o_t`
+- receives reward `r_t`
+
+Definitions  
+- History: sequence of observations, actions and rewards, represent all the knowledge that the agent has gained over time.  
+`h = a_1, o_1, r_1, ..., a_t, o_t, r_t`
+- State: information used to determine the next action to take, it is a function of the history. We want to minimize the amount of information that we need to store to select the optimal choice.  
+`S_t = f(h)`  
+A big problem to build the state is credit attribution: what observation/actions are correlated with the reward that i received?
+- Environment state: state of the environment, usually can be not fully known. The agent needs to build a representation of it to make decisions. In this course we only consider fully observable problems where the state of the environment is known to the agent.
+
+When to use RL?  
+- dynamics are unknown or modeling the problem directly is hard or unfeasible
+- the model is known but too complex to be solved exactly
+- i need to make sequential decisions
+
+Examples of RL applications:  
+- solving rubik's cube
+- playing games (poker, blackjack, chess, ...)
+- single pole balancing (often used as a benchmark for RL algorithm)
+
 ## Markov Decision Processes (MDP)
 
 
