@@ -986,9 +986,91 @@ Examples of RL applications:
 - solving rubik's cube
 - playing games (poker, blackjack, chess, ...)
 - single pole balancing (often used as a benchmark for RL algorithm)
+- robot navigation
+- which banners to put on a website
+
+### Exploraiton vs exploitation
+To play the optimal policy we need to reach a trade-off between:
+- exploration: the choice of new unexplored actions, even at random, to increase our knowledge about the problem
+- exploitation: use only the current knowledge to make decision, following known-good paths but risking to miss some opportunities.
+
+Reaching a balance between the two is extremely difficult and it's a core part of RL.  
+At the beginning we want to lean more towards exploration to see all the possible oppurtunities and then shift more and more towards exploiting the accumulated knowledge. We will see ways of making this transition, typically we cannot remove exploration completely.
 
 ## Markov Decision Processes (MDP)
+For MDPs we work under the *Markov assumption*: the future is independent from the past given the present. This means that the current state is enough to make decisions, there is no need to know the past.  
+Examples:
+- markovian: chess, rubik's cube
+- non-markovian: poker, blackjack (i need information about past cards that have already been played)
 
+Formally, a stochastic process `X_t` is said to be Markovian if and only if:
+![Markovian_process](assets/Markovian_process.png)
+This implies, as we said before:
+- the state captures all information from history
+- once the state is known, history can be thrown away
+- the state is a sufficient statistic for the future
+- the conditional probabilities are transition probabilities
+- if the probabilities are stationary (time invariant) we can write:  
+![Markovian_process_stationary](assets/Markovian_process_stationary.png)
+
+### Discrete–time Finite Markov Decision Processes
+A Markov decision process (MDP) is Markov reward process with decisions.
+It models an environment in which all states are Markovian and time is divided into stages.
+
+Definition:  
+MARKOV PROCESS: tuple `<S, A, P, R, γ, μ>`
+- `S` finite set of states
+- `A` finite set of actions
+- `P` state transition probability matrix `P(s'|s,a)`
+- `R` reward function, `R(s,a) = E[r|s,a]`
+- `γ` discount factor `0 <= γ <= 1`, evaluates how much i care about future rewards w.r.t. present ones. It represents our time horizon
+  - `γ = 1` rewards in the future have same value as today
+  - `γ = 0` only look at immediate reward
+- `μ` set of initial probabilities, `μ_0,i = P(X_0 = i) for all i`
+
+#### Goals and rewards  
+Sutton hypothesis: all goals can be expressed as a maximization of the cumulative sum of a received scalar reward.  
+Probably this is not completely true but it is so simple and flexible that there is no need to change approach.  
+The goal should specify **what** we want to achieve, not **how** to reach it and the same goal can be specified by infinitely many different reward functions. The agent must be able to measure success explicitly and frequently during its lifespan. 
+
+How do we define the cumulative reward?
+- time horizon
+  - finite: fixed number of steps
+  - indefinite: go on until some stopping condition is met
+  - infinite: go on forever  
+  In the last two cases we can define a stationary policy.
+- cumulative
+  - total reward: sum of all rewards, not good for infinite horizon (i get infinite reward in any case)
+  - average reward: divide the total reward by the number of steps taken
+  - discounted reward: use a discount factor to weight future rewards (their importance decrease the further they are into the future) <-- we use this  
+  ![MDP_discounted_reward](assets/MDP_discounted_reward.png)  
+  If the reward at each step is bounded `R_min <= r <= R_max` the total discounted reward `V` is upper bounded by `R_max/(1-γ)` (geometric series property)  
+
+We define the *return* `v_t` as the total discounted reward from time step `t`.  
+![MDP_return](assets/MDP_return.png)  
+
+The discount factor `γ` is a property of the problem and plays an important role in the selection of the optimal policy. Changing the `γ` is like changing the problem itself because a problem with a small discount factor is easier to learn (and will yield a different policy). It can also be interpreted as the probability that the process will go on for another step (so `1 - γ` is the probability that the problem will end in the next step).
+
+#### Policies 
+A policy fully defines the behaviour of the agent by selecting which action to take at each step. A policy can be:
+- Markovian vs history dependent
+- deterministc vs stochastic
+- stationary vs non-stationary
+
+For any MDP we can always find at least one optimal policy that is markovian, deterministic and stationary. This simplifies its search. We will consider only this policies, sometimes also stochastic policies (for learning we need stochastic policies to explore the different possibilities).
+
+Formally, a policy is a distribution over actions, given the state.  
+`π(a|s) = P(a|s)`  
+Given an MDP `M = <S, A, P, R, γ, μ>` and a policy `π` we obtain a Markov Reward Process `M = <S, P_π, R_π, γ, μ>`. where `P` and `R` becomes only function of the states.  
+
+![MDP_reward_process](assets/MDP_reward_process.png)  
+where:
+- `P_π` matrix that specifies the probability of going from each state to another state following policy `π`
+- `R_π` expected reward in each one of the states given the policy `π`  
+
+How do we find policies and evaluate their goodness?
+
+#### Value functions
 
 ## Dynamic programming
 
