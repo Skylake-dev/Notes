@@ -1133,7 +1133,32 @@ There are may other ways of solving this problem
   - SARSA
 
 ## Dynamic programming
+Dynamic Programming is a very general solution method for problems which have two properties:
+- optimal substructure: optimal solutions can be decomposed into subproblems
+- overlapping subproblems: solutions can be cached and reused
 
+MDPs satisfy these properties, but to apply dynamic programming it needs to be fully observable.
+
+We can solve two problems:
+- prediction problem: evaluate the performance of a given policy
+- control probelm: estimate best policy for a specific problem
+
+Finite-horizon problems are easy because we can start from the end and maximize the reward going backwards (*backwards recursion*).  
+We will consider infinite-horizon, discounted MDPs
+
+### Policy iteration
+Two step iterative alogrithm, starting from a policy `π` (can choose whatever policy to start, even random):
+- evaluate the given policy `π` (using the expectation equation or the iterative approach with the operator)
+- improve the policy `π` by computing the *greedy policy*  
+![DP_greedy_policy_improvement](assets/DP_greedy_policy_improvement.png)  
+Of course this is not the optimal policy but `π'` is never worse than the `π`  
+![DP_improvement](assets/DP_improvement.png)  
+
+If the improvement stops (`V_π' = V_π`) it means that we have reached the optimal value function, and as a consequence the optimal policy `π*`  
+![DP_policy_iteration](assets/DP_policy_iteration.png)  
+This is guaranteed to happen in a finite number of steps. Another interesting property is that we can get really close to the optimal policy long before finding the optimal value function. So we can modify the algorithm to stop after a certain number of steps or some other stopping condition. In this case we only have asymptotical convergence.
+
+### Linear programming
 
 ## Reinforcement learning in MDPs
 
