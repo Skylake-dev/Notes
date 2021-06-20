@@ -1071,6 +1071,66 @@ where:
 How do we find policies and evaluate their goodness?
 
 #### Value functions
+- state-value function (value function): expected return starting from state `s` and then following policy `π`  
+![MDP_state_value_function](assets/MDP_state_value_function.png)
+- action-value function: expected return starting from state `s`, taking action `a` and then following policy `π` (i specify the starting action to take, then follow policy)
+![MDP_action_value_function](assets/MDP_action_value_function.png)
+
+These value functions can be decomposed in immediate reward + discounted value of the successive state (yields a recursive formulation)
+![MDP_value_functions_decomposition](assets/MDP_value_functions_decomposition.png)  
+These are called *Bellman expectation equations* and can be expressed concisely using matrix notation,  
+![MDP_Bellman_expectation_matrix_form](assets/MDP_Bellman_expectation_matrix_form.png)  
+that can be solved directly.  
+![MDP_Bellman_expectation_exact_solution](assets/MDP_Bellman_expectation_exact_solution.png)  
+Computing the exact solution is computationally expensive (`O(n^3)` for the inverse, that always exists for `γ < 1`) and we need to approximate
+
+##### Bellman operator
+![MDP_Bellman_operator](assets/MDP_Bellman_operator.png)  
+Using this operator we can rewrite the expectation equation in a compact way (from now on consider only `V_π`,everything is analogous for `Q_π` unless stated otherwise)  
+`T_π*V_π = V_π`  
+- `V_π` is a fixed point of the Bellman operator
+- It is a linear equation
+- if `0 < γ < 1` then the operator is a contraction w.r.t. the maximum norm
+
+The last condition is what allows us to solve the problem: if we apply the operator to another value function `V_0` the resulting function will be "closer" to `V_π` w.r.t. `V_0`. This is true for all the vectors in the space.
+![MDP_Bellman_operator_contraction](assets/MDP_Bellman_operator_contraction.png)  
+I can iterate the procedure to get closer and closer to `V_π`, the closer i get the smaller the steps will become. Putting a threshold on this difference is useful to determine when to stop.  
+The advantage of doing this is that the complexity is only `O(n^2)` for each iteration, so if i can iterate fewer times than the number of samples i get to the solution quicker.  
+The smaller the discount factor `γ` the faster i get to the value function (makes sense since solving problem with a smaller horizon is easier).
+
+##### Optimal value function
+An MDP is solved when we know the optimal value function, that we can define as the maximum value function over all the policies.  
+![MDP_optimal_value_function](assets/MDP_optimal_value_function.png)  
+This function specifies the best possible performance in the MDP. The value function specify a partial ordering over the policies  
+![MDP_policies_partial_ordering](assets/MDP_policies_partial_ordering.png)  
+A policy is greater than another if its value function is greater than the other's policy value function **in every state**.
+
+THEOREM  
+For any MDP:
+- there always exists an optimal policy that is better or equal to all other policies (achieves maximum utility in every state).
+- all optimal policies achieve the same optimal value function `V*`
+- there is always an optimal policy that is stationary, deterministic and Markovian.
+
+To find such policy we can maximize over `Q*(s,a)`  
+![MDP_compute_optimal_policy](assets/MDP_compute_optimal_policy.png)  
+Basically, if i have `Q*(s,a)` i can compute the optimal policy by putting probability 1 to the action that maximizes it (very easy case). The problem of this is that often we do not have `Q*(s,a)`.
+
+#### Bellman optimality equation and operator
+Analogous of the expectation equation but to compute the optimal value function. The difference is that the `max` is non linear so we do not have a closed form solution for `V*`
+![MDP_Bellman_optimality_equation](assets/MDP_Bellman_optimality_equation.png)  
+![MDP_Bellman_optimality_operator.png](assets/MDP_Bellman_optimality_operator.png)  
+The good thing is that we maintain the convergence properties of the operator:
+- `V*` is a fixed point
+- can reach a solution by applying it iteratively starting from a random value function `V_0`
+
+There are may other ways of solving this problem
+- iterative approach (dynamic programming)
+  - value iteration (the one that we saw)
+  - policy iteration
+- using linear programming
+- reinforcement learning
+  - Q-learning
+  - SARSA
 
 ## Dynamic programming
 
