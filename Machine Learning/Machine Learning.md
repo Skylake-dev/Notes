@@ -770,7 +770,145 @@ We can extend kernel to symbolic data like graphs, sets or something else. The i
 ![symbolic_kernel_example](assets/symbolic_kernel_example.png)
 
 ## Support Vector Machines (SVM)
+One of the best methods for classification, invented in the late 90s. To define a support vector machine we need:
+- a subset of the training samples **`x`** called *support vectors*
+- a vector of weights for those samples **`a`**
+- a kernel function `k(x, x')`
 
+This is a very smart way of doing instance based learning because only a small subset of the inputs is needed to perform the prediction.
+
+![SVM_classification](assets/SVM_classification.png)  
+where `S` is the set of the support vectors.
+
+SVMs can be seen as a generalization of the perceptron.
+
+How do we chose
+- the kernel? --> depends on the problem that we have
+- the weights? --> side effect of choosing samples
+- the samples? --> maximize the margin
+
+We will deal first with the case in which the points are all linearly separable, the extention to non linearly separable is [here](#Handling-noisy-data).
+
+### Margin maximization
+Let's define the margin as the minimum distance between the points in our training set and the separating hyperplane.  
+
+![SVM_margin](assets/SVM_margin.png)  
+multiplying by `tn` is needed to have all the distances with the same sign.
+
+To obtain a robust margin we want to maximize the minimum distance of our samples from the separating plane. The solution to the margin maximization is
+
+![SVM_maximize_minimum_distance](assets/SVM_maximize_minimum_distance.png)
+
+This is very complex to compute as is but we can rewrite it by fixing the margin (e.g. =1). I can fix the margin because there are infinite values of **`w`** that build the same hyperplane, so i have one degree of freedom in their choice. We use this to assign the value that we want to the minimum margin (1) to simplyfy the problem by removing the minimization part (i fixed the minimum to 1).
+
+![SVM_maximize_margin_simplified](assets/SVM_maximize_margin_simplified.png)  
+NOTE: it is a minimization because we flipped the fraction of the weights
+
+**Math recall**   
+This is a very general class of problem in constraint optimization that have the form
+
+![general_constraint_optimization](assets/general_constraint_optimization.png)
+
+I can solve this class of problem using a lagrangian function.
+
+![general_lagrangian_function](assets/general_lagrangian_function.png)  
+where `λi` are the lagrangian multipliers.
+
+We can find the optimal weights and parameters by putting putting the gradient of the lagrangian equal to 0 (compute the gradient w.r.t. both `w` and `λ`).
+
+Example:  
+![lagrangian_example](assets/lagrangian_example.png)  
+
+We can then use parameter `λ` to rewrite the lagrangian only to be function of `λ` (*dual representation*)  
+![dual_lagrangian_example](assets/dual_lagrangian_example.png)  
+
+In our case, we do not only have equality constraint but also inequality constraints. We can add those to the problem with their own parameter
+
+![optimization_with_inequalities](assets/optimization_with_inequalities.png)  
+
+The resulting lagrangian is  
+![lagrangian_general_with_inequalities](assets/lagrangian_general_with_inequalities.png)
+
+The optimal solutions of this problem are characterized by the **KKT conditions**. These are only necessary conditions but highlight some interesting properties
+
+![KKT_conditions](assets/KKT_conditions.png)
+
+The last two constraints represent the *complementarity*, a constraint can either:
+- be active `g(`**`w*`**`) = 0`
+- have its multiplier `αi*` equal to 0  
+
+**End recall**
+
+The complementarity is the property that we are interested in because they active constraint will correspond to the support vectors, the only points with a weight different from 0. All other points will have 0 weight and not used in the prediction.
+
+Recap of the steps:
+- problem over the weights **`w`** is the primal
+- write the lagrangian  
+![SVM_lagrangian_function](assets/SVM_lagrangian_function.png)  
+- use the lagrangian to solve it by putting the gradient w.r.t. **`w`** and `b` equal to 0  
+![SVM_lagrangian_solution](assets/SVM_lagrangian_solution.png)  
+- rewrite the lagrangian, obtaining the dual problem  
+![SVM_lagrangian_dual](assets/SVM_lagrangian_dual.png)
+- **if it's easier**, solve the dual instead of the primal to find the weights `α` (use a quadratic optimization solver)
+- due to the complementarity conditions, the solution of the dual will have a lot of 0 weights, highlighting the support vectors
+
+To classify new points we now use those support vectors  
+![SVM_classification](assets/SVM_classification.png)
+
+where `b` is usually calculated as  
+![SVM_b_parameter](assets/SVM_b_parameter.png)
+
+NOTE: this does not come from the optimization problem it is computed a posteriori on the weights of the support vector (`Ns` is the set of support vectors). It represent the average error of the prediciton and it is added to the prediction to correct it.
+
+Graphically, the result will be something like this  
+![SVM_support_vectors_example](assets/SVM_support_vectors_example.png)  
+where:
+- `+` and `-` are the sample points belonging to the two classes
+- the circled points are the support vectors `α > 0`
+- the other points are not used in prediction `α = 0`
+- the blue dashed line represent the maximized minimum distance from the separating plane (margin)
+
+NOTE: SVM works in linear classification but the "plane" is in the feature space defined implicitly by the kernel function that we choose. This means that we can learn arbitrarily complex separating planes in the input space.
+
+#### Curse of dimensionality in SVMs
+Increasing the dimension lead to an increase in the number of support vectors too:
+- scalability issue, both to train and during prediction. We can use optimized algorithm to solve the dual problem to speed up the computation of the weights (e.g. [SMO](https://en.wikipedia.org/wiki/Sequential_minimal_optimization), Sequential Minimal Optimization)
+- having many support vectors is correlated with overfitting. The upper bound of error can be espressed using the some bounds
+  - margin bound, based on VC dimension
+  - leave-one-out bound  
+  ![SVM_leave_one_out_bound](assets/SVM_leave_one_out_bound.png)  
+  The good thing about this bound is that it can be computed easily.
+
+### Handling noisy data
+Can we apply SVMs if the dataset is not linearly separable? The maximum margin does not work as is anymore because it does not allow to have misclassification. 
+
+We need to extend it to allow some misclassification to find the plane that best separates the points. To do this we can introduce slack variables `ξi` --> allow to have miscalssified points but we add a penalty for those in order to have them minimized.  
+The problem formulation becomes:  
+
+![SVM_formulation_noisy_data](assets/SVM_formulation_noisy_data.png)  
+The parameter `C` is:
+- used for the bias-variance tradeoff
+  - `C = 0`  --> no penalization, complete underfitting
+  - `C infinite` --> no misclassification allowed, overfit
+- chosen by cross validation
+
+The dual problem in this case is similar to the original, the objective is the same, we only have new constraints on the weights.
+
+![SVM_dual_problem_noisy_data](assets/SVM_dual_problem_noisy_data.png)  
+For each point, their weight define what they are:
+- `α > 0` are associated with support vectors
+- `α = C` on the margin
+  - correctly classified if `ξ <= 1`
+  - misclassified if `ξ > 1`  
+  remeber that we could choose the margin to be an arbitrary value and we chose 1.
+- `α < C` inside the margin
+
+Graphical representation:    
+![SVM_noisy_data](assets/SVM_noisy_data.png)  
+where:
+- the blue dashed line represent the maximized minimum distance from the separating plane (margin)
+- "inside the margin" is between the dashed line and the separating plane (there is one region that is inside the margin for each class)
+- "outside the margin" on the other side
 
 ## Markov Decision Processes (MDP)
 
