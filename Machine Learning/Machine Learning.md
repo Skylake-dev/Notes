@@ -769,6 +769,55 @@ We can extend kernel to symbolic data like graphs, sets or something else. The i
 
 ![symbolic_kernel_example](assets/symbolic_kernel_example.png)
 
+We now briefly see two examples of regression based on kernel methods:
+- Radial Basis Functions Networks
+- Gaussian Processes
+
+### Radial Basis Functions Networks
+Radial Basis Functions: each basis function depends only on the radial distance (typically Euclidean) from a center `μ`.  
+`Φ(x) = h(||x - μ||)`  
+
+Original use was for interpolation but since in machine learning data is often noisy we need to use normalized basis functions: in each point the sum of the basis function is 1.
+
+![not_normalized_vs_normalized_basis_functions](assets/not_normalized_vs_normalized_basis_functions.png)  
+The normalization allows to have enough power of prediction in every point. 
+
+NADARAYA-WATSON MODEL  
+Given a training set `{xn, tn}`, we want to learn the joint distribuition `p(x, t)`  
+The idea of this method is to approximate this density using *Kernel Density Estimation* KDE, for example we can use Parzen window  
+![radial_basis_functions_parzen_window](assets/radial_basis_functions_parzen_window.png)
+
+Once we have the distrubution we can use that to make predictions  
+
+![radial_basis_functions_regression](assets/radial_basis_functions_regression.png)  
+The kernel is obtained by a normalized version of the basis functions centered in the training point. A basis function can be for example a gaussian distribution.
+
+This models define a full conditional distribution, this means that we do not have a point prediction but a distribution over the prediction that allow to state the confidence of that prediction.
+
+
+### Gaussian Processes
+Dual version of bayesian linear regression. Similarly to radial basis functions, it gives a distribution for the prediction value.  
+The idea is: instead of defining the prior distribution over the weights we define it directly over the functions. This does not mean that the prior distribution has infinite dimension, we only have to consider the value of the function only over the `N` samples that we have in our training set.
+
+As prior we can use a gaussian distribution.  
+![gaussian_processes_gaussian_prior_distribution](assets/gaussian_processes_gaussian_prior_distribution.png)  
+This will lead to have also a gaussian distribution over our models. We can compute the expected value and the covariance matrix of our models:  
+![gaussian_processes_covariance_matrix](assets/gaussian_processes_covariance_matrix.png)  
+where **`K`** is the Gram matrix.
+
+The gaussian process is defined as a probability distribution over functions `y(x)` such that the set of value `y(x)` evaluated on a arbitrary set of points `x1, ..., xn` jointly have a gaussian distribution.  
+This distribution is completely defined by its covariance matrix, given by the Gram matrix of the kernel.  
+The kernel defines "how close" two points need to be to be correlated: a "wide" kernel (e.g. gaussian with high variance) --> points are correlated even if they are far. This can be used to balance the bias-variance trade-off:
+- enlarge kernel if overfit
+- shrink kernel if underfit
+
+Some examples:  
+![gaussian_processes_examples](assets/gaussian_processes_examples.png)  
+where:
+- in red we have our prior distribution
+- blue dots are the samples
+- green is the distribution of our models  
+
 ## Support Vector Machines (SVM)
 One of the best methods for classification, invented in the late 90s. To define a support vector machine we need:
 - a subset of the training samples **`x`** called *support vectors*
