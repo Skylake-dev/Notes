@@ -1351,3 +1351,88 @@ Q-learning will learn the optimal policy even if it is not playing it. This is d
 SARSA can learn the optimal policy only in the GLIE, when the ε goes to 0 while Q-learning learns directly the best policy.
 
 ## Multi Armed Bandit (MAB)
+Sequential decision making technique. It is a specific case of MDP where:
+- there is a single state `s`
+- actions = arms = `{a_1, ..., a_N}`
+- reward depends only on the action taken `R(s,a) = R(a)`
+  - deterministic (trivial): single value for each arm
+  - stochastic: reward drawn from a distribution
+  - adversarial: an adversary chooses the reward depending on how we behave 
+
+The MAB operates like this:
+- at each round `t` the agent selects an arm `a_i,t`
+- the environment generates a reward `r_i,t` drawn from `R(a_i,t)`
+- the agent updates his information using an history `h_t`
+
+In doing this we want to find the best trade-off between exploration and eploitation.
+
+The objective as always is maximize the reward over time given a certain time horizon. For the MAB we car reformulate it exploiting the particular structure of the MAB:
+- expected reward of the optimal arm (action) `a*`:  
+![MAB_optimal_arm_reward](assets/MAB_optimal_arm_reward.png)  
+- at each step we select action `a_i,t` and incur in a loss:  
+![MAB_step_loss](assets/MAB_step_loss.png)  
+- on average the algorithm loses:  
+![MAB_average_loss](assets/MAB_average_loss.png)  
+- the objective can be rewritten as a minimization of the loss (called *expected pseudo-regret*)  
+![MAB_expected_pseudo_reward](assets/MAB_expected_pseudo_reward.png)
+
+NOTE: the regret can also be defined as the number of times that a suboptimal arm has been chosen:
+- average difference of reward, also express the "similarity" between the different arms  
+![MAB_average_difference_of_reward](assets/MAB_average_difference_of_reward.png)  
+- number of times arm `a_i` has been pulled after `t` time steps --> `N_t(a_i)`  
+
+The regret becomes:  
+![MAB_equivalent_regret_definition](assets/MAB_equivalent_regret_definition.png)  
+
+It is possible to prove that there is a lower bound on the regret that a MAB can accumulate and it is proportionale to `log(T)`.
+
+### Upper Confidence Bound (UCB)
+The algorithm that we use to learn needs to explore all the options to make sure that the arm that he selected is the optimal one. To choose which arm to explore we look at the uncertainty about its estimate:
+- pull with high probability the arm that has the higher upper bound on the value, accounting for the uncertainty
+- after pulling update the uncertainty (becomes narrower) based on the outcome
+
+This is called the Upper Confidence Bound (UCB) approach  
+![MAB_upper_confidence_bound_approach](assets/MAB_upper_confidence_bound_approach.png)  
+where to compute the bound we use the Hoeffding inequality  
+![MAB_hoeffding_inequality_bound](assets/MAB_hoeffding_inequality_bound.png)  
+- pick a probability `p`
+- solve to find `B_i(a_i)`
+- reduce the value of `p` over time (e.g. `p = t^-4`)
+- ensure that `B_i(a_i)` goes to zero as the number of samples increases
+
+NOTE  
+There are many possible bounds to use in the UCB instead of the Hoeffding inequality:
+- UCBV
+- BayesUCB
+- UCB1 <-- lowest upper bound
+- ...
+
+### Bayesian approach: Thompson sampling
+- we define a prior distribution for each arm
+- at each round `t`, sample from each one of the distributions
+- pull arm `a_i,t` with the largest sampled value
+- update priors
+
+Example  
+If we use a bernoulli distribution (`B(α,β)`) for the prior:
+- start with an uniform prior `B(1,1)`
+- at each pull, update the arm as follows
+  - success --> increment `α` by 1
+  - failure --> increment `β` by 1
+
+The advantage of this method is that the upper bound on the regret matches exactly the lower bound, so theoretically this is the best performer.
+
+### Adversarial MAB
+The process is sligthly different from the stochastic MAB. At each time step:
+- the agent selects a single arm `a_i,t`
+- at the same time, the adversary chooses the rewards `r_i,t` for each arm
+- the agent gets the reward
+- the objective is always to maximize the reward (minimize the regret)
+
+In this case we cannot define the regret as we did before because there is no optimal arm since it is chosen at every iteration (so we can't use deterministic algorithms like UCB1).  
+To overcome this we define the regret as the difference between what we got and the maximum possible.  
+![MAB_adversarial_regret](assets/MAB_adversarial_regret.png)  
+
+The adversarial MAB is more complex than the stochastic MAB, in fact the lower bound of regret is also higher, proportional to the squared root of `T`.
+
+An algorithm to solve this is EXP3.
