@@ -1195,7 +1195,7 @@ To learn the value function we use the return from each sample and average it. T
 - first visit: averages return only for the first time that a state `s` is visited (unbiased estimator, better if i have a lot of samples), the result is the same as a maximum likelihood estimator
 - every visit: average return for every time `s` is visited (biased because the two samples are correlated but it is consistent, good if i have fewer samples)
 
-The empirical mean can be adjusted at every step:
+The empirical mean can be adjusted at every step:  
 ![RL_monte_carlo_incremental_mean](assets/RL_monte_carlo_incremental_mean.png)  
 This way i do not have to store samples to calculate mean, i only need to keep the previous estimator.  
 Apply this to Monte Carlo to update the value function at every step  
@@ -1258,9 +1258,96 @@ where:
 
 To make the update more stable we can cap the maximum value of the eligibility trace to 1.
 
-Using those we can writ the *backward view* of TD(λ):  
+Using those we can write the *backward view* of TD(λ):  
 ![RL_TD_lambda_backward_view](assets/RL_TD_lambda_backward_view.png)
 
 ### Model free control
+There is a distinction between:
+- on-policy approach, use the data coming from the interaction to estimate the value function of the policy used by the agent (similar to policy iteration).
+- off-policy approach, use data coming from a policy to estimate performance of another policy.
+
+#### On-policy Monte Carlo control
+This approach is based on the generalized policy iteration but of course in RL we do not have the model. We use the same two steps, but modified.
+
+- policy evaluation -> use Monte Carlo policy evaluation on the `Q(s,a)` function
+- policy improvement -> greedy improvement over `Q(s,a)`  
+![RL_on_policy_monte_carlo_policy_improvement](assets/RL_on_policy_monte_carlo_policy_improvement.png)  
+
+We use Q because it allows to improve the policy model-free.
+
+The problem with this approach is that the policy `π'` is deterministic and since we are learning we cannot use a deterministic policy because it doesn't perform exploration. If i do not measure the value of other actions i cannot learn if they are better or not. On the other hand i want to minimize the number of times that i select a suboptimal action.
+
+##### ε-greedy exploration
+IDEA: never give 0 probability to any action.  
+We modify the deterministic policy:  
+![RL_on_policy_monte_carlo_epsilon_greedy_policy](assets/RL_on_policy_monte_carlo_epsilon_greedy_policy.png)  
+- with probability `1 - ε` i choose the greedy action given by the deterministic policy
+- with proabiblity `ε` i choose another action at random
+
+The parameter `ε` regulates the amount of exploration. There is an equivalent policy improvement theorem also for ε-greedy policies, so we are sure that the resulting policy is always an improvement.
+
+DEFINITION: greedy in the limit of infinite exploration (GLIE)  
+- all state-action pairs are explored infinitely many times
+- the policy converges on a greedy policy (the exploration disappears in the limit of infinite sample)
+
+Theorem   
+GLIE Monte Carlo control converges to the optimal action-value function.
+
+#### On-policy temporal difference control
+Basically the same, we only need to make the changes that we also applied to MC.
+- apply it to Q(s,a)
+- use an ε-greedy policy improvement to update at each step  
+
+##### SARSA algorithm
+- policy evaluation  
+Uses a very simple update rule to evaluate the policy :  
+![RL_on_policy_temporal_difference_SARSA](assets/RL_on_policy_temporal_difference_SARSA.png)  
+- policy improvement, ε-greedy policy improvement
+
+SARSA converges to the optimal Q function under two assumptions:
+- GLIE sequence of policies
+- Robbins-Monro sequence of learning rates  
+![convergence_conditions](assets/convergence_conditions.png)  
+
+Low variance but biased
+
+##### SARSA(λ)
+Same idea of TD(λ), trade-off between Monte Carlo and SARSA (SARSA(0)), use backwards view and eligibility traces in the same way we saw in TD(λ). The only difference is that now the eligibility traces are defined over state-action pairs `e(s,a)`.
+
+The trade-offs are similar
+- SARSA propagates information only to the last state
+- MC propagates to all states
+- SARSA(λ) propagates backwards but reducing the impact the more it goes back in the states (the scaling factor is given by the eligibility traces).  
+![SARSA_lambda_example](assets/SARSA_lambda_example.png)
+
+#### Off policy learning
+Why is this important:
+- learn by observing someone else behaviour
+- reuse experience generated from old policies
+- learn about multiple policies while following one policy
+
+**Importance sampling**  
+We want to estimate the expected value of a distribution but the samples that we get come from a different distribution. We can do this by:  
+![RL_off_policy_importance_sampling](assets/RL_off_policy_importance_sampling.png)  
+
+The samples are reweighted by the ration `P(x)/Q(x)` and yield an unbiased estimator of the distribution `P`.
+
+The same approach is used in off-policy techniques:
+- off-policy Monte Carlo  
+  - weight the return based on the similarity of the two policies  
+  ![RL_off_policy_return_correction_importance_sampling](assets/RL_off_policy_return_correction_importance_sampling.png)
+  - use the return in the usual update rule.
+  The drawback of this approach is that it greatly increases variance bacause we have to importance weight all the steps.
+- off-policy SARSA
+  - only needs a single importance sampling correction, so it introduces lower variance because the policies have to be similar only over one step.
+
+##### Q-learning
+GOAL: learn the optimal policy `π = π*`.  
+Can be seen as the RL version of value iteration, the update rule is:  
+![RL_Q_learning_update_rule](assets/RL_Q_learning_update_rule.png)  
+The only requirement is that we need to have a policy that have non zero probability to each action, but there is no constraint on the policy --> Q-learning will learn the optimal policy even if it always plays the random policy.
+
+Q-learning will learn the optimal policy even if it is not playing it. This is different from SARSA because SARSA is an on-policy approach and can only learn the best ε-greedy policy considering also the exploration.  
+SARSA can learn the optimal policy only in the GLIE, when the ε goes to 0 while Q-learning learns directly the best policy.
 
 ## Multi Armed Bandit (MAB)
