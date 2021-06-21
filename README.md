@@ -8,7 +8,7 @@ Status: 🟩 = completed, 🟨 = in progress, 🟥 = to be started.
 As of now, i plan on doing them for the following courses:
 - 🟩 Digital Forensics and Cybercrime, teachers Stefano Zanero and Michele Carminati
 - 🟩 Computer Security, teacher Stefano Zanero
-- 🟨 Machine Learning, teachers Marcello Restelli and Francesco Trovò
+- 🟩 Machine Learning, teachers Marcello Restelli and Francesco Trovò
 
 ### Commit messages
 All commits regarging the notes start with an identifier of the course:
