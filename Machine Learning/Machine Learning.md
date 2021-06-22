@@ -12,17 +12,17 @@ Knowledge in machine learning comes from:
 - experience
 - induction
 
-Can only learn what is present in the data, if the dataset is not rich enough i cannot learn anything
+Can only learn what is present in the data, if the dataset is not rich enough i cannot learn anything.
 
 Traditional programming:  
-data + program -> output  
+data + program --> output  
 Machine learning approach:  
-data + output -> program
+data + output --> program
 
-Used when it is easy to solve the task for a human but it is very difficult to code a program to do the same task (e.g. tell if there is a cat or a dog in a picture)
+Used when it is easy to solve the task for a human but it is very difficult to code a program to do the same task (e.g. tell if there is a cat or a dog in a picture).
 
 Why machine learning?  
-We need computer to make informed decisions on new unseen data where writing a program directly is difficult or unfeasible. Machine learning allows to automatically extract information from data and applying it to new data -> automating automation.
+We need computer to make informed decisions on new unseen data where writing a program directly is difficult or unfeasible. Machine learning allows to automatically extract information from data and applying it to new data --> automating automation.
 
 Fields:
 - computer vision
@@ -40,7 +40,7 @@ There are 3 main subfields in machine learning:
 - Unsupervised learning
   - learn the representation, there is no output value we want to find structure in the input data (e.g. find clusters, grouping according to some property)
 - Reinforcement learning
-  - learn the policy, to control, make the best decision to collect the best utililty.
+  - learn the policy, to control, make the best decision to collect the best utililty
 
 We will deal mainly with supervised and reinforcement learning.
 
@@ -49,7 +49,7 @@ Goal: estimate an unknown model that maps known inputs to known outputs.
 Problems:
 - classification, target is a discrete set of values
 - regression, target value is continous
-- probability estimation, target is a probability value (basically a constrined regression)  
+- probability estimation, target is a probability value (basically a constrained regression)  
 
 Techniques:
 - Artificial Neural Networks
@@ -80,9 +80,9 @@ We want to approximate the **unkwown** function `f` given the dataset `D`. The s
 - optimize to find an approximate model `h`
   - search the best function in `H` that minimizes our loss function.
 
-The size of the hypothesis space depends on the sample that we have -> the larger `H` the more samples we need.  
-Also we do not have the true loss function but only the empirical loss function given by the samples that we have -> it's only an approximation of the true loss and can be (very) noisy. The more samples we have the more `L` will be close the true loss (is the true loss if we have infinite samples).  
-It is not possible to learn complex models with few data -> will lead to overfitting. Choosing the right `H` is the most difficult task in supervised learning.  
+The size of the hypothesis space depends on the sample that we have --> the larger `H` the more samples we need.  
+Also we do not have the true loss function but only the empirical loss function given by the samples that we have --> it's only an approximation of the true loss and can be (very) noisy. The more samples we have the more `L` will be close the true loss (is the true loss if we have infinite samples).  
+It is not possible to learn complex models with few data --> will lead to overfitting. Choosing the right `H` is the most difficult task in supervised learning.  
 
 NOTE: assumption of supervised learning is that the distribution of the dataset is the same of the real world data we will observe, if not we need to take this into account and basically it is like having fewer samples.
 
@@ -99,7 +99,7 @@ Techniques:
 - ...
 
 ### Reinforcement learning
-Goal: learning the optimal policy to collect the maximum utility through a series of actions  
+Goal: learning the optimal policy to collect the maximum utility through a series of actions.  
 Problems:
 - Markov Decision Problems
 - Stochastic games  
@@ -122,7 +122,7 @@ Many problems can be approximated by linear models that can be solved analytical
 
 A linear model is a parametric method, linear in the **parameters** (not necessarily linear in the variables):  
 ![linear_model](assets/linear_model.png)  
-- **`x`**` = (1, x1, x2, ..., xD-1)`
+- **`x`**` = (1, x_1, x_2, ..., x_D-1)`
 - `w0` is the offset
 
 NOTE:
@@ -143,7 +143,7 @@ The optimal solution is the conditional average:  `y(`**`x`**`) = E[t|`**`x`**`]
 
 Since the model is linear in the parameters we can transform the input variables as we please, also using non linear function. These are called basis functions:  
 ![linear_model_with_basis_function](assets/linear_model_with_basis_function.png)  
-where **`Φ`**`(`**`x`**`) = (1, Φ1(`**`x`**`), ..., ΦM-1(`**`x`**`)` is called *feature vector* and each component is a *feature*.  
+where **`Φ`**`(`**`x`**`) = (1, Φ_1(`**`x`**`), ..., Φ_M-1(`**`x`**`)` is called *feature vector* and each component is a *feature*.  
 Examples:
 - polynomial
 - gaussian
@@ -187,7 +187,7 @@ Discriminative approach where we assume that the target value is given by:
 `t = f(`**`x`**`) + ε`  
 We want to approximate `f(`**`x`**`)` with `y(`**`x`**`, `**`w`**`)`
 
-If the noise `ε` is gaussian with `0` mean and variance `σ^2` we can write the likelihood function given `N` samples  
+If the noise `ε` is gaussian with `0` mean and variance `σ^2` we can write the likelihood function given `N` samples as  
 ![likelihood_function](assets/likelihood_function.png)  
 Our objective now is to find the parameters that maximize the likelihood. We can compute it in two steps:
 - compute log-likelihood  
@@ -201,7 +201,7 @@ We can estimate the variance of the parameters that we have found by computing t
 ![ML_parameter_variance](assets/ML_parameter_variance.png)  
 This allows to perform some feature selection. If the parameter is small and has high variance then likely it is not relevant to our estimate and can be removed. Statistical tests are used to determine what parameters can be discarded.
 
-NOTE: can be used also in case of multiple outputs, the inverse matrix only needs to be computed once and cam be reused for each component.
+NOTE: can be used also in case of multiple outputs, the inverse matrix only needs to be computed once and can be reused for each component.
 
 #### Gauss-Markov theorem
 The least square estimate of **`w`** has the smallest variance among all linear unbiased estimates.
@@ -241,7 +241,7 @@ NOTE: another intesting point is that the matrix is always invertible.
 
 Similar to ridge but is is not linear. The loss function is  
 ![lasso_loss_function](assets/lasso_loss_function.png)  
-where `||`**`w`**`||1` is the sum of the norms of the weights.
+where `||`**`w`**`||_1` is the sum of the norms of the weights.
 
 The disadvantage is that we no more have a closed form solution.
 The advantage w.r.t. to ridge is that for some `λ` some values of the weights can be put to 0. Lasso performs feature selction and is able to yield sparse models.
@@ -259,7 +259,7 @@ where:
 - `p(`**`w`**`)` is the prior distribution of the parameters
 - `p(D)` is a normalization factor (marginal likelihood)
 
-We want to obtain the most probable value for the weights given the data that we have -> Maximum A Posteriori (MAP).
+We want to obtain the most probable value for the weights given the data that we have --> Maximum A Posteriori (MAP).
 
 NOTE: if the prior distribution does not bring any knowledge (i.e. uniform distribution) then it is equivalent to the maximum likelihood approach.
 
@@ -267,10 +267,10 @@ What is the advantage?
 Thanks to the prior we can avoid overfitting and there is no need to regularize, the prior act as a regularizer.
 
 #### Gaussian prior
-Using a gaussian prior is very useful in a scenario when we have sequential data (prior -> new data -> posterior -> use posterior as new prior -> new data -> new posterior -> ...) because this ensures that the posterior will also be a gaussian (so i can iterate the process indefinitely). If the prior and posterior are distributions in the same family we say that the prior is a *conjugate prior* and this allows to have a closed form solution:  
+Using a gaussian prior is very useful in a scenario when we have sequential data (prior --> new data --> posterior --> use posterior as new prior --> new data --> new posterior --> ...) because this ensures that the posterior will also be a gaussian (so i can iterate the process indefinitely). If the prior and posterior are distributions in the same family we say that the prior is a *conjugate prior* and this allows to have a closed form solution:  
 ![closed_form_bayesian](assets/closed_form_bayesian.png)  
 As we can see:
-- **`wN`**, the mean of the new posterior, depends on the mean of the prior and the OLS solution, in particular if we choose a prior with 0 mean and variance this approaches reduces to ridge regression.
+- **`w_N`**, the mean of the new posterior, depends on the mean of the prior and the OLS solution, in particular if we choose a prior with 0 mean and variance this approaches reduces to ridge regression.
 - with infinite variance (uniform distribution) it is reduced to ML.
 
 The more data we have the less the prior becomes relevant in determining the posterior distribution (for lots of data it is usually preferred to use ML since it is cheaper to compute BUT yields a point prediction instead).
@@ -291,7 +291,7 @@ The good news is that in the limit of infinite samples the second term goes to 0
 - computational cost for the posterior distribution if we do not have gaussian distribution (no closed form, approximations like gaussian approximation or monte carlo integration)
 
 ## Linear classification
-Goal: assign an input `x` into one of the `k` discrete classes `Ck`. Typically each input is assigned to only one class.
+Goal: assign an input `x` into one of the `k` discrete classes `C_k`. Typically each input is assigned to only one class.
 
 To achieve this the input space is divided into regions whose boundaries are called *decision boundaries* or *decision surfaces*. For classification we would like to use a non-linear function:  
 ![non_linear_classification_model](assets/non_linear_classification_model.png)  
@@ -305,20 +305,20 @@ We call this **generalized linear model** because the expression of the decision
 
 ### Approaches
 Similarly to regression we can have different approaches:
-- probabilistic, models the conditional distribution `p(Ck|x)` and uses it to make optimal decision. We can distinguish in:
+- probabilistic, models the conditional distribution `p(C_k|x)` and uses it to make optimal decision. We can distinguish in:
   - discriminative, models it directly
-  - generative, models the conditional densities `p(`**`x`**`|Ck)`and then computes the conditional distribution using bayes rule (not treated in this course)
+  - generative, models the conditional densities `p(`**`x`**`|C_k)`and then computes the conditional distribution using bayes rule (not treated in this course)
 - discriminant function (direct approach), build a function that directly maps input to classes, does not output a probability value of an input belonging to other classes
 
 ### Discriminant function
 We start with the 2 classes case using a linear model(spoiler alert: not a good idea to use a linear model):
 - we pick a linear model (e.g. the same as logistic regression)
 - explicitate the boundary
-  - assign to `C1` if `y(`**`x`**`) >= 0`
-  - assign to `C2` otherwise
+  - assign to `C_1` if `y(`**`x`**`) >= 0`
+  - assign to `C_2` otherwise
 - if we compute the parameters of our model we obtain that it is orthogonal to the decision surface.
 
-What if i have`K` classes?
+What if i have `K` classes?
 - ONE-VERSUS-THE-REST
   - `K-1` classifiers, each classifies if it belongs to one class or all the others. Can lead to ambiguous points
 - ONE-VERSUS-ONE
@@ -335,36 +335,36 @@ PROBLEMS:
 - non-gaussian distribution in the target noise, since linear regression
 
 #### Fixed basis function
-As seen for regression, we do not have to find linear boundaries in the input space but we can define a feature space in which the boundaries are linear, obtained by transforming the input using vectors of basis functions `Φ(`**`x`**`)`
+As seen for regression, we do not have to find linear boundaries in the input space but we can define a feature space in which the boundaries are linear, obtained by transforming the input using vectors of basis functions `Φ(`**`x`**`)`.
 
 #### Perceptron
 Oldest approach to classification, it is a two class model  
 ![perceptron](assets/perceptron.png)  
-where +1 correspond to class `C1` and -1 to `C2`.  
+where +1 correspond to class `C_1` and -1 to `C_2`.  
 The idea is to find the separating plane by minimizing the sum of the distance of the misclassified points from the decision boundary.  
 The loss function to be minimized is the following  
 ![perceptron_loss_function](assets/perceptron_loss_function.png)  
 where:
 - `M` is the set of misclassified points
-- 0 error is given to correctly classified points
+- `0` error is given to correctly classified points
 
 This can be optimized using gradient descent  
 ![perceptron_gradient_descent](assets/perceptron_gradient_descent.png)  
 The value of the learning rate `α` is not relevant since the separating plane does not change with the value of `w` (is a vector orthogonal to the plane), so we can put `α = 1` (the opposite from regression where `α` had to respect certain conditions). 
 
-The alghorithm iterates over all the points until all the points are correctly classified. It is guaranteed to converge if the points are linearly separable (but if they aren't it never stops, it is semidecidable -> cannot distinguish between non separable and slowly convergence by running the algorithm). If there are more than one solutions the one that is found depends on the order in which we inspect the points.  
+The alghorithm iterates over all the points until all the points are correctly classified. It is guaranteed to converge if the points are linearly separable (but if they aren't it never stops, it is semidecidable --> cannot distinguish between non separable and slowly convergence by running the algorithm). If there are more than one solutions the one that is found depends on the order in which we inspect the points.  
 
 ### Probabilistic discriminative model: logistic regression
 We want to learn the probability for a certain element to belong to a certain class. We start with the 2 classes scenario:  
 ![sigmoid_logistic_regression](assets/sigmoid_logistic_regression.png)  
 the probability of belonging to the second class is given by  
-`p(C2|Φ) = 1 - p(C1|Φ)`  
+`p(C_2|Φ) = 1 - p(C_1|Φ)`  
 We use the non-linear [sigmoid function](https://en.wikipedia.org/wiki/Sigmoid_function), also known as logistic function, hence the name. As we said before, the model is non linear in **`w`** but if we put a threshold on the probabilty to have a linear decision surface.
 
 #### Maximum likelihood for logistic regression
 To train the parameters of the logistic regression we use maximum likelihood, by finding the weights that maximize the likelihood of getting the right label:  
 ![maximum_likelihood_logistic_regression](assets/maximum_likelihood_logistic_regression.png)  
-Using the same approache we saw before we take the log likelihood(cross-entropy error function) and find the maximum by imposing gradient = 0.  
+Using the same approace we saw before we take the log likelihood (cross-entropy error function) and find the maximum by imposing gradient = 0.  
 ![cross_entropy_error_function](assets/cross_entropy_error_function.png)  
 ![cross_entropy_gradient](assets/cross_entropy_gradient.png)  
 It has similar structure to the SSE but since the sigmoid function is non linear there is no closed form solution. However the function is still convex and can be optimized using the gradient descent technique.
@@ -379,21 +379,21 @@ The percetron can be seen as a particular case of logistic regression where the 
 
 ## No free lunch theorems
 First some notation:
-- `ACCg(L)` = generalization accuracy of learner `L` (its accuracy over non-training samples)
+- `ACC_g(L)` = generalization accuracy of learner `L` (its accuracy over non-training samples)
 - `F` = set of **all** possible concepts `y = f(x)`
 
 THEOREM  
-For any learner `L` the average accuracy over all possible concepts is 0.5 -> cannot perform better than random guessing. In formula  
+For any learner `L` the average accuracy over all possible concepts is 0.5 --> cannot perform better than random guessing. In formula  
 ![no_free_lunch_theorem](assets/no_free_lunch_theorem.png)  
 What is the problem?  
 We are considering accuracy over **all** possible concepts! If all functions have the same probability (i am trying to learning *any* function with the same probability) i have no hope of learning because it means that the patterns that i see in the data maybe not related at all to what happens in other points. 
 
-Machine learning can only work if generalization of the problem is possibile -> there is some structure in the data that i can learn. If i cannot propagate what i learn in one point to other points then it's not possible to learn.
+Machine learning can only work if generalization of the problem is possibile --> there is some structure in the data that i can learn. If i cannot propagate what i learn in one point to other points then it's not possible to learn.
 
 COROLLARY:  
-For any two learners `L1`, `L2`  
-if there exist a problem s.t. `ACCg(L1)` > `ACCg(L2)`   
-then there existis a problem s.t `ACCg(L2)` > `ACCg(L1)`  
+For any two learners `L_1`, `L_2`  
+if there exist a problem s.t. `ACC_g(L1)` > `ACC_g(L2)`   
+then there existis a problem s.t `ACC_g(L2)` > `ACC_g(L1)`  
 
 This means that there is no one technique that is always superior to another, the correct (best) technique to use depends on the problem. Do not expect your favourite learner to always be the best :^).
 
@@ -403,14 +403,14 @@ Assume to have a dataset `D` generated by a function `t = f(`**`x`**`) + ε` , w
 where:
 - `Var[t]` is the variance of the noise (irreducible)
 - `Var[y(`**`x`**`)]`  is the variance of our approximation, describes how sensible to the noise it is, if we have high variance we are very sensitive to noise and it means that we are overfitting
-- `E[f(`**`x`**`) - y(`**`x`**`)]^2` is the bias squared of our approximation, how far from the true function we are. If the bias is high it means that we are really far from the real function and we are underfitting
+- `E[f(`**`x`**`) - y(`**`x`**`)]^2` is the squared bias of our approximation, how far from the true function we are. If the bias is high it means that we are really far from the real function and we are underfitting.
 
 Ideally we want to minimize both variance and bias to have the smallest possible error:
-- bias -> reduced with model complexity, independently from the number of samples
-- variance -> reduced with many samples or with simpler models  
+- bias --> reduced with model complexity, independently from the number of samples
+- variance --> reduced with many samples or with simpler models  
 ![bias_variance_graph](assets/bias_variance_graph.png)  
 
-So when we have a large number of samples we want to use unbiased estimators since this will reduce the variance and so the total erro. On the other hand we have to use biased estimators when we have a few samples to compensate for the high variance.
+So when we have a large number of samples we want to use unbiased estimators since this will reduce the variance and so the total error. On the other hand we have to use biased estimators when we have a few samples to compensate for the high variance.
 
 ### Training error and prediction error
 Given a dataset `D` with `N` samples we can choose a loss function to measure the error of our model on our samples. This is what we have focused so far using for example RSS. The problem of considering only the train error does not take into account the variance, it reprensents only the bias of the model.  
@@ -430,7 +430,7 @@ We will see that this can be overcome by splitting in 3 sets:
 - test set, to evaluate performance in the end
 
 ### Curse of dimensionality
-When we introduce more dimension (parameters or features) in our problem leads to an exponential increase in the number of samples needed to train it properly.  
+Introducing more dimensions (parameters or features) in our problem leads to an exponential increase in the number of samples needed to properly train it.  
 Working in higher dimension is hard because there is large viariance.
 
 ### Managing bias-variance trade-off
@@ -469,12 +469,12 @@ Then we can train `N` models and evaluate the error for each model:
 ![LOO_error](assets/LOO_error.png)  
 This estimator is almost unbiased and in the end i have validated my model over all `N` samples.
 
-The major drawback of this approach is that it requires to build all `N` models so it is very computational intensive
+The major drawback of this approach is that it requires to build all `N` models so it is very computational intensive.
 
-K-FOLD CROSS VALIDATION
-Same idea of LOO but reduces the number of models that i have to train. Divide the dataset `D` in `k` equal parts `D1, ..., Dk` and train them in a round robin style. For each i from 1 to k:  
-- learn model on `D\Di` (dataset excluding set `Di`)
-- validate on `Di`
+K-FOLD CROSS VALIDATION  
+Same idea of LOO but reduces the number of models that i have to train. Divide the dataset `D` in `k` equal parts `D_1, ..., D_k` and train them in a round robin style. For each i from 1 to k:  
+- learn model on `D\D_i` (dataset excluding set `D_i`)
+- validate on `D_i`
 
 The advantage is that it is much cheaper to compute than LOO but it is usually more pessimistically biased. A typical value for `k` is 10.
 
@@ -494,16 +494,16 @@ We have already seen some techniques (ridge and lasso), the idea is to shrink th
 Find a new set of features that performs well and encodes (almost) all the information of the starting features. The advantage is that the resulting set is way smaller than the orginal one so the dimensionality of the problem is greatly reduced. We will see Principal Component Anlaysis (PCA).
 
 ##### PCA (unsupervised approach)
-Project the original feature space into a subspace that accounts for most of the variance of the input. The idea is that input features with low variance are less important in determing the final outcome. In this particular analysis the new features are a linear combination of the starting one.
+Project the original feature space into a subspace that accounts for most of the variance of the input. The idea is that input features with low variance are less important in determing the final outcome. In this particular analysis the new features are a linear combination of the starting ones.
 
 How can we compute the new features?  
 - compute the average of our data `x`
 - build covariance matrix `S`  
 ![PCA_covariance_matrix](assets/PCA_covariance_matrix.png)  
-- compute eigenvectors `ei` and eigenvalues `λi`
+- compute eigenvectors `e_i` and eigenvalues `λ_i`
 - sort eigenvectors by their eignevalues
-- the first principal component is the one with the largest eigenvalue, the second is the one with the second largest eignvalues, ...
-- the proportion of variance caputered by each eigenvector is the ration between its eigenvalue and the sum of all eignvalues  
+- the first principal component is the one with the largest eigenvalue, the second is the one with the second largest eignvalue, ...
+- the proportion of variance captured by each eigenvector is the ratio between its eigenvalue and the sum of all eignvalues  
 ![PCA_variance_eigenvector](assets/PCA_variance_eigenvector.png)  
 
 - the eigenvectors create a new space (they are an orthogonal basis) in which we can work, we select the first `k` eigenvector and project the initial data on the new space determined by those vector.
@@ -517,7 +517,7 @@ If we observe that faces are not randomly distributed in the image space, the "f
 PCA is very useful to reduce complexity and filter noise out of the dataset but there are some caveats:
 - fails when data consist of multiple clusters (in general, when the distribution is far from gaussian)
 - direction of greatest variance may not be the most informative for the specific problem
-- PCA can only build new features that are a linear combination of the old one
+- PCA can only build new features that are a linear combination of the old ones
 
 #### Bagging
 Often used with decision trees ([random forest](https://en.wikipedia.org/wiki/Random_forest)), reduce the variance without significantly increasing bias. The general idea is to learn multiple models and combine them toghether (same for boosting, see later).
@@ -526,13 +526,13 @@ In bagging we average models to reduce variance.
 How can we build multiple models having only one training set?  
 
 ##### Bootstrapping
-We produce `k` dataset from one dataset obtained by sampling uniformly the original dataset with replacement. The new `k` datasets contain the same number of samples as the orginal samples but they wwill have some that are missing and some that are duplicate. Then we train a model for each dataset (of course they are not completely independent).
+We produce `k` dataset from one dataset obtained by sampling uniformly the original dataset with replacement. The new `k` datasets contain the same number of samples as the orginal dataset but they will have some that are missing and some that are duplicate. Then we train a model for each dataset (of course they are not completely independent).
 
 We can then use these models for prediction:
 - regression: average the prediction of each model
 - classification: classify according to majority
 
-NOTE: we prefer to have unbiased models when we apply this technique
+NOTE: we prefer to have unbiased models when we apply this technique.
 
 Bagging improves the performance of unstable (overfitting) learners.
 
@@ -566,17 +566,17 @@ The learner observes a sequence `D` of training examples `<x, c(x)>` where:
 - instances `x` are drawn from `P`
 - teacher provides deterministic `c(x)`
 
-The learner must output and hypotesis `h` estimating `c`
+The learner must output and hypotesis `h` estimating `c`.
 - `h` is evaluated by its performance on the instances drawn from `P`, we want to minimize:  
 ![PAC_true_loss](assets/PAC_true_loss.png)  
-- can we bound the `Ltrain` to `Ltrue`?
+- can we bound the `L_train` to `L_true`?
 
-VERSION SPACE (VSh,d)  
+VERSION SPACE (VS_h,d)  
 Subset of the hypotesis space `H` that contains all hypotesis with 0 training error.  
-Can we bound `Ltrue` in this region?
+Can we bound `L_true` in this region?
 
 Theorem:  
-If the hypothesis space `H` is finite and `D` is a sequence of `N >= 1` independent random examples of some target concept `c`, then for any `0 <= ε <= 1`, the probability that `VSh,d` contains a hypothesis error greater then `ε` is less than `|H|e^(-εN)`.  
+If the hypothesis space `H` is finite and `D` is a sequence of `N >= 1` independent random examples of some target concept `c`, then for any `0 <= ε <= 1`, the probability that `VS_h,d` contains a hypothesis error greater then `ε` is less than `|H|e^(-εN)`.  
 ![PAC_theorem](assets/PAC_theorem.png)  
 
 Interpretation: we can bind the prediction error (misclassification in this case). The error increases when we have a large hypotesis space (as expected), but we can bound it given a certain threshold on the probability of error.
@@ -593,13 +593,13 @@ This answes our question:
 When is a problem PAC-learnable?  
 Consider a class `C` of possible target concepts defined over a set of instances `X` of length `n` and a learner `L` using an hypothesis space `H`
 - PAC-learnable
-  - if there exists an algorithm `L` s.t. for every `f ∈ C`, any distribution `P`, any `ε`, `δ` between 0 and 1/2 that with proability of at least `1 - δ` probability outputs a concept `h` s.t. `Ltrue(h) < ε` using a number of samples polynomial in `1/ε` and `1/δ`
+  - if there exists an algorithm `L` s.t. for every `f ∈ C`, any distribution `P`, any `ε`, `δ` between 0 and 1/2 that with proability of at least `1 - δ` probability outputs a concept `h` s.t. `L_true(h) < ε` using a number of samples polynomial in `1/ε` and `1/δ`
 - Efficiently PAC-learnable
   - same as above if polynomial in `1/ε`, `1/δ`, `M` and `size(c)`
 
 In practice usually we need to work outside of the version space.  
 We can still bind the error w.r.t. the train error:  
-`Ltrue <= Ltrain + ε`    
+`L_true <= L_train + ε`    
 
 We can define the bound for the probability that the empirical mean diverges from the expected value for more than `ε`:  
 ![PAC_Hoeffding_bound](assets/PAC_Hoeffding_bound.png)  
@@ -670,7 +670,7 @@ If we can find a kernel that is faster to compute than the scalar product of fea
 The advantages are:
 - can build complex model with few data
 - allow for high dimensional or infinite feature space
-- can be applied to non numerical values [symbolic kernels](#Kernels-on-symbolic-data)
+- can be applied to non numerical values (see [symbolic kernels](#Kernels-on-symbolic-data))
 
 The drawback is that the prediction phase then needs to work on the samples:
 - slower
@@ -702,7 +702,7 @@ Solving for our new variables **`a`** we obtain:
 
 ![dual_ridge_solution](assets/dual_ridge_solution.png)
 
-The rewritten version of ridge regression using kernels has a complexity that is independent from the number of fetures, it only depends on the number of samples.
+The rewritten version of ridge regression using kernels has a complexity that is independent from the number of features, it only depends on the number of samples.
 
 To perform the prediction now we substitute **`a`** into the linear regression model:
 
@@ -722,7 +722,7 @@ Our kernel function needs to encode some kind of similarity, the basic idea is:
 
 The more a sample is similar to our observation, the more weight they will have in the final prediction.
 
-We can construct kernels directly and them prove that they are equivalent to a scalar product, for example  
+We can construct kernels directly and them prove that they are equivalent to a scalar product, for example:  
 
 ![example_kernel](assets/example_kernel.png)
 
@@ -734,8 +734,8 @@ Where is the advantage?
 - kernel: 2 multiplications + 1 squaring
 - features: compute 6 features + 9 multiplications
 
-As we see the kernel is much faster to compute than the feature.  
-It can be shown that thiis kernel can be expanded:
+As we see the kernel is much faster to compute than the feature expansion.  
+It can be shown that this kernel can be generalized:
 - `(x^T*z + c)^2` includes constant, linear and second order terms
 - `(x^T*z + c)^p` all terms up to degree `p` (*polynomial kernel*) 
 
@@ -754,7 +754,7 @@ This makes it easier to build a "personalized" kernel for a specific problem and
 
 ![kernel_transformation_rules](assets/kernel_transformation_rules.png)
 
-We apply these rule to prove that a commonly used kernel, the *gaussian kernel*, is a valid kernel.
+We apply these rules to prove that a commonly used kernel, the *gaussian kernel*, is a valid kernel.
 
 The gaussian kernel is  
 ![gaussian_kernel](assets/gaussian_kernel.png)  
@@ -765,7 +765,7 @@ The gaussian kernel is
 - using the second and the fourth rule and knowing that the linear kernel `k(x, x') = x^T*x'` is valid, we see that the gaussian kernel is valid.
 
 #### Kernels on symbolic data
-We can extend kernel to symbolic data like graphs, sets or something else. The important thing is that we somehow encode the similarity of two object in the kernel. For instance, suppose `A1` and `A2` are sets, we can define a kernel function like this:  
+We can extend kernel to symbolic data like graphs, sets or something else. The important thing is that we somehow encode the similarity of two objects in the kernel. For instance, suppose `A_1` and `A_2` are sets, we can define a kernel function like this:  
 
 ![symbolic_kernel_example](assets/symbolic_kernel_example.png)
 
@@ -777,17 +777,17 @@ We now briefly see two examples of regression based on kernel methods:
 Radial Basis Functions: each basis function depends only on the radial distance (typically Euclidean) from a center `μ`.  
 `Φ(x) = h(||x - μ||)`  
 
-Original use was for interpolation but since in machine learning data is often noisy we need to use normalized basis functions: in each point the sum of the basis function is 1.
+Original use was for interpolation but since in machine learning data is often noisy we need to use normalized basis functions: in each point the sum of the basis functions is 1.
 
 ![not_normalized_vs_normalized_basis_functions](assets/not_normalized_vs_normalized_basis_functions.png)  
 The normalization allows to have enough power of prediction in every point. 
 
 NADARAYA-WATSON MODEL  
-Given a training set `{xn, tn}`, we want to learn the joint distribuition `p(x, t)`  
+Given a training set `{x_n, t_n}`, we want to learn the joint distribuition `p(x, t)`.  
 The idea of this method is to approximate this density using *Kernel Density Estimation* KDE, for example we can use Parzen window  
 ![radial_basis_functions_parzen_window](assets/radial_basis_functions_parzen_window.png)
 
-Once we have the distrubution we can use that to make predictions  
+Once we have the distrubution we can use that to make predictions.  
 
 ![radial_basis_functions_regression](assets/radial_basis_functions_regression.png)  
 The kernel is obtained by a normalized version of the basis functions centered in the training point. A basis function can be for example a gaussian distribution.
@@ -805,7 +805,7 @@ This will lead to have also a gaussian distribution over our models. We can comp
 ![gaussian_processes_covariance_matrix](assets/gaussian_processes_covariance_matrix.png)  
 where **`K`** is the Gram matrix.
 
-The gaussian process is defined as a probability distribution over functions `y(x)` such that the set of value `y(x)` evaluated on a arbitrary set of points `x1, ..., xn` jointly have a gaussian distribution.  
+The gaussian process is defined as a probability distribution over functions `y(x)` such that the set of value `y(x)` evaluated on a arbitrary set of points `x_1, ..., x_n` jointly have a gaussian distribution.  
 This distribution is completely defined by its covariance matrix, given by the Gram matrix of the kernel.  
 The kernel defines "how close" two points need to be to be correlated: a "wide" kernel (e.g. gaussian with high variance) --> points are correlated even if they are far. This can be used to balance the bias-variance trade-off:
 - enlarge kernel if overfit
@@ -842,16 +842,16 @@ We will deal first with the case in which the points are all linearly separable,
 Let's define the margin as the minimum distance between the points in our training set and the separating hyperplane.  
 
 ![SVM_margin](assets/SVM_margin.png)  
-multiplying by `tn` is needed to have all the distances with the same sign.
+multiplying by `t_n` is needed to have all the distances with the same sign.
 
-To obtain a robust margin we want to maximize the minimum distance of our samples from the separating plane. The solution to the margin maximization is
+To obtain a robust margin we want to maximize the minimum distance of our samples from the separating plane. The solution to the margin maximization is:
 
 ![SVM_maximize_minimum_distance](assets/SVM_maximize_minimum_distance.png)
 
-This is very complex to compute as is but we can rewrite it by fixing the margin (e.g. =1). I can fix the margin because there are infinite values of **`w`** that build the same hyperplane, so i have one degree of freedom in their choice. We use this to assign the value that we want to the minimum margin (1) to simplyfy the problem by removing the minimization part (i fixed the minimum to 1).
+This is very complex to compute as is but we can rewrite it by fixing the margin (e.g. =1). I can fix the margin because there are infinite values of **`w`** that build the same hyperplane, so i have one degree of freedom in their choice. We use this to assign the value that we want to the minimum margin (1) to simplify the problem by removing the minimization part (i fixed the minimum to 1).
 
 ![SVM_maximize_margin_simplified](assets/SVM_maximize_margin_simplified.png)  
-NOTE: it is a minimization because we flipped the fraction of the weights
+NOTE: it is a minimization because we flipped the fraction of the weights.
 
 **Math recall**   
 This is a very general class of problem in constraint optimization that have the form
@@ -861,7 +861,7 @@ This is a very general class of problem in constraint optimization that have the
 I can solve this class of problem using a lagrangian function.
 
 ![general_lagrangian_function](assets/general_lagrangian_function.png)  
-where `λi` are the lagrangian multipliers.
+where `λ_i` are the lagrangian multipliers.
 
 We can find the optimal weights and parameters by putting putting the gradient of the lagrangian equal to 0 (compute the gradient w.r.t. both `w` and `λ`).
 
@@ -884,7 +884,7 @@ The optimal solutions of this problem are characterized by the **KKT conditions*
 
 The last two constraints represent the *complementarity*, a constraint can either:
 - be active `g(`**`w*`**`) = 0`
-- have its multiplier `αi*` equal to 0  
+- have its multiplier `α*_i` equal to 0  
 
 **End recall**
 
@@ -907,7 +907,7 @@ To classify new points we now use those support vectors
 where `b` is usually calculated as  
 ![SVM_b_parameter](assets/SVM_b_parameter.png)
 
-NOTE: this does not come from the optimization problem it is computed a posteriori on the weights of the support vector (`Ns` is the set of support vectors). It represent the average error of the prediciton and it is added to the prediction to correct it.
+NOTE: this does not come from the optimization problem it is computed a posteriori on the weights of the support vector (`N_s` is the set of support vectors). It represent the average error of the prediciton and it is added to the prediction to correct it.
 
 Graphically, the result will be something like this  
 ![SVM_support_vectors_example](assets/SVM_support_vectors_example.png)  
@@ -931,7 +931,7 @@ Increasing the dimension lead to an increase in the number of support vectors to
 ### Handling noisy data
 Can we apply SVMs if the dataset is not linearly separable? The maximum margin does not work as is anymore because it does not allow to have misclassification. 
 
-We need to extend it to allow some misclassification to find the plane that best separates the points. To do this we can introduce slack variables `ξi` --> allow to have miscalssified points but we add a penalty for those in order to have them minimized.  
+We need to extend it to allow some misclassification to find the plane that best separates the points. To do this we can introduce slack variables `ξ_i` --> allow to have miscalssified points but we add a penalty for those in order to have them minimized.  
 The problem formulation becomes:  
 
 ![SVM_formulation_noisy_data](assets/SVM_formulation_noisy_data.png)  
@@ -974,7 +974,7 @@ Definitions
 `h = a_1, o_1, r_1, ..., a_t, o_t, r_t`
 - State: information used to determine the next action to take, it is a function of the history. We want to minimize the amount of information that we need to store to select the optimal choice.  
 `S_t = f(h)`  
-A big problem to build the state is credit attribution: what observation/actions are correlated with the reward that i received?
+A big problem to build the state is credit attribution: what observations/actions are correlated with the reward that i received?
 - Environment state: state of the environment, usually can be not fully known. The agent needs to build a representation of it to make decisions. In this course we only consider fully observable problems where the state of the environment is known to the agent.
 
 When to use RL?  
@@ -991,7 +991,7 @@ Examples of RL applications:
 
 ### Exploraiton vs exploitation
 To play the optimal policy we need to reach a trade-off between:
-- exploration: the choice of new unexplored actions, even at random, to increase our knowledge about the problem
+- exploration: the choice of new unexplored actions, even at random, to increase our knowledge about the problem.
 - exploitation: use only the current knowledge to make decision, following known-good paths but risking to miss some opportunities.
 
 Reaching a balance between the two is extremely difficult and it's a core part of RL.  
@@ -1000,8 +1000,8 @@ At the beginning we want to lean more towards exploration to see all the possibl
 ## Markov Decision Processes (MDP)
 For MDPs we work under the *Markov assumption*: the future is independent from the past given the present. This means that the current state is enough to make decisions, there is no need to know the past.  
 Examples:
-- markovian: chess, rubik's cube
-- non-markovian: poker, blackjack (i need information about past cards that have already been played)
+- Markovian: chess, rubik's cube
+- non-Markovian: poker, blackjack (i need information about past cards that have already been played)
 
 Formally, a stochastic process `X_t` is said to be Markovian if and only if:
 ![Markovian_process](assets/Markovian_process.png)
@@ -1023,7 +1023,7 @@ MARKOV PROCESS: tuple `<S, A, P, R, γ, μ>`
 - `A` finite set of actions
 - `P` state transition probability matrix `P(s'|s,a)`
 - `R` reward function, `R(s,a) = E[r|s,a]`
-- `γ` discount factor `0 <= γ <= 1`, evaluates how much i care about future rewards w.r.t. present ones. It represents our time horizon
+- `γ` discount factor `0 <= γ <= 1`, evaluates how much i care about future rewards w.r.t. present ones. It represents our time horizon.
   - `γ = 1` rewards in the future have same value as today
   - `γ = 0` only look at immediate reward
 - `μ` set of initial probabilities, `μ_0,i = P(X_0 = i) for all i`
@@ -1044,7 +1044,7 @@ How do we define the cumulative reward?
   - average reward: divide the total reward by the number of steps taken
   - discounted reward: use a discount factor to weight future rewards (their importance decrease the further they are into the future) <-- we use this  
   ![MDP_discounted_reward](assets/MDP_discounted_reward.png)  
-  If the reward at each step is bounded `R_min <= r <= R_max` the total discounted reward `V` is upper bounded by `R_max/(1-γ)` (geometric series property)  
+  If the reward at each step is bounded `R_min <= r <= R_max` the total discounted reward `V` is upper bounded by `R_max/(1-γ)` (geometric series property).  
 
 We define the *return* `v_t` as the total discounted reward from time step `t`.  
 ![MDP_return](assets/MDP_return.png)  
@@ -1057,7 +1057,7 @@ A policy fully defines the behaviour of the agent by selecting which action to t
 - deterministc vs stochastic
 - stationary vs non-stationary
 
-For any MDP we can always find at least one optimal policy that is markovian, deterministic and stationary. This simplifies its search. We will consider only this policies, sometimes also stochastic policies (for learning we need stochastic policies to explore the different possibilities).
+For any MDP we can always find at least one optimal policy that is Markovian, deterministic and stationary. This simplifies its search. We will consider only these policies, sometimes also stochastic policies (for learning we need stochastic policies to explore the different possibilities).
 
 Formally, a policy is a distribution over actions, given the state.  
 `π(a|s) = P(a|s)`  
@@ -1076,17 +1076,17 @@ How do we find policies and evaluate their goodness?
 - action-value function: expected return starting from state `s`, taking action `a` and then following policy `π` (i specify the starting action to take, then follow policy)
 ![MDP_action_value_function](assets/MDP_action_value_function.png)
 
-These value functions can be decomposed in immediate reward + discounted value of the successive state (yields a recursive formulation)
+These value functions can be decomposed in immediate reward + discounted value of the successive state (yields a recursive formulation).
 ![MDP_value_functions_decomposition](assets/MDP_value_functions_decomposition.png)  
 These are called *Bellman expectation equations* and can be expressed concisely using matrix notation,  
 ![MDP_Bellman_expectation_matrix_form](assets/MDP_Bellman_expectation_matrix_form.png)  
 that can be solved directly.  
 ![MDP_Bellman_expectation_exact_solution](assets/MDP_Bellman_expectation_exact_solution.png)  
-Computing the exact solution is computationally expensive (`O(n^3)` for the inverse, that always exists for `γ < 1`) and we need to approximate
+Computing the exact solution is computationally expensive (`O(n^3)` for the inverse, that always exists for `γ < 1`) and we need to approximate.
 
 ##### Bellman operator
 ![MDP_Bellman_operator](assets/MDP_Bellman_operator.png)  
-Using this operator we can rewrite the expectation equation in a compact way (from now on consider only `V_π`,everything is analogous for `Q_π` unless stated otherwise)  
+Using this operator we can rewrite the expectation equation in a compact way (from now on consider only `V_π`, everything is analogous for `Q_π` unless stated otherwise)  
 `T_π*V_π = V_π`  
 - `V_π` is a fixed point of the Bellman operator
 - It is a linear equation
@@ -1101,7 +1101,7 @@ The smaller the discount factor `γ` the faster i get to the value function (mak
 ##### Optimal value function
 An MDP is solved when we know the optimal value function, that we can define as the maximum value function over all the policies.  
 ![MDP_optimal_value_function](assets/MDP_optimal_value_function.png)  
-This function specifies the best possible performance in the MDP. The value function specify a partial ordering over the policies  
+This function specifies the best possible performance in the MDP. The value function specify a partial ordering over the policies.  
 ![MDP_policies_partial_ordering](assets/MDP_policies_partial_ordering.png)  
 A policy is greater than another if its value function is greater than the other's policy value function **in every state**.
 
@@ -1147,7 +1147,7 @@ Finite-horizon problems are easy because we can start from the end and maximize 
 We will consider infinite-horizon, discounted MDPs
 
 ### Policy iteration
-Two step iterative alogrithm, starting from a policy `π` (can choose whatever policy to start, even random):
+Two step iterative algorithm, starting from a policy `π` (can choose whatever policy to start, even random):
 - evaluate the given policy `π` (using the expectation equation or the iterative approach with the operator)
 - improve the policy `π` by computing the *greedy policy*  
 ![DP_greedy_policy_improvement](assets/DP_greedy_policy_improvement.png)  
@@ -1171,7 +1171,7 @@ There are a lot of RL techniques that we can use to solve MDPs. The difference w
 - On–policy vs Off–policy, estimate value of the policy used in the interaction vs estimate value of a different policy from the one used to interact with the environment
 - Online vs Offline, update estimates during learning vs separate data collection from learning
 - Tabular vs Function Approximation store a value for each state and action vs learn a parametric value function to generalize over new unseen states (like supervised learning but more complex because we do not have the target, we need to estimate it)
-- Value–based vs Policy–based vs Actor–Critic learn the value function (work better if markovian problem) vs learn the policy (work best in continous state/actions) vs mix of the two, actor=policy critic=value, the critic evaluates the policy and tells the actor how to improve
+- Value–based vs Policy–based vs Actor–Critic learn the value function (work better if Markovian problem) vs learn the policy (work best in continous state/actions) vs mix of the two, actor=policy critic=value, the critic evaluates the policy and tells the actor how to improve
 
 The problem that we will deal with are:
 - model-free prediction: estimate value function of an unknown MRP (MDP + fixed policy `π`)
@@ -1206,19 +1206,19 @@ For non stationary problems we want to give less importance to old information a
 ![RL_monte_carlo_stochastic_approximation](assets/RL_monte_carlo_stochastic_approximation.png)  
 
 #### Temporal Difference (TD)
-RL version of the Bellman expectation equation. TD can *bootstrap* that is it can learn from incomplete episodes. Temporal difference uses its previous estimation to update its estimation (biased but consistent)  
+RL version of the Bellman expectation equation. TD can *bootstrap* that is it can learn from incomplete episodes. Temporal difference uses its previous estimation to update its estimation (biased but consistent).  
 The return of each step is calculated as:  
 ![RL_temporal_difference_return](assets/RL_temporal_difference_return.png)  
 and the update rule becomes  
 ![RL_temporal_difference_update_rule](assets/RL_temporal_difference_update_rule.png)  
 where:
-- the red part is called TD target, 
+- the red part is called TD target 
 - the content of the parenthesis is called TD error, difference between the new value and the previous estimate
 
-#### Comparison MC TD
+#### Comparison MC vs TD
 | MC | TD |
 | -- | -- |
-| wait until the end ot f the episode | learn online at every step |
+| wait until the end of the episode | learn online at every step |
 | only episodic problems | can work in continous problems |
 | unbiased but a lot of variance | biased but still consistent and low variance |
 | better for function approximation | worse for function approximation |
@@ -1234,7 +1234,7 @@ We define the n-step return (return of the next n step + estimate)
 - `n = 1` is the temporal difference approach (TD(0))
 - `n infinite` is the Monte Carlo approach
 
-The idea of TD(λ) is to have a weighted sum of the different n-step returns to combine information from the different time steps. The weight depdends on the value of `λ`  
+The idea of TD(λ) is to have a weighted sum of the different n-step returns to combine information from the different time steps. The weight depdends on the value of `λ`.  
 ![RL_TD_lambda_return](assets/RL_TD_lambda_return.png)  
 - high `λ`  low bias, high variance
 - low `λ` low variance, high bias
@@ -1309,7 +1309,7 @@ SARSA converges to the optimal Q function under two assumptions:
 - Robbins-Monro sequence of learning rates  
 ![convergence_conditions](assets/convergence_conditions.png)  
 
-Low variance but biased
+Low variance but biased.
 
 ##### SARSA(λ)
 Same idea of TD(λ), trade-off between Monte Carlo and SARSA (SARSA(0)), use backwards view and eligibility traces in the same way we saw in TD(λ). The only difference is that now the eligibility traces are defined over state-action pairs `e(s,a)`.
