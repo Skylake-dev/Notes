@@ -9,11 +9,13 @@ As of now, i plan on doing them for the following courses:
 - 🟩 Digital Forensics and Cybercrime, teachers Stefano Zanero and Michele Carminati
 - 🟩 Computer Security, teacher Stefano Zanero
 - 🟩 Machine Learning, teachers Marcello Restelli and Francesco Trovò
+- 🟥 Data Bases 2, teachers Sara Comai, Piero Fraternali and Daniele Braga
 
 ### Commit messages
 All commits regarging the notes start with an identifier of the course:
 - [DFC] Digital Forensics and Cybercrime
 - [CS] Computer Security
 - [ML] Machine Learning
+- [DB2] Data Bases 2
 
-Other commits (i.e. readme or other) do not have a prefix
+Other commits (i.e. readme or other) do not have a prefix.
