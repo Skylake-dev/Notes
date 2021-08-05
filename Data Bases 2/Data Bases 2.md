@@ -152,5 +152,140 @@ NOTE: the opposite is not true, if the graph contains a cycle we cannot conclude
 Graphical recap:  
 ![VSR_CSR_schedules](assets/VSR_CSR_schedules.png)  
 
-#### Concurrency control in practice
-CSR checks is efficent but it only works *a posteriori*. Real DBMS schedulers need to make decisions *online*, managing the requests as they arrive.
+### Concurrency control in practice
+CSR checking is efficent but it only works *a posteriori*. Real DBMS schedulers need to make decisions *online*, managing the requests as they arrive.  
+We can use two approaches:
+- pessimistic, lock based approaches, higher isolation
+- optimistic, timestamps and versioning, higher throughput
+
+#### Locking
+A transaction is well formed w.r.t. locking if:
+- read operations are preceded by a `R_LOCK` (shared lock) and followed by `UNLOCK`
+- write operations are preceded by a `W_LOCK` (exclusive lock) and followed by `UNLOCK`  
+
+Transactions that first read and then write can acquire an exclusive lock directly or acquire a shared lock and upgrade it later.
+
+The objects in a database can have 3 states:
+- `FREE`
+- `R_LOCKED`
+- `w_LOCKED`  
+
+| REQUEST | FREE | R_LOCKED | W_LOCKED |
+| -- | -- | -- | -- |
+| R_LOCK | OK -> R_LOCKED | OK -> R_LOCKED* | NO -> W_LOCKED |
+| W_LOCK | OK -> W_LOCKED | NO -> R_LOCKED | NO -> W_LOCKED |
+| UNLOCK | ERROR | OK -> R_LOCKED/FREE* | OK -> FREE |  
+
+NOTE: * multiple transactions can have a read lock on the same resource (it's a shared lock), the DBMS keeps track of how many transactions are sharing the lock.
+
+Following this rules, some transactions will have to wait until the resources they need are free to use. The arrival sequence can be different from the schedule a posteriori because some transactions can be delayed.
+
+##### Implementation: lock tables
+Lock tables are hash tables that index the lockable items by hashing them.  
+every node has a linked list with all the transactions that requested a lock for that resource, the lock mode (shared/exclusive) and the status (granted/pending). When a transaction ends it is removed from the list.
+
+![lock_table](assets/lock_table.png)  
+
+##### Locks and serializability
+Is respecting locks enough to guarantee serializability? NO, some anomalies may still occur. This is caused by the fact that transactions may release locks early and reacquire it later.
+
+Example:
+- T1 locks resource `x` with a shared lock to read its value
+- T1 releases the lock after the read
+- T2 locks `x` with an exclusive lock
+- T2 updates `x`
+- T2 releases the lock
+- T1 reacquires the shared lock on `x` to read it
+- T1 finds that the value has changed --> non-repeatable read
+
+#### 2PL
+Aims at preventing non repeatable reads.  
+A transaction cannot acquire more locks after it has released a lock. This simple rule not only prevents non-repeatable reads but also ensures serializability.  
+
+![2PL](assets/2PL.png)  
+
+Theorem: 2PL is strictly contained into CSR.  
+
+![2PL_CSR_VSR_schedules](assets/2PL_CSR_VSR_schedules.png)  
+
+What about other anomalies? The ones that cause problems are:
+- phantom inserts because it requires to lock data in a "future-proof" way, not only the data that i am currently fetching. We will solve this issue using predicate locks.
+- dirty reads because it requires to deal with aborts which so far we have not done in our model.
+
+##### Strict 2PL
+Releasing a lock before committing exposes uncommitted data. Other transactions can then read this data and use it and this leads to anomalies in case of abort. The solution is pretty simple.  
+A transaction hold all its locks until the decision point (commit/rollback). This way nobody can read data that was not committed.
+
+![strict_2PL](assets/strict_2PL.png)
+
+##### Predicate locks
+To prevent phantom inserts we need, as said before, to "lock future data", that is block the insertion of data that would satisfy a previous query made by a transaction.  
+Let's suppose that we have a table with two columns `A` and `B`  
+
+| A | B |
+| -- | -- |
+| data | data |
+| .. | .. |  
+
+Transactions T1 updates the data with the following command (pseudocode):  
+`T1: update B where A < 1`  
+The concept of predicate lock disallow other transactions to insert, delete or update any record that satisfies the predicate `A < 1`. This prevents phantom inserts because no other transaction can modify the data that T1 is working with.
+
+#### Isolation levels
+DBMS in practice allow to specify so called *isolation levels* for the transactions. These specify what anomalies we allow in order to achieve more concurrency and performance.  
+Not all transactions need to have the same isolation level, it can be set on a per-transaction basis.  
+These levels do not affect write locks that are **always kept until the decision point** (strict 2PL on write locks), regardless off the isolation level. If this doesn't occur we cannot ensure rollback in case of aborts, jeopardizing consistency (dirty write).  
+On the other hand we can have different levels for read locks:
+- READ UNCOMMITTED, no read locks  
+allowed anomalies: dirty reads, non-repeatable reads, phatom inserts, phantom updates
+- READ COMMITTED, read locks but not 2PL  
+allowed anomalies: non-repeatable reads, phantom inserts, phantom updates
+- REPEATABLE READ, read locks with 2PL  
+allowed anomalies: phantom inserts
+- SERIALIZABLE, read locks with 2PL and predicate locks  
+allowed anomalies: none (only advised for distributed transactions)
+
+Recap table
+| ISOLATION LEVEL | DIRTY READ | NON-REPEATABLE READ | PHANTOM UPDATE | PHANTOM INSERTS |
+| -- | -- | -- | -- | -- |
+| READ UNCOMMITTED | YES | YES | YES | YES |
+| READ COMMITTED | NO | YES | YES | YES |
+| REPEATABLE READ | NO | NO | NO | YES |
+| SERIALIZABLE | NO | NO | NO | NO |  
+
+#### Problems of locking: deadlocks and starvation
+##### Deadlocks
+Deadlocks happen when a transaction holds a lock that the another transaction needs and viceversa, blocking both transactions in a infinite wait. Of course more than two transactions can be involved in a deadlock, the idea is that there is a circular dependence between them (i.e. T1 waits for T2 that waits for T3 that waits for T1).  
+There are different approaches to deal with deadlocks:
+- timeouts: kill transactions that wait for longer than a certain threshold.  
+Impractical approach because it is difficult to correctly balance the timeout, transactions may require very different time to execute even within the same application.
+- prevention: killing transactions that could cause deadlocks.  
+Transactions are assigned an ID as they arrive. The heuristic that is used is that an older transaction should not wait for a younger transaction. If this happens the younger transaction is killed and restarted. Also this approach is inefficient because waiting does not imply that there is a deadlock so this leads to a lot of unnecessary kills.
+- detection: let deadlocks happen and resolve them when they occur.  
+Build the *waits-for* graph to detect cycles of waits and choose a transaction to kill according to some policy. Works in local DBMS.
+
+NOTE: detection in a distributed DBMS  
+OBERMARK'S ALGORITHM  
+Recontructs the whole dependency graph using only the view of a single node. Each node needs to exchange only minimal amount of information, node A sends info to node B only if:
+- A contains a transaction `T_i` that is waited for from another transaction and waits for `T_j` on B
+- `i < j` (or viceversa, it doesn't have a semantics) to ensure information is propagated only one way
+
+The algorithm is executed periodically at each node and consists in:
+- get graph info from previous nodes
+- update local graph with information from remote nodes
+- check if there are cycles
+  - yes: kill one in the cycle following some policy
+  - no: do nothing
+- send update to other nodes
+
+##### Deadlocks in practice
+If i have `n` records, assuming uniform distribution for accessing:
+- conflict probability is `O(1/n)`
+- deadlock probability is `O(1/n^2)`
+
+Still they do occur (once in a minute in a medium sized database) and long running transactions are more likely to deadlock.  
+There are techniques to limit the frequency of deadlocks:
+- update lock
+- hierarchical lock
+
+##### Update locks
