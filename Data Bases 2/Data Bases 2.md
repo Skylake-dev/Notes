@@ -289,3 +289,46 @@ There are techniques to limit the frequency of deadlocks:
 - hierarchical lock
 
 ##### Update locks
+Most deadlocks involves only 2 transaction and happen because they lock some resource in a shared way with the intention of upgrading it later.  
+Update locks allow to state the intention of upgrading the lock later in order to prevent other transactions to express the same will.  
+There are 3 possible lock request:
+- SHARED LOCK (SL): express the intention to read only
+- UPDATE LOCK (UL): express the intention to read and then upgrade to an exclusive lock later
+- EXCLUSIVE LOCK (XL): express the intention to write
+
+The interactions work as follows  
+| REQUEST | SL | UL | XL |
+| -- | -- | -- | -- |
+| SHARED LOCK | YES | YES | NO |
+| UPDATE LOCK | YES | **NO** | NO |
+| EXCLUSIVE LOCK | NO | NO | NO |
+
+Update locks are requested using the SQL statement SELECT FOR UPDATE.
+
+##### Hierarchical locks
+Locks can be specified with different granurality.  
+Objectives:
+- lock minimum amount of data
+- recognize conflicts as soon as possible  
+
+The idea that a transaction expresses the intention to lock a finer level of granularity (for instance: table -> page -> tuple -> field).  
+In addition to SL and XL there are 3 more locks:
+- ISL: intention to lock a sub-element of the current element in shared mode
+- IXL: intention to lock a sub-element of the current element in exclusive mode
+- SIXL: lock in shared mode with the intention to lock a sub-element in exclusive mode (basically SL + IXL)
+
+The protocol to lock is the following:
+- lock request starts from the root of the hierarchy and go down the levels
+- locks are released in reverse order, going up in the hierarchy
+- to request a lock on a given level the transaction must hold an equal or stricter lock at an higher level
+- locks requests are granted following this decision table
+
+| REQUEST | ISL | IXL | SL | SIXL | XL |
+| -- | -- | -- | -- | -- | -- |
+| ISL | YES | YES | YES | YES | NO |
+| IXL | YES | YES | NO | NO | NO |
+| SL | YES | NO | YES | NO | NO |
+| SIXL | YES | NO | NO | NO | NO |
+| XL | NO | NO | NO | NO | NO |
+
+Very useful approach to avoid locking an entire table if i only need to act on a small subset of the records. Of course when i want to perform the action i have stateted my intention to perform i have to get an actual SL or XL.
