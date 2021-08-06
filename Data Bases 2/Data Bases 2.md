@@ -332,3 +332,90 @@ The protocol to lock is the following:
 | XL | NO | NO | NO | NO | NO |
 
 Very useful approach to avoid locking an entire table if i only need to act on a small subset of the records. Of course when i want to perform the action i have stateted my intention to perform i have to get an actual SL or XL.
+
+#### Timestamp-based approaches
+A timestamp is a unique identifier that defines a total ordering of the events in a system. In a centralized system it is easy because all requests are on the same node, in a distributed system we can use the Lamport clocks to assign timestamps without a global clock.  
+For each element `x` the scheduler keeps two timestamps:
+- `RTM(x)` timestamp of the last transaction that read `x`
+- `WTM(X)` timestamp of the last transaction that wrote `x`
+
+The scheduler receives R/W requests with the timestamp `ts` of the transaction that issued it. The algorithm to grant access is the following:  
+
+```python
+read(x, ts):
+  if ts < WTM(x):
+    #reject and kill, the request is obsolete the value was updated
+  else:
+    #granted and update RTM if ts is more recent
+    RTM(x) = max(RTM(x), ts)
+
+write(x, ts):
+  if ts < RTM(x) or ts < WTM(x):
+    #reject and kill, someone younger already read the value or updated it
+  else:
+    #granted and update WTM
+    WTM(x) = ts
+```
+
+The schedules produced by this algorithm belong to the TS class. How do these schedules relate to the other?
+- 2PL: not comparable, there can be some schedules that are 2PL but not TS and viceversa.
+- CSR: TS is strictly included in CSR
+
+![VSR_CSR_2PL_TS_schedules](assets/VSR_CSR_2PL_TS_schedules.png)  
+
+We can have some optimizations to the basic TS algorithm to avoid killing transactions unnecessarily. For example Thomas rule changes condition to kill a transaction in writing:
+
+```python
+write(x, ts):
+  if ts < RTM(x):
+    #kill, a younger transaction already read the value
+  else if ts < WTM(x):
+    #the write has already been overwritten, can be skipped without killing
+  else:
+    #granted and update WTM
+    WTM(x) = ts
+```
+
+TS with Thomas rule is "bigger" than TS and sometimes can produce schedules that are not in CSR but still VSR.
+
+NOTE: TS and dirty writes  
+To prevent dirty reads a transaction that reads or writes and has a timestamp greater than WTM (`ts > WTM(x)` i.e. acceptable) must wait until the transaction that wrote that value has committed or aborted.
+
+#### Multiversion concurrency control
+IDEA: writes generate new copies (new versions) of data, a read request accesses the "right" value w.r.t. its timestamp.  
+Each write generates a new copy with its own timestamp for the write. In the end there are N copies each with its WTM_N. Old copies needs to be discarded when all transaction that could access it have completed.  
+With this mechanism the reads are always allowed (avoid killings) following the protocol:
+
+```python
+read(x, ts):
+  #always accepted and update the RTM
+  RTM(x) = ts
+  if ts < WTM(x):
+    #get latest value
+  else:
+    #get value k such that WTM_k(x) <= ts <= WTM_k+1(x)
+
+write(x, ts):
+  if ts < RTM(x):
+    #reject the request
+  else:
+    #new version and set WTM
+    WTM_n(x) = ts
+```
+
+This avoids the problem of killing long running transactions only because a newer and faster transaction has written some value in the database (which is a very common occurrence).
+
+The drawback of this approach (denoted as TS-multi) is that it can generate some schedules that are not even in VSR, so some long running transaction may not get the most up to date value but a value that was current when they started (the older version). 
+
+![TS_multi_schedules](assets/TS_multi_schedules.png)
+
+##### Snapshot isolation
+The typical implementation of multiversion in DBMS. It does not use RTM but only WTMs for each version.  
+Every transaction is assigned a timestamp and when it reads the DBMS gives it a value consistent with the timestamp (i.e. the value that there was when the transaction started).
+
+Snapshot isolation does not guarantee serializability. For example:
+
+T1: UPDATE Balls set Color=White where Color=Black  
+T2: UPDATE Balls set Color=Black where Color=White
+
+A serializable execution of these two transaction will leave all balls either white or black. Under snapshot isolation instead the result will be that the two colors have swapped. This anomaly is called **write skew**.
