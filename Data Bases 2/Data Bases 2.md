@@ -333,6 +333,8 @@ The protocol to lock is the following:
 
 Very useful approach to avoid locking an entire table if i only need to act on a small subset of the records. Of course when i want to perform the action i have stateted my intention to perform i have to get an actual SL or XL.
 
+NOTE: from the table we can see that intentional locks are always compatible with one another, onle when they are actualized there can be conflicts.
+
 #### Timestamp-based approaches
 A timestamp is a unique identifier that defines a total ordering of the events in a system. In a centralized system it is easy because all requests are on the same node, in a distributed system we can use the Lamport clocks to assign timestamps without a global clock.  
 For each element `x` the scheduler keeps two timestamps:
@@ -618,3 +620,5 @@ The set of leaf nodes is a dense index.
 
 Each node can hold `N-1` keys and must at least hold `floor(N-1/2)` (except for the root). The SKs are sorted `K_i < K_j with i < j`.  
 The idea of B+ tree is similar to a binary search tree except that with a larger fan out we can only have very few levels to access. This is good because each node that we need to access is an IOP from disk and we want to minimize them because they are the most expensive part of the processing.
+
+NOTE: B+ tree can also be used to store directly the tuples, the leaf nodes in this case contain directly the data.
