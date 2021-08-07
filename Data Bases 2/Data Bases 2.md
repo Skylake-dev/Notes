@@ -419,3 +419,202 @@ T1: UPDATE Balls set Color=White where Color=Black
 T2: UPDATE Balls set Color=Black where Color=White
 
 A serializable execution of these two transaction will leave all balls either white or black. Under snapshot isolation instead the result will be that the two colors have swapped. This anomaly is called **write skew**.
+
+## Pshysical database structure
+Databases must be stored on secondary (persistent) memory to achieve persistency.
+To operate on data we need to transfer them to the main memory.  
+I/O operation (IOP): moving a block from secondary memory to main memory (we assume page size = block size for simplicity).  
+How long does it take to transfer a block depends on the technology of the storage. For large databases HDDs are still the predominant solution due to the higher cost of SSDs. For a mechanical hard drive the time to perform an IOP is given by:  
+`T_iop = T_seek + T_rot + T_transfer`  
+where:
+- T_seek is the time to position the head (10-20 ms)
+- T_rot is the time that the head needs to wait to have the correct sector under it (2-8 ms)
+- T_transfer is the time to tranfer the data (<1 ms)
+
+Since the cost of accessing the secondary memory is 4 orders of magnitude higher than the cost of accessing the main memory we consider as "cost" for a query the time needed to access the data on the disk (I/O bound application).
+
+DBMS do not rely on the file system of the OS but directly manage the file organization, both the distribution of records between the blocks and the internal organization of the blocks.
+
+### Physical access structures
+Access methods: software modules that allow the system to access and manipulate data.  
+Access methods have their own data structures to manage data, each table has:
+- exactly one primary access structure
+- optional secondary access structures  
+
+![primary_and_secondary_access_structures](assets/primary_and_secondary_access_structures.png)  
+
+Primary structures contain all the tuples and have the purpose to store data.  
+Secondary strucutres are used to index the primary structure with the objective of speeding up the search of tuples in the primary structures.  
+There are 3 main types of structures:  
+| type | primary | secondary |
+| -- | -- | -- |
+| sequential | typical | not used |
+| hash-based | frequent | frequent |
+| tree-based | frequent | typical |
+
+Definitions:
+- block, physical component of files. The size of the block is fixed and decided by the file system.
+- tuple, logical component of files. The size depends on how the database is defined and often has variable size.
+
+Tuples are organized inside blocks in the following way:  
+
+![blocks_and_tuples](assets/blocks_and_tuples.png)  
+
+where:
+- page dictionary contains pointers to each useful item contained in the page
+- useful part contains the data
+- checksum is used to detect corrupt data
+
+The page dictionary and the useful part grow in opposite direction.  
+We call **block factor** the number of tuples that can fit in a block
+
+`B = floor(S_b / S_r)`
+
+where:
+- `S_b` is the block size
+- `S_r` is the tuple size
+
+The remaining space can be left empty or filled with a partial tuple (*spanned records*).
+
+Primitives to manipulate data:
+- insertion and update
+  -  may require page reorganization (e.g. to keep it sorted)
+  - may need a new page
+- deletion
+  - usually carried out by marking the tuple as invalid and the invalid tuples are periodically removed by the DBMS
+- access
+  - need to read the page dictionary to get the correct offset
+
+#### Sequential structures
+Tuples are arranged sequentially in the secondary memory. We can have different arrangements:
+- entry-sequenced, sequence dictated by the order of insertion
+- array, all tuples have the same size and are arranged into an array and accessed by its index
+- sequentially ordered, tuples are kept sorted according to the value of a key
+
+Each of these strucutures have its advantages and disadvantages.
+
+##### Entry-sequenced
+Optimal for:
+- space occupancy, uses all the blocks available within a file and all the space inside each block
+- sequential read and write, especially if the blocks are physically arranged in a sequential way
+
+Non optimal for:
+- querying a specific tuple, require scanning the entire file to look for a tuple
+
+##### Array
+Can only be used if tuples have all the same size, indexes are obtained by incrementing a counter. However this solution is not often used because fixed length tuples are not common.  
+The advantage is that operation on data are very simple.
+
+##### Sequentially ordered
+The main problems are:
+- inseretion, may need reordering
+- update, may increase the size of the tuple -> rearrange tuples
+
+To avoid global reordering of tuples at each operation we can use different techniques:
+- differential files, keep the difference in a separate file and periodically merge them in the database.
+- always keep some free space inside the block, only need to locally reorder inside the block.
+- *overflow files*, if i need to add a new block i just insert in the previous block a pointer to the new block forming an overflow chain.
+
+##### Recap
+| Operation | Entry-sequenced | Array | Sequentially ordered |
+| -- | -- | -- | -- |
+| INSERT | efficient | efficient | not efficient |
+| UPDATE | efficient (if size increases delete+insert new) | efficient | not efficient if size increases |
+| DELETE | mark invalid | mark invalid | mark invalid |
+| Tuple size | fixed or variable | fixed | fixed or variable |
+
+In practice in all DBMS the default behaviour for storing tuples in secondary storage is entry-sequenced associated with secondary access structures to speed up the search.
+
+#### Hash-based structures
+Associative access to data based on the hash of a key field. These structures have `N_B` buckets, hash function maps the key value to a value between `0` and `N_B - 1`, that represent the index of the bucket in which that tuple belongs to.  
+This strcuture are very efficient for queries with equality predicates on the key, while they are not good with intervals.
+
+Collision (i.e. keys that yield the same hash) must be handled:
+- closed hashing, try to find some space in the next bucket of the table (not used in DBMS)
+- open hashing, append another bucket to the current one (also called overflow bucket)
+
+![hash_based_structures_with_open_hashing](assets/hash_based_structures_with_open_hashing.png)
+
+The advantage of this structure as we said is in accessing a specific record since it requires few IOPs (only 1 if no overflow bucket). We can estimate the average number of block by estimating the average length of the overflow chain that is a function of:
+- the block factor `B`
+- the load factor `T/(B*N_B)`, the percentage of space used in the hash table (we usually want a load factor between 50% and 80% to maintain the hash table efficient).
+
+![average_length_of_overflow_chain](assets/average_length_of_overflow_chain.png)
+
+For example:
+- `B = 3`
+- load factor = 70%
+
+Then the average length of the overflow chain is ~0.3 (from table).  
+The number of IOPs needed on average is 1,3, that is 1 to access the first bucket and 0,3 on average to access the second bucket (i access the second bucket only 30% of the times).
+
+#### Indexes
+Secondary access structures to speed up search:
+- efficiently retrieve tuples based on a search key
+- contain records in the form of `SEARCH-KEY:POINTER`
+
+Notation:
+- SK = search key
+- OK = ordering key (for sequentially ordered strucutres)
+- PK = primary key
+- FK = foreign key
+
+##### Primary index
+For sequentially ordered primary access structures
+- SK is the same used to order the structure (OK)
+- only one primary index can be defined
+- usually is built upon the PK of the table
+
+Can be a dense index, with an entry for each tuple
+
+![sequentially_ordered_primary_index_dense](assets/sequentially_ordered_primary_index_dense.png)
+
+or sparse, aggregating tuples tha belong to the same block
+
+![sequentially_ordered_primary_index_sparse](assets/sequentially_ordered_primary_index_sparse.png)  
+
+The advantage of a sparse index is that it saves space but it is generally slower in locating the tuple.
+
+##### Secondary index
+Can be used independetly from teh physical organization of the blocks:
+- SK specifies a different order from the file
+- multiple secondary indexes can be defined on different SK
+
+![secondary_index](assets/secondary_index.png)
+
+Secondary indexes can be defined also on generic attributes, not necessarily key so multiple tuples can share the same value. In this case, for each value we point to a bucket that contains the pointers to all the tuples that contain that value.
+
+![secondary_index_non_unique_values](assets/secondary_index_non_unique_values.png)
+
+MEMO: the SK is not necessarily the PK of the table.  
+PK:
+- set of attributes that allows to uniquely identify a tuple
+- doesn't imply an access path
+- can be implemented using indexes
+
+SK:
+- physical implementation of access structures
+- define an access path
+- maybe unique or not
+
+##### Hash-based structures as indexes
+Exactly the same structure but instead of containing tuples it contains a pointer to the tuple.  
+Offers good performance for equality predicates but are inefficient for interval predicates and values of non SK attributes. They require 2 IOPs to retrieve a tuple assuming no overflow chains, 1 for the bucket and 1 for the block containing the tuple.
+
+![hash_based_structures_for_indexing](assets/hash_based_structures_for_indexing.png)  
+
+#### Tree-based structures as indexes: B+ tree
+Most used way to index data. The B+ tree (B = balanced) is the most used one.  
+It is a multi level index with one root and several intermediate and leaf nodes. Each node is stored in a block and has a large *fan out* (number of children), therefore the majority of the blocks are leaves and there are few levels.
+
+![B+_tree](assets/B+_tree.png)
+
+The nodes of a B+ tree are organized as follows:
+- leaf node  
+![B+_tree_leaf_node](assets/B+_tree_leaf_node.png)  
+The set of leaf nodes is a dense index.
+- intermediate node  
+![B+_tree_intermediate_node.png](assets/B+_tree_intermediate_node.png)
+
+Each node can hold `N-1` keys and must at least hold `floor(N-1/2)` (except for the root). The SKs are sorted `K_i < K_j with i < j`.  
+The idea of B+ tree is similar to a binary search tree except that with a larger fan out we can only have very few levels to access. This is good because each node that we need to access is an IOP from disk and we want to minimize them because they are the most expensive part of the processing.
