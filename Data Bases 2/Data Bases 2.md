@@ -622,3 +622,98 @@ Each node can hold `N-1` keys and must at least hold `floor(N-1/2)` (except for 
 The idea of B+ tree is similar to a binary search tree except that with a larger fan out we can only have very few levels to access. This is good because each node that we need to access is an IOP from disk and we want to minimize them because they are the most expensive part of the processing.
 
 NOTE: B+ tree can also be used to store directly the tuples, the leaf nodes in this case contain directly the data.
+
+#### Indexes in SQL
+Indexes are generally managed by the DBMS but can be explicitly created or deleted  by the user with SQL commands:
+- `create [unique] index *index_name* on *table_name* [attribute_list]`
+- `drop index *index_name*`
+
+Every table should have:
+- a suitable primary storage, possibly key-sequenced
+- several secondary indexes both unique and not unique on the attributes most used for selects and join operations
+
+However, since indexes require to be updated together with the data, they should be created only if they are actually going to be used and provide benefits otherwise they just slow down data manipulation.
+
+##### Guidelines for choosing indexes
+What to index:
+- primary key (often done automatically by the engine)
+- columns often used as secondary keys
+- foreign keys
+- columns used for joins, group by, order by
+
+Avoid indexing:
+- small tables
+- frequently updated columns
+- when queries retrieve a significant part of the data
+- columns that consist of long character strings
+
+### Query optimization
+SQL queries need to be translated into read and write operation on data. This process involves a few steps:
+- lexical, syntactical and semantical analysis of the query
+- translation into an internal representation (something like the query tree of the relational algebra)
+- **algebraic optimization**
+- **cost-based optimization**, the query may be rewritten by the DBMS
+- code generation
+
+Optimizations can be done in different ways. Depending on the physical structure of the data different implementation of the operators may be used.  
+DBMS also store simple statistics of the data, for example:
+- number of tuples in a table
+- min/max value of columns
+- number of distinct values of a given attribute
+
+This data can be used to determine which optimization to apply. In particular we can define the *selectivity*.  
+The selectivity of a predicate is the probability that any row will satisfy that predicate. Assuming that we have `N` different values for a given attribute and the values are uniformly distributed we have that the selectivity is `1/N`.  We assume a uniform distribution unless stated otherwise.
+
+#### Costs of queries
+MEMO: we evaluate the cost of a query based on the number of IOPs required, for example if a query has cost 10 it means that it requires 10 IOPs.  
+Lookups:
+- equality predicates
+  - sequential structures require a full scan, if they are sequentially ordered may have cost reduced (stop the scan when the value is found or a higher value is reached).
+  - hash/tree structures support equality predicates if the attribute that is queried is the index key, the cost depends on the storage type (primary/secondary) and if the value is unique or not.  
+  Example (see all examples on the slides):  
+  query: `SELECT * FROM student WHERE id=54`
+  hash built on students id:
+    - if it's primary storage the cost is `1 + average length of overflow chain`
+    - if it's secondary storage the cost is `1 + average length of overflow chain` for retrieving the pointer + `1` to access the block containing the id
+- intervals
+  - sequential structures require a full scan, if they are sequentially ordered may have cost reduced (stop the scan when the end of the interval is reached).
+  - hash structures do not support interval lookup.
+  - tree strucutres support interval lookups if the lookup is on the key on which the structure is built, the cost depends on the storage type (primary/secondary) and if the value is unique or not.  
+  Like before the cost depend on the specific structure:
+    - primary storage tree: `1 for each intermediate node` + `N leaves required to retrieve all tuples`
+    - secondary storage tree: `1 for each intermediate node` + `N leaves required to retrieve all the pointers` + `1 for each pointer (N*pointers-per-leaf)`
+- predicate conjuction `AND`  
+If one or more predicates are supported by indexes start from the most selective one (i.e. the one that retrieves less tuples) and evaluate the others in main memory.
+- predicate disjunction `OR`  
+If any of the predicates involved is not supported by an index then a full scan is required. Can only use indexes if all predicates are supproted and require elimination of duplicate result (i.e. tuples that satisfy more than one index).
+- sorting operation  
+If the data is too large to fit in memory special algorithms need to be used that allow to sort data loading them in a few chunks at a time. We consider the *external merge sort*. Assuming that we need to sort `N` blocks of data using only `B < N` buffer pages in memory, the steps are the following:
+  - read `B` blocks at a time in memory and sort them
+  - write sorted data to a *run* file (each run is `B` blocks)
+  - the total number of runs is `ceil(N/B)`
+  - merging step: select `B-1` blocks from the different runs and use the remaining block (*output buffer*) to merge them. when the output buffer is full write it to disk and continue. When an input block has been completely used, load the next until the run file is finished
+  - this produces a run of length `B(B-1)` (B blocks in each run * B-1 runs used) -> each pass merges B-1 contigous runs
+  - repeat until all runs have been merged into one (each pass reduces the number of runs by a factor of `B-1` and create longer runs of the same factor)  
+  Example N=40 B=5:
+  - initial runs: `ceil(40/5) = 8`, each of 5 pages. To do this steps 40 read and 40 writes are needed
+  - now we merge the runs using `B - 1 = 4` input pages and `1` output page. Load the first 4 runs and produce a `B(B-1) = 5*4 = 20 pages` run. Same for the next 4 runs.  
+This requires another 40 + 40 IOPs
+  - second pass: merge the two 20 pages runs into the final sorte run of length 20*2 = 40 pages, requiring another 40 + 40 IOPs.
+  - In total we had 3 passes, the initial pass and the two merge pass. Each pass requires reading and writing all `N` blocks, that is `2N` cost.  
+  The total cost in terms of IOPs is `2N * # of passes`.
+- join operations  
+There are several strategies to perform the joins, choosing the optimal one depends on many factors:
+  - NESTED LOOPS  
+  Cycles on the *external table* and for each block cycles on the *internal table*. The cost is `blocks in t_ext + blocks in t_ext * blocks in t_int`. There are slight savings if we put the smallest table as external, however if one of the table is small enough to fit in memory its more convenient to load it once and keep it there using it as an internal table, decreasing the total cost to `blocks in t_ext + blocks in t_int`
+  - SCAN AND LOOKUP (nested loops with indexes support)  
+  If one table supports indexed access in the form of a lookup based on the join predicate this table can be used as internal and instead of cycling through it we can do a lookup. If both table support index choose as internal the most selective.  
+  The cost is `blocks in t_ext + tuples in t_ext * cost of indexed lookup in t_int` (note that a lookup must be done for each tuple not for each block!)
+  - MERGE-SCAN JOIN  
+  **Only possible if both tables are ordered according to the same key, that is also the attribute used in the join predicate.**  
+  Scan the two tables and merge them according to the join predicate.  
+  Cost: linear `blocks in t1 + blocks in t2`  
+  NOTE: if the tables are not sorted we can still use this method but we need to sort them first, so the cost increases.
+  - HASHED JOIN  
+  **Only possible if both tables are hashed according to the same key, that is also the attribute used in the join predicate.**  
+  The matching tuples can only be found in the correspoing buckets.  
+  Cost: linear `blocks in t1 + blocks in t2`.
