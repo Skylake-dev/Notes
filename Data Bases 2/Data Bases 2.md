@@ -717,3 +717,113 @@ There are several strategies to perform the joins, choosing the optimal one depe
   **Only possible if both tables are hashed according to the same key, that is also the attribute used in the join predicate.**  
   The matching tuples can only be found in the correspoing buckets.  
   Cost: linear `blocks in t1 + blocks in t2`.
+
+#### Cost-based optimization
+The query optimizer needs to make decision in a short time on how to execute the query:
+- how to access the data (scan vs index)
+- order of joins
+- method to use for each join
+
+The optimizer can also improve performance by parellelizing tasks or use a pipeline approach.
+
+The process of optimizing the query is done by building *decision trees* where each node corresponds to a choice and each leaf is a specific execution plan.
+
+![decision_tree_for_query_optimization](assets/decision_tree_for_query_optimization.png)
+
+Then a cost is assigned to each plan  
+`cost = C_io*N_io + C_cpu*N_cpu`  
+The plan with the lowest cost is selected.  
+Queries can be stored (*compile and store* approach) to execute them directly next time they are encountered. There needs to be some management to invalidate stored queries when the parameters for which they were computed change. Another approach is *compile and go* where the query is executed and not stored (the code can be available in the DBMS for a while even if not stored).
+
+## Reliability control
+Reliability: the ability of an item to perform a required
+function under stated conditions for a stated period of time.
+
+In a DBMS the reliability manager is in charge of ensuring the atomicity and durability of transactions:
+- realizes commit/abort commands
+- orchestrates read and write access to pages
+- handles recovery after a failure
+
+The key components to ensure reliability are:
+- stable memory, abstraction of secondary memory that cannot be damaged. In practice this is implemented using replication of data, both online (RAID) and offline (backups).
+- log management, all operation are logged to the disk
+
+All systems need to find a compromise between stability and performance. For this reason a *buffer* is kept in main memory and writes on disk are delayed. The buffer is organized in pages, each page contains:
+- a transaction counter to keep track of how many transactions are using that specific page
+- dirty flag to specify if it has been modified
+
+On a dedicated DBMS server up to 80% of the main memory can be allocated only for the buffer.
+
+The following primitives are used to interact with the buffer:
+- FIX, loads a page from disk to main memory and increments the transaction counter. The algorithm to load a page consists in:
+  - if the page is already present (HIT) -> increment counter
+  - if it isn't, select a free (i.e. transaction counter = 0) page, flush on disk if it is dirty and load the new page
+  - if there aren't any free pages there can be two approaches:
+    - STEAL: evicts a page from memory to load the new one
+    - NO STEAL: the transaction that requested the page needs to wait (default)
+- UNFIX, deallocates a page from the buffer and decrements its counter
+- FORCE, transfer synchronously a page from buffer to disk (off by default)
+- SET-DIRTY, sets the dirty flag of the page
+- FLUSH, transfer asynchronously (i.e. when transaction counter = 0) a page from buffer to the disk
+
+The buffer can use prefetching and preflushing to speed up operations.
+
+### Failure handling
+In case of failures a transaction can have different outcomes:
+- COMMIT -> success
+- ROLLBACK or failure before COMMIT -> UNDO (ensures atomicity)
+- failure after COMMIT -> REDO (ensures durability)
+
+To perform undo and redo of operation a log is kept with all the operation done by each transaction.
+
+#### Transactional log
+A transactional log is a sequential file made of records that describe the actions taken by the transactions:
+- update operation, save before and after value
+- insert/delete, similar to update but there is no before/after value
+
+After a failure transactions can be replayed using the log file.  
+NOTE: undo and redo operation are idempotent. This is important because in case we are unsure of the outcome of certain operation we can undo/redo them without worrying about damaging the system, in the worst case they are just unnecessary.
+
+To make sure that the log is useful we need to observe some rules on how to use it:
+- when a transaction commits write synchronously (force) to the log file to record the decision
+- the log must be written ahead of time, first a transaction states the intention of doing an operation to the log and after it performs the operation. This ensures that actions can always be undone.
+- a transaction, before committing, needs to write the after state to the log. This ensures that actions can always be redone.
+
+The write operations done by a transaction can be done at different point in time depending on the implementation:
+- before commit, redo is not necessary because the state of the log reflects the state of the database
+- after commit, undo not necessary and doesn't need to write the before states to abort because data are not modified until after the commit
+- arbitrary, allow to optimize the buffer management but in general requires both undo and redo in case of failures
+
+#### Types of failures
+- SOFT FAILURE
+  - loss of the content of the main memory (i.e. require a reboot)
+  - log is exploited to replay transactions
+  - requires a warm restart
+- HARD FAILURE
+  - loss of part of the secondary memory content
+  - a dump (backup) is used to restore database content and the log is used to replay operations
+  - requires a cold restart
+- DISASTER
+  - loss of stable memory (i.e. log + dump)
+
+To make replay of operation easier the reliability manager periodically performs *checkpointing* to identify consistent time points and saves the checkpoint to the log file. Everything that comes before the checkpoint is considered stable, only what comes after in the log needs to be analyzed to determine the necessary undo and redo.
+
+There can be many different implementation of the checkpointing, the idea is the following:
+- suspend acceptance of commit and abort requests
+- all dirty pages modified by committed transactions are forced to disk (also the log if it was not already saved on disk)
+- the IDs of the transactions that are still in progress are saved in a CKPT record in the log file (*active* transactions)
+- resume acceptance of commit/aborts
+
+In this way the reliability manager can guarantee that:
+- for all committed transactions, their data are saved to mass storage
+- transactions that are still in progress are listed in the CKPT record
+
+WARM RESTART  
+- use the most recent CKPT record to identify active transactions
+- divide in undo and redo set
+- undo and/or redo the operations
+
+COLD RESTART  
+- restore data from the latest dump (backup)
+- execute all operations recorded on the log until failure time. This is done to bring back the state that was there before the failure
+- now a warm restart is performed to undo uncertain transactions
