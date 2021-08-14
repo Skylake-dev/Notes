@@ -827,3 +827,94 @@ COLD RESTART
 - restore data from the latest dump (backup)
 - execute all operations recorded on the log until failure time. This is done to bring back the state that was there before the failure
 - now a warm restart is performed to undo uncertain transactions
+
+## Active databases: triggers
+Introduce reactive behaviour in databases.  
+A trigger is a set of actions that are automatically executed when an insert/update/delete operation is performed.  
+ECA paradigm for triggers:
+- Event, a modification of the database status
+- Condition, a predicate that identifies those situations in which the execution of the trigger’s action is required
+- Action, a generic update statement or a stored procedure can also involve some error notification to the application
+
+When the event happens the trigger is *activated*, then the predicate is *considered* and, if the predicate is satisfied, the trigger is *executed*.
+
+### Syntax
+The syntax for a generic trigger is the following:  
+MEMO:
+- curly brackets --> choose one of the options
+- squared brackets --> optionals
+
+```SQL
+create trigger <trigger_name>
+{before | after}
+{insert | delete | update [of <column>]} on <table>
+[referencing (to put aliases on old, new, etc)]
+[for each {row | statement}]
+[when condition]
+<SQL_procedural_statement>
+```
+
+In the trigger there are specified many parameters:
+- execution mode
+  - before, the trigger is executed before the event is applied to the database. Typically used to check and validate modification before it happens and possibly prevent or modify it.
+  - after, the trigger is executed after the event is applied to the database. It is the most common mode and it is suitable for many applications.
+- granularity
+  - for each statement, the trigger is considered only once per activating statement, independently from the number of tuples affected by the change. The modification are stored in two transition tables `old table` and ` new table` containing the old and the new values of all the affected rows.
+  - for each row, the trigger is considered once for each tupleaffected by the activating statement. Easier to write but can be less efficient. The modifications are stored in two transition variables `old` and `new` that represent the prior and following value of the row that is being considered.
+
+If there are several triggers associated with the same event the SQL standard prescribes the following execution policy
+| BEFORE | EVENT | AFTER |
+| -- | -- | -- |
+| statement -> row | modifications + integrity checks | row -> statement |
+
+If more than one trigger is present for each category the order is not specified. However many DBMS allow to specify a specific order or priority rules between triggers.
+
+### Trigger design
+Since actions performed by a trigger may activate other triggers it is necessary to pay attention to this during the design process in order to guarantee two properties:
+- termination, no event can generate an infinite sequence of trigger activations
+- confluence, triggers terminate and produce a unique final state, independent of the order in which triggers are executed
+
+#### Termination analysis
+Several techniques exist, mostly based on graphs. The most simple to apply is the *triggering graph*:
+- each trigger is associated to a node `T_i`
+- an arc is drawn from node `i` to node `j` if the execution of trigger `T_i`'s action may activate trigger `T_j`
+
+In the end we can have two outcomes:
+- acyclic graph -> there cannot be infinite trigger activation
+- contains cycles -> infinite activations *may* be possible
+
+### Trigger execution
+Triggers are handled within Trigger Execution Contexts (TECs). If a trigger activates another trigger the execution of the second trigger is handled in its own "inner" TEC. This execution mode is called *recursive*: as soon as an event that activates a trigger is generated the corresponding trigger is executed (recursively). When it ends the first trigger can go on. If a certain depth threshold is exceeded the execution is halted rising a *nonterminating exception*
+
+There can also be an *iterative* execution of the triggers: first executes the initial trigger and hold the other events that are generated. When the first trigger ends tha other triggers are considered and possibily executed.
+
+In case of failures during the activation chain of trigger  causes a rollback of the activation event and all the actions performed by the triggers.
+### Extensions
+Commercial DBMS have extended the standard behaviour of triggers.
+
+#### Execution mode
+Describes the connection between the activating event E and the consideration/execution (CA) phases:
+- immediate: handles the trigger together with the activating event
+- deferred: trigger handled at the end of the transaction that generated the event, just before commit
+- detached: the trigger is handled is a separate transaction
+
+The execution mode can influence how the trigger should be written.
+
+#### Extended events
+Extends the possible set of activating event:
+- scheduled triggers
+- react on system events
+- react on user defined events
+- on specific queries
+- boolean combination of normal event (e.g. activate if any of these event happens)
+
+#### Other extensions
+- definition of trigger priority
+- activate/deactivate some triggers
+- organize triggers into logical groups
+
+### Conclusion on triggers
+They have the advantage of centralizing the management of semantics at the database level instead of having to replicate it for each application that needs to interact with the database.  
+They can guaranteed properties of data that cannot be specified by simple integrity constraints.
+
+However there are also some drawback, mainly due to the different implementation of the standard by different DBMS and different proprietary extensions. Portability across DBMS can be difficult, always document triggers if used.
