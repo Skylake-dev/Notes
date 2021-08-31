@@ -69,7 +69,7 @@ When to apply?
 - task for which there is no human expert
 - where it is too difficult to write a program to do it (remember image classification example)
 - the desired function changes frequently
-- each user needs a customized function(e.g. spam filtering)
+- each user needs a customized function (e.g. spam filtering)
 
 #### Essence
 We want to approximate the **unkwown** function `f` given the dataset `D`. The steps are:
@@ -81,7 +81,7 @@ We want to approximate the **unkwown** function `f` given the dataset `D`. The s
   - search the best function in `H` that minimizes our loss function.
 
 The size of the hypothesis space depends on the sample that we have --> the larger `H` the more samples we need.  
-Also we do not have the true loss function but only the empirical loss function given by the samples that we have --> it's only an approximation of the true loss and can be (very) noisy. The more samples we have the more `L` will be close the true loss (is the true loss if we have infinite samples).  
+Also we do not have the true loss function but only the empirical loss function given by the samples that we have --> it's only an approximation of the true loss and can be (very) noisy. The more samples we have the more `L` will be close the true loss (it is the true loss if we have infinite samples).  
 It is not possible to learn complex models with few data --> will lead to overfitting. Choosing the right `H` is the most difficult task in supervised learning.  
 
 NOTE: assumption of supervised learning is that the distribution of the dataset is the same of the real world data we will observe, if not we need to take this into account and basically it is like having fewer samples.
@@ -149,7 +149,7 @@ Examples:
 - gaussian
 - sigmoidal
 
-This is very useful because often the input variables are not linearly related to the target but there can be more complex relationships and all of these cann be modeled using linear models.
+This is very useful because often the input variables are not linearly related to the target but there can be more complex relationships and all of these can be modeled using linear models.
 
 Different approaches to supervised learning:
 - statistical
@@ -170,17 +170,17 @@ We can optimize it in closed form:
 - assuming the second derivative is a non singular matrix we can compute the parameters (gradient = 0)  
 ![RSS_optimal](assets/RSS_optimal.png)
 
-The computational complexity of this method `O(NM^2 + M^3)` where `N` is the number of samples and `M` is the number of features, so it becomes unpractical for large number of features. Where is the matrix singular (and therefore i cannot compute inverse)?
+The computational complexity of this method `O(NM^2 + M^3)` where `N` is the number of samples and `M` is the number of features, so it becomes unpractical for large number of features. When is the matrix singular (and therefore i cannot compute inverse)?
 - linearly dependent features
 - more features than samples
 
 NOTE: it is always positive semidefinite.
 
-If we have too many feature we can avoid using the closed form solution and use instead the **gradient approximation**  
+If we have too many features we can avoid using the closed form solution and use instead the **gradient approximation**  
 ![RSS_gradient_approximation](assets/RSS_gradient_descent.png)  
 This is guaranteed to converge if the learning rates `α` comply with the following conditions (e.g. `1/k` satisfies both conditions):  
 ![convergence_conditions](assets/convergence_conditions.png)  
-This iterative approach has a quadratic complexity and therefore more convenient if the number of iteration is lower than the number of features.
+This iterative approach has a quadratic complexity and therefore more convenient if the number of iterations is lower than the number of features.
 
 ### Maximum Likelihood (ML)
 Discriminative approach where we assume that the target value is given by:  
@@ -211,8 +211,8 @@ NOTE:
 - unbiased estimators are not always the best approach, as we will see low bias means high variance so there are trade-offs to be made.
 
 ### Overfitting and underfitting
-- low order polynomial (small hypothesis space) lead to underfitting, performs bad both on data and on generalization
-- high order polynomial (big hypothesis space) yield excellent performance on the training data but generalize very poorly on new data because it is a poor representation of the true function.
+- low order polynomial (small hypothesis space) leads to underfitting, performs bad both on data and on generalization
+- high order polynomial (big hypothesis space) yields excellent performance on the training data but generalize very poorly on new data because it is a poor representation of the true function.
 
 Increasing the size of the hypothesis space always lead to reducing the training error but the true error raises.
 
@@ -229,13 +229,13 @@ Constraints the value of the weights by adding a penalization factor in the loss
 where:
 - `Ld(`**`w`**`)` is the error on the data (e.g. RSS)
 - `Lw(`**`w`**`)` is the model complexity (e.g. squared sum of the norm of the weights)
-- `λ` is a parameter that we can tweak to decide how "heavy" we want to regularize (usually very small: 10^-8 to 10^-6)
+- `λ` is a parameter that we can tweak to decide how "heavily" we want to regularize (usually very small: 10^-8 to 10^-6)
 
 The optimized weights are computed in a similar way as RSS and ML:  
 ![ridge_optimal](assets/ridge_optimal.png)  
 The effect of this technique is to "smooth" the value of the parameters uniformely towards 0 (avoid overfitting) while still maintaining a closed form solution. I can use this approach also to test models with many features to see how they work.
 
-NOTE: another intesting point is that the matrix is always invertible.
+NOTE: another interesting point is that the matrix is always invertible.
 
 - LASSO REGULARIZATION
 
@@ -270,7 +270,7 @@ Thanks to the prior we can avoid overfitting and there is no need to regularize,
 Using a gaussian prior is very useful in a scenario when we have sequential data (prior --> new data --> posterior --> use posterior as new prior --> new data --> new posterior --> ...) because this ensures that the posterior will also be a gaussian (so i can iterate the process indefinitely). If the prior and posterior are distributions in the same family we say that the prior is a *conjugate prior* and this allows to have a closed form solution:  
 ![closed_form_bayesian](assets/closed_form_bayesian.png)  
 As we can see:
-- **`w_N`**, the mean of the new posterior, depends on the mean of the prior and the OLS solution, in particular if we choose a prior with 0 mean and variance this approaches reduces to ridge regression.
+- **`w_N`**, the mean of the new posterior, depends on the mean of the prior and the OLS solution, in particular if we choose a prior with 0 mean and variance this approach is reduced to ridge regression.
 - with infinite variance (uniform distribution) it is reduced to ML.
 
 The more data we have the less the prior becomes relevant in determining the posterior distribution (for lots of data it is usually preferred to use ML since it is cheaper to compute BUT yields a point prediction instead).
@@ -311,36 +311,36 @@ Similarly to regression we can have different approaches:
 - discriminant function (direct approach), build a function that directly maps input to classes, does not output a probability value of an input belonging to other classes
 
 ### Discriminant function
-We start with the 2 classes case using a linear model(spoiler alert: not a good idea to use a linear model):
+We start with the 2 classes case using a linear model (spoiler alert: not a good idea to use a linear model):
 - we pick a linear model (e.g. the same as logistic regression)
 - explicitate the boundary
   - assign to `C_1` if `y(`**`x`**`) >= 0`
   - assign to `C_2` otherwise
-- if we compute the parameters of our model we obtain that it is orthogonal to the decision surface.
+- if we compute the vector of the parameters of our model we obtain that it is orthogonal to the decision surface.
 
 What if i have `K` classes?
 - ONE-VERSUS-THE-REST
-  - `K-1` classifiers, each classifies if it belongs to one class or all the others. Can lead to ambiguous points
+  - `K-1` classifiers, each classifies if it belongs to one class or all the others. Can lead to ambiguous points.
 - ONE-VERSUS-ONE
-   - `K(K-1) / 2` classifiers, one for each pair of classes, leads to similar problems of ambiguous
+   - `K(K-1) / 2` classifiers, one for each pair of classes, leads to similar problems of ambiguity.
 
-How do we solve this ambiguitly?  
-Assign the class based on the largest value(remember that the output represents the probability). the advantage in doing this is that the decision boundaries are singly connected and convex.
+How do we solve this ambiguity?  
+Assign the class based on the largest value (remember that the output represents the probability). The advantage in doing this is that the decision boundaries are singly connected and convex.
 
 #### Least squares for classification
 The idea is to use linear regression for each target class using K models.
 
 PROBLEMS:
 - outliers: very sensitive to outliers because it will try to "bend" the linear model towards those outliers to reduce the squared error, moving the decision surface and causing misclassification.
-- non-gaussian distribution in the target noise, since linear regression
+- non-gaussian distribution in the target noise, since linear regression assumes to have a gaussian distribution for the noise.
 
-#### Fixed basis function
-As seen for regression, we do not have to find linear boundaries in the input space but we can define a feature space in which the boundaries are linear, obtained by transforming the input using vectors of basis functions `Φ(`**`x`**`)`.
+#### Fixed basis functions
+As seen for regression, we do not have to find linear boundaries in the input space but we can define a feature space in which the boundaries are linear, that is obtained by transforming the input using vectors of basis functions `Φ(`**`x`**`)`.
 
 #### Perceptron
 Oldest approach to classification, it is a two class model  
 ![perceptron](assets/perceptron.png)  
-where +1 correspond to class `C_1` and -1 to `C_2`.  
+where `+1` correspond to class `C_1` and `-1` to `C_2`.  
 The idea is to find the separating plane by minimizing the sum of the distance of the misclassified points from the decision boundary.  
 The loss function to be minimized is the following  
 ![perceptron_loss_function](assets/perceptron_loss_function.png)  
@@ -352,14 +352,14 @@ This can be optimized using gradient descent
 ![perceptron_gradient_descent](assets/perceptron_gradient_descent.png)  
 The value of the learning rate `α` is not relevant since the separating plane does not change with the value of `w` (is a vector orthogonal to the plane), so we can put `α = 1` (the opposite from regression where `α` had to respect certain conditions). 
 
-The alghorithm iterates over all the points until all the points are correctly classified. It is guaranteed to converge if the points are linearly separable (but if they aren't it never stops, it is semidecidable --> cannot distinguish between non separable and slowly convergence by running the algorithm). If there are more than one solutions the one that is found depends on the order in which we inspect the points.  
+The alghorithm iterates over all the points until all the points are correctly classified. It is guaranteed to converge if the points are linearly separable (but if they aren't it never stops, it is semidecidable --> cannot distinguish between non separable and slow convergence by running the algorithm). If there is more than one solutions the one that is found depends on the order in which we inspect the points.  
 
 ### Probabilistic discriminative model: logistic regression
 We want to learn the probability for a certain element to belong to a certain class. We start with the 2 classes scenario:  
 ![sigmoid_logistic_regression](assets/sigmoid_logistic_regression.png)  
-the probability of belonging to the second class is given by  
+the probability of belonging to the second class is given by:  
 `p(C_2|Φ) = 1 - p(C_1|Φ)`  
-We use the non-linear [sigmoid function](https://en.wikipedia.org/wiki/Sigmoid_function), also known as logistic function, hence the name. As we said before, the model is non linear in **`w`** but if we put a threshold on the probabilty to have a linear decision surface.
+We use the non-linear [sigmoid function](https://en.wikipedia.org/wiki/Sigmoid_function), also known as logistic function, hence the name. As we said before, the model is non linear in **`w`** but we can put a threshold on the probabilty to have a linear decision surface.
 
 #### Maximum likelihood for logistic regression
 To train the parameters of the logistic regression we use maximum likelihood, by finding the weights that maximize the likelihood of getting the right label:  
@@ -392,13 +392,13 @@ Machine learning can only work if generalization of the problem is possibile -->
 
 COROLLARY:  
 For any two learners `L_1`, `L_2`  
-if there exist a problem s.t. `ACC_g(L1)` > `ACC_g(L2)`   
-then there existis a problem s.t `ACC_g(L2)` > `ACC_g(L1)`  
+if there exists a problem s.t. `ACC_g(L1)` > `ACC_g(L2)`   
+then there exists a problem s.t `ACC_g(L2)` > `ACC_g(L1)`  
 
 This means that there is no one technique that is always superior to another, the correct (best) technique to use depends on the problem. Do not expect your favourite learner to always be the best :^).
 
 ## Bias-Variance trade-off
-Assume to have a dataset `D` generated by a function `t = f(`**`x`**`) + ε` , where `ε` is a gaussian noise. We want to consider that function. Let's considere the expected squared error:  
+Assume to have a dataset `D` generated by a function `t = f(`**`x`**`) + ε` , where `ε` is a gaussian noise. We want to consider that function. Let's consider the expected squared error:  
 ![bias_variance_decomposition](assets/bias_variance_decomposition.png)   
 where:
 - `Var[t]` is the variance of the noise (irreducible)
@@ -413,14 +413,15 @@ Ideally we want to minimize both variance and bias to have the smallest possible
 So when we have a large number of samples we want to use unbiased estimators since this will reduce the variance and so the total error. On the other hand we have to use biased estimators when we have a few samples to compensate for the high variance.
 
 ### Training error and prediction error
-Given a dataset `D` with `N` samples we can choose a loss function to measure the error of our model on our samples. This is what we have focused so far using for example RSS. The problem of considering only the train error does not take into account the variance, it reprensents only the bias of the model.  
+Given a dataset `D` with `N` samples we can choose a loss function to measure the error of our model on our samples. This is what we have focused so far using for example RSS. The problem of considering only the train error is that it does not take into account the variance, it reprensents only the bias of the model.  
 
 What we want to estimate to select our model is the true error (prediction error). How can we do so?  
 - split dataset in training set and test set
 - train over training set
 - evaluate performance over test set  
 ![train_and_prediction_error](assets/train_and_prediction_error.png)  
-How do we split depends on the problem and the samples that we have.
+
+How we split the data depends on the problem and the samples that we have.
 
 IMPORTANT:  
 Do not use test samples to select our model, we need to use it only in the end to evaluate performance or else it is like we are using the test error for learning (training).  
@@ -462,7 +463,7 @@ If we want to compare a lot of model on the same validation set we will overfit 
 
 LEAVE-ONE-OUT CROSS VALIDATION (LOO)  
 We build `N` validation sets in this way:
-- training set `D \ {n}`, dataset without the nth element
+- training set `D \ {n}`, dataset without the n_th element
 - validation set, the one element we left out of the training set  
 
 Then we can train `N` models and evaluate the error for each model:  
@@ -472,7 +473,7 @@ This estimator is almost unbiased and in the end i have validated my model over 
 The major drawback of this approach is that it requires to build all `N` models so it is very computational intensive.
 
 K-FOLD CROSS VALIDATION  
-Same idea of LOO but reduces the number of models that i have to train. Divide the dataset `D` in `k` equal parts `D_1, ..., D_k` and train them in a round robin style. For each i from 1 to k:  
+Same idea of LOO but reduces the number of models that i have to train. Divide the dataset `D` in `k` equal parts `D_1, ..., D_k` and train them in a round robin style. For each `i` from 1 to k:  
 - learn model on `D\D_i` (dataset excluding set `D_i`)
 - validate on `D_i`
 
@@ -481,7 +482,7 @@ The advantage is that it is much cheaper to compute than LOO but it is usually m
 After selecting the model using cross validation we can now use all the dataset (training + validation) to train the final model and evaluate its performance on the test set. If the result are not satisfying we are screwed, we cannot use the same datased! USE THE TEST SET ONLY AT THE VERY END, ONCE USED I CANNOT MODIFY THE MODEL.
 
 ##### Adjustment techniques
-Combine train error with a term that accounts for the model complexity without using a validation set. Usually used when i have too many samples and building too many models is not feasible There are a number of parameters that are used (`d` is the number of parameters):
+Combine train error with a term that accounts for the model complexity without using a validation set. Usually used when i have too many samples and building too many models is not feasible There are a number of indicators that are used (`d` is the number of parameters):
 - `Cp = (RSS + 2dσ^2)` where `σ` is an estimation of the variance of the noise
 - `AIC = -2log(L) + 2d` where `L` is the maximized value of the likelihood function for the estimated model
 - `BIC`
@@ -491,7 +492,7 @@ Combine train error with a term that accounts for the model complexity without u
 We have already seen some techniques (ridge and lasso), the idea is to shrink the parameters towards 0 to reduce the variance. Can be used in combination to cross validation, for examples i can select the `λ` using cross validation (trial and error) and then regularize.
 
 #### Dimensionality reduction
-Find a new set of features that performs well and encodes (almost) all the information of the starting features. The advantage is that the resulting set is way smaller than the orginal one so the dimensionality of the problem is greatly reduced. We will see Principal Component Anlaysis (PCA).
+Find a new set of features that performs well and encodes (almost) all the information of the starting features. The advantage is that the resulting set is way smaller than the orginal one so the dimensionality of the problem is greatly reduced. We will see Principal Component Analysis (PCA).
 
 ##### PCA (unsupervised approach)
 Project the original feature space into a subspace that accounts for most of the variance of the input. The idea is that input features with low variance are less important in determing the final outcome. In this particular analysis the new features are a linear combination of the starting ones.
@@ -501,18 +502,18 @@ How can we compute the new features?
 - build covariance matrix `S`  
 ![PCA_covariance_matrix](assets/PCA_covariance_matrix.png)  
 - compute eigenvectors `e_i` and eigenvalues `λ_i`
-- sort eigenvectors by their eignevalues
-- the first principal component is the one with the largest eigenvalue, the second is the one with the second largest eignvalue, ...
+- sort eigenvectors by their eigenvalues
+- the first principal component is the one with the largest eigenvalue, the second is the one with the second largest eigenvalue, ...
 - the proportion of variance captured by each eigenvector is the ratio between its eigenvalue and the sum of all eignvalues  
 ![PCA_variance_eigenvector](assets/PCA_variance_eigenvector.png)  
 
 - the eigenvectors create a new space (they are an orthogonal basis) in which we can work, we select the first `k` eigenvector and project the initial data on the new space determined by those vector.
 
-We are basically "compressing" the information that we had in the original dataset. Unfortunately there is no way to tell beforehand if the variance that we are losing is important to our problem or not but it is used because it greatly reduces the dimensionality.
+We are basically "compressing" the information that we had in the original dataset. Unfortunately there is no way to tell beforehand if the variance that we are losing is important to our problem or not but PCA is used because it greatly reduces the dimensionality.
 
 Example:  
 We want to build a face recognition system on 256x128 pixel images --> 256*128 = 32768 dimensions.  
-If we observe that faces are not randomly distributed in the image space, the "face-space" is very small compared to all the possible images. Using the PCA we find that there are only 15 relevant eignevector, that we call [eigenfaces](https://en.wikipedia.org/wiki/Eigenface).
+If we observe that faces are not randomly distributed in the image space, the "face-space" is very small compared to all the possible images. Using PCA we find that there are only 15 relevant eignevector, that we call [eigenfaces](https://en.wikipedia.org/wiki/Eigenface).
 
 PCA is very useful to reduce complexity and filter noise out of the dataset but there are some caveats:
 - fails when data consist of multiple clusters (in general, when the distribution is far from gaussian)
@@ -520,7 +521,7 @@ PCA is very useful to reduce complexity and filter noise out of the dataset but 
 - PCA can only build new features that are a linear combination of the old ones
 
 #### Bagging
-Often used with decision trees ([random forest](https://en.wikipedia.org/wiki/Random_forest)), reduce the variance without significantly increasing bias. The general idea is to learn multiple models and combine them toghether (same for boosting, see later).
+Often used with decision trees ([random forest](https://en.wikipedia.org/wiki/Random_forest)), reduces the variance without significantly increasing bias. The general idea is to learn multiple models and combine them toghether (same for boosting, see later).
 
 In bagging we average models to reduce variance.   
 How can we build multiple models having only one training set?  
@@ -552,13 +553,13 @@ This sequentially build models that toghether will build a final model whose pre
 ## PAC Learning and VC dimensions
 Overfitting happens because:
 - the train error is a bad estimate of the generalization error --> can we find a relation between the two?
-- the learned did not have enough sample to learn a complex model --> how many samples is enough samples?
+- the learner did not have enough sample to learn a complex model --> how many samples is enough samples?
 
 PAC learning tries to answer theoretically to these two question.
 
 Consider this scenario (can be extended to regression):
 - set of instances (samples) `X`
-- set of hypothesis `H`
+- set of hypotheses `H`
 - set of possibile target concepts `C` (boolean functions)
 - the samples are generated by a fixed distribution `P` over `X`
 
@@ -566,13 +567,13 @@ The learner observes a sequence `D` of training examples `<x, c(x)>` where:
 - instances `x` are drawn from `P`
 - teacher provides deterministic `c(x)`
 
-The learner must output and hypotesis `h` estimating `c`.
+The learner must output an hypotesis `h` estimating `c`.
 - `h` is evaluated by its performance on the instances drawn from `P`, we want to minimize:  
 ![PAC_true_loss](assets/PAC_true_loss.png)  
 - can we bound the `L_train` to `L_true`?
 
 VERSION SPACE (VS_h,d)  
-Subset of the hypotesis space `H` that contains all hypotesis with 0 training error.  
+Subset of the hypotesis space `H` that contains all hypotheses with 0 training error.  
 Can we bound `L_true` in this region?
 
 Theorem:  
@@ -593,7 +594,7 @@ This answes our question:
 When is a problem PAC-learnable?  
 Consider a class `C` of possible target concepts defined over a set of instances `X` of length `n` and a learner `L` using an hypothesis space `H`
 - PAC-learnable
-  - if there exists an algorithm `L` s.t. for every `f ∈ C`, any distribution `P`, any `ε`, `δ` between 0 and 1/2 that with proability of at least `1 - δ` probability outputs a concept `h` s.t. `L_true(h) < ε` using a number of samples polynomial in `1/ε` and `1/δ`
+  - if there exists an algorithm `L` s.t. for every `f ∈ C`, any distribution `P`, any `ε`, `δ` between 0 and 1/2 that with probability of at least `1 - δ` outputs a concept `h` s.t. `L_true(h) < ε` using a number of samples polynomial in `1/ε` and `1/δ`
 - Efficiently PAC-learnable
   - same as above if polynomial in `1/ε`, `1/δ`, `M` and `size(c)`
 
@@ -604,7 +605,7 @@ We can still bind the error w.r.t. the train error:
 We can define the bound for the probability that the empirical mean diverges from the expected value for more than `ε`:  
 ![PAC_Hoeffding_bound](assets/PAC_Hoeffding_bound.png)  
 
-In a finite hypotesis space `H` using the Hoeffding bound written above we can bound the probability for the training error to be different from the true error for more than `ε`:  
+In a finite hypotesis space `H` using the *Hoeffding bound* written above we can bound the probability for the training error to be different from the true error for more than `ε`:  
 ![PAC_error_bound_outside_version_space](assets/PAC_error_bound_outside_version_space.png)  
 
 Similarly as before, if we bound this probability to be <= `δ` we can get the value of `ε` and decompose the true error in the two components given by the bias and the variance  
@@ -621,7 +622,7 @@ We still need to consider the case when `|H|` is infinite. Need to define a meas
 What is important in determining the size of `H`? Before that, some concepts:
 
 - dichotomy: given a set `S` of points a dichotomy is a partition of that set `S` in 2 disjunct subsets
-- shattering: we say that a set `S` is shattered by an hypothesis space `H` if and only if for every dichotomy in `S` there exist some hypothesis in `H` consistent with this dichotomy. Basically `H` is shattering `S` if it is able to perfectly classify  all the examples in `S` independently of how they are labelled.
+- shattering: we say that a set `S` is shattered by an hypothesis space `H` if and only if for every dichotomy in `S` there exist some hypotheses in `H` consistent with this dichotomy. Basically `H` is shattering `S` if it is able to perfectly classify  all the examples in `S` independently of how they are labelled.
 
 This encodes the flexibilty of the hypothesis space `H`.
 
@@ -639,11 +640,11 @@ We can express the PAC bound using the VC dimension
 This function can be used to do model selection by minimizing it, choose the `H` that minimize the upper bound to the true error (Structural Risk Minimization).
 
 ## Kernel methods
-Dual version of parametric methods, the work in the sample space instead of the feature space This are called *memory based methods* because the training data is used in prediction, making them fast to learn but slow to predict (because of this they are not suitable for real time application).  
+Dual version of parametric methods, the work in the sample space instead of the feature space. These are called *memory based methods* because the training data is used in prediction, making them fast to learn but slow in prediction (because of this they are not suitable for real time application).  
 The equivalent of finding good feature is finding the correct similarity function between the data.
 
 Goal:  
-capture non linear relationships in the data by mapping the input to a bigger feature space bu avoid to actually compute it.
+capture non linear relationships in the data by mapping the input to a bigger feature space but avoid to actually compute it.
 
 Kernel methods are ideal if we want to work in a large feature space (even number of features > number of samples) because they allow to avoid computing those explicitly.
 
@@ -655,7 +656,7 @@ Measure the similarity between samples in the input space (they are symmetric fu
 
 ![kernel_function](assets/kernel_function.png)
 
-To be a valid kernel function it needs to be possible to express them as the scalar product of the feature vector. This does not mean then i have to compute them this way but only that they are need to be equivalent to a scalar product between feature vectors. The idea is to find efficient ways to compute them to avoid the feature expansion.
+To be a valid kernel function it needs to be possible to express them as the scalar product of the feature vector. This does not mean that i have to compute them this way but only that they are need to be equivalent to a scalar product between feature vectors. The idea is to find efficient ways to compute them to avoid the feature expansion.
 
 To perform the prediction, each sample is weighted by the similarity between that sample and the new observation that we are trying to predict.
 
@@ -836,7 +837,7 @@ How do we chose
 - the weights? --> side effect of choosing samples
 - the samples? --> maximize the margin
 
-We will deal first with the case in which the points are all linearly separable, the extention to non linearly separable is [here](#Handling-noisy-data).
+We will deal first with the case in which the points are all linearly separable, the extension to non linearly separable is [here](#Handling-noisy-data).
 
 ### Margin maximization
 Let's define the margin as the minimum distance between the points in our training set and the separating hyperplane.  
@@ -989,7 +990,7 @@ Examples of RL applications:
 - robot navigation
 - which banners to put on a website
 
-### Exploraiton vs exploitation
+### Exploration vs exploitation
 To play the optimal policy we need to reach a trade-off between:
 - exploration: the choice of new unexplored actions, even at random, to increase our knowledge about the problem.
 - exploitation: use only the current knowledge to make decision, following known-good paths but risking to miss some opportunities.
@@ -1004,7 +1005,8 @@ Examples:
 - non-Markovian: poker, blackjack (i need information about past cards that have already been played)
 
 Formally, a stochastic process `X_t` is said to be Markovian if and only if:
-![Markovian_process](assets/Markovian_process.png)
+![Markovian_process](assets/Markovian_process.png)  
+
 This implies, as we said before:
 - the state captures all information from history
 - once the state is known, history can be thrown away
@@ -1364,7 +1366,7 @@ The MAB operates like this:
 - the environment generates a reward `r_i,t` drawn from `R(a_i,t)`
 - the agent updates his information using an history `h_t`
 
-In doing this we want to find the best trade-off between exploration and eploitation.
+In doing this we want to find the best trade-off between exploration and exploitation.
 
 The objective as always is maximize the reward over time given a certain time horizon. For the MAB we car reformulate it exploiting the particular structure of the MAB:
 - expected reward of the optimal arm (action) `a*`:  
