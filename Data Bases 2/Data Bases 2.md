@@ -578,7 +578,7 @@ or sparse, aggregating tuples tha belong to the same block
 The advantage of a sparse index is that it saves space but it is generally slower in locating the tuple.
 
 ##### Secondary index
-Can be used independetly from teh physical organization of the blocks:
+Can be used independetly from the physical organization of the blocks:
 - SK specifies a different order from the file
 - multiple secondary indexes can be defined on different SK
 
@@ -685,7 +685,7 @@ Lookups:
 - predicate conjuction `AND`  
 If one or more predicates are supported by indexes start from the most selective one (i.e. the one that retrieves less tuples) and evaluate the others in main memory.
 - predicate disjunction `OR`  
-If any of the predicates involved is not supported by an index then a full scan is required. Can only use indexes if all predicates are supproted and require elimination of duplicate result (i.e. tuples that satisfy more than one index).
+If any of the predicates involved is not supported by an index then a full scan is required. Can only use indexes if all predicates are supported and require elimination of duplicate result (i.e. tuples that satisfy more than one index).
 - sorting operation  
 If the data is too large to fit in memory special algorithms need to be used that allow to sort data loading them in a few chunks at a time. We consider the *external merge sort*. Assuming that we need to sort `N` blocks of data using only `B < N` buffer pages in memory, the steps are the following:
   - read `B` blocks at a time in memory and sort them
@@ -715,7 +715,7 @@ There are several strategies to perform the joins, choosing the optimal one depe
   NOTE: if the tables are not sorted we can still use this method but we need to sort them first, so the cost increases.
   - HASHED JOIN  
   **Only possible if both tables are hashed according to the same key, that is also the attribute used in the join predicate.**  
-  The matching tuples can only be found in the correspoing buckets.  
+  The matching tuples can only be found in the corresponding buckets.  
   Cost: linear `blocks in t1 + blocks in t2`.
 
 #### Cost-based optimization
@@ -917,4 +917,4 @@ Extends the possible set of activating event:
 They have the advantage of centralizing the management of semantics at the database level instead of having to replicate it for each application that needs to interact with the database.  
 They can guaranteed properties of data that cannot be specified by simple integrity constraints.
 
-However there are also some drawback, mainly due to the different implementation of the standard by different DBMS and different proprietary extensions. Portability across DBMS can be difficult, always document triggers if used.
+However there are also some drawbacks, mainly due to the different implementation of the standard by different DBMS and different proprietary extensions. Portability across DBMS can be difficult, always document triggers if used.
