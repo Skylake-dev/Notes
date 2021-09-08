@@ -10,7 +10,7 @@ At the end of the transaction only one of the following commands is executed:
 - rollback-work: discard changes  
 
 This is done to guarantee the ACID properties:
-- **Atomicity**: all or nothing semantics for transaction, it either completes or fails, no partial execution.
+- **Atomicity**: all or nothing semantics for a transaction, it either completes or fails, no partial execution.
 - **Consistency**: enforce integrity constraints on data, DBMS can automatically rollback transactions that do not satisfy these constraints.
 - **Isolation**: the execution of transaction should not interfere with other concurrent transactions, the result must be the same as if the transactions were issued in order.
 - **Durability**: the effect of committed transactions must be stored long term.
@@ -61,7 +61,7 @@ From the point of view of T1 the value of `x` has changed by itself because it d
 Let's suppose that we have a constraint on some data, for example `A + B + C = 100`
 - T1 reads `A` and `B`
 - T2 reads `B` and `C`
-- T2 updates them consistently with the constraint, for example `B = B + 10` and `C = C -10`
+- T2 updates them consistently with the constraint, for example `B = B + 10` and `C = C - 10`
 - T2 writes the updated values (constraint still holds)
 - T1 reads `C`
 - For T1 the constraint doesn't hold
@@ -83,7 +83,7 @@ Mnemonics to remember the anomalies
 - Phantom insert: R1 insert2 R1
 
 ### Modeling concurrency
-First, some definition and notation:
+First, some definitions and notation:
 - operation: read or write on a specific piece of data
   - R1(x): transaction 1 read the value of `x`
   - W2(x): transaction 2 update value `x`
@@ -182,12 +182,12 @@ Following this rules, some transactions will have to wait until the resources th
 
 ##### Implementation: lock tables
 Lock tables are hash tables that index the lockable items by hashing them.  
-every node has a linked list with all the transactions that requested a lock for that resource, the lock mode (shared/exclusive) and the status (granted/pending). When a transaction ends it is removed from the list.
+Every node has a linked list with all the transactions that requested a lock for that resource, the lock mode (shared/exclusive) and the status (granted/pending). When a transaction ends it is removed from the list.
 
 ![lock_table](assets/lock_table.png)  
 
 ##### Locks and serializability
-Is respecting locks enough to guarantee serializability? NO, some anomalies may still occur. This is caused by the fact that transactions may release locks early and reacquire it later.
+Is respecting locks enough to guarantee serializability? NO, some anomalies may still occur. This is caused by the fact that transactions may release a lock early and reacquire it later.
 
 Example:
 - T1 locks resource `x` with a shared lock to read its value
@@ -232,7 +232,7 @@ Transactions T1 updates the data with the following command (pseudocode):
 The concept of predicate lock disallow other transactions to insert, delete or update any record that satisfies the predicate `A < 1`. This prevents phantom inserts because no other transaction can modify the data that T1 is working with.
 
 #### Isolation levels
-DBMS in practice allow to specify so called *isolation levels* for the transactions. These specify what anomalies we allow in order to achieve more concurrency and performance.  
+DBMS in practice allow to specify so called *isolation levels* for the transactions. These levels specify what anomalies we allow in order to achieve more concurrency and performance.  
 Not all transactions need to have the same isolation level, it can be set on a per-transaction basis.  
 These levels do not affect write locks that are **always kept until the decision point** (strict 2PL on write locks), regardless off the isolation level. If this doesn't occur we cannot ensure rollback in case of aborts, jeopardizing consistency (dirty write).  
 On the other hand we can have different levels for read locks:
@@ -255,20 +255,20 @@ Recap table
 
 #### Problems of locking: deadlocks and starvation
 ##### Deadlocks
-Deadlocks happen when a transaction holds a lock that the another transaction needs and viceversa, blocking both transactions in a infinite wait. Of course more than two transactions can be involved in a deadlock, the idea is that there is a circular dependence between them (i.e. T1 waits for T2 that waits for T3 that waits for T1).  
+Deadlocks happen when a transaction holds a lock that another transaction needs and viceversa, blocking both transactions in a infinite wait. Of course more than two transactions can be involved in a deadlock, the idea is that there is a circular dependence between them (i.e. T1 waits for T2 that waits for T3 that waits for T1).  
 There are different approaches to deal with deadlocks:
 - timeouts: kill transactions that wait for longer than a certain threshold.  
 Impractical approach because it is difficult to correctly balance the timeout, transactions may require very different time to execute even within the same application.
-- prevention: killing transactions that could cause deadlocks.  
+- prevention: kill transactions that could cause deadlocks.  
 Transactions are assigned an ID as they arrive. The heuristic that is used is that an older transaction should not wait for a younger transaction. If this happens the younger transaction is killed and restarted. Also this approach is inefficient because waiting does not imply that there is a deadlock so this leads to a lot of unnecessary kills.
 - detection: let deadlocks happen and resolve them when they occur.  
 Build the *waits-for* graph to detect cycles of waits and choose a transaction to kill according to some policy. Works in local DBMS.
 
 NOTE: detection in a distributed DBMS  
 OBERMARK'S ALGORITHM  
-Recontructs the whole dependency graph using only the view of a single node. Each node needs to exchange only minimal amount of information, node A sends info to node B only if:
+Recontructs the whole dependency graph using only the view of a single node. Each node needs to exchange only minimal amounts of information, node A sends info to node B only if:
 - A contains a transaction `T_i` that is waited for from another transaction and waits for `T_j` on B
-- `i < j` (or viceversa, it doesn't have a semantics) to ensure information is propagated only one way
+- `i < j` or viceversa, it doesn't have a specific semantic, it is only needed to ensure information is propagated only one way
 
 The algorithm is executed periodically at each node and consists in:
 - get graph info from previous nodes
@@ -289,7 +289,7 @@ There are techniques to limit the frequency of deadlocks:
 - hierarchical lock
 
 ##### Update locks
-Most deadlocks involves only 2 transaction and happen because they lock some resource in a shared way with the intention of upgrading it later.  
+Most deadlocks involves only 2 transactions and happen because they lock some resource in a shared way with the intention of upgrading it later.  
 Update locks allow to state the intention of upgrading the lock later in order to prevent other transactions to express the same will.  
 There are 3 possible lock request:
 - SHARED LOCK (SL): express the intention to read only
@@ -306,7 +306,7 @@ The interactions work as follows
 Update locks are requested using the SQL statement SELECT FOR UPDATE.
 
 ##### Hierarchical locks
-Locks can be specified with different granurality.  
+Locks can be specified with different granularity.  
 Objectives:
 - lock minimum amount of data
 - recognize conflicts as soon as possible  
@@ -333,7 +333,7 @@ The protocol to lock is the following:
 
 Very useful approach to avoid locking an entire table if i only need to act on a small subset of the records. Of course when i want to perform the action i have stateted my intention to perform i have to get an actual SL or XL.
 
-NOTE: from the table we can see that intentional locks are always compatible with one another, onle when they are actualized there can be conflicts.
+NOTE: from the table we can see that intentional locks are always compatible with one another, only when they are actualized there can be conflicts.
 
 #### Timestamp-based approaches
 A timestamp is a unique identifier that defines a total ordering of the events in a system. In a centralized system it is easy because all requests are on the same node, in a distributed system we can use the Lamport clocks to assign timestamps without a global clock.  
@@ -385,7 +385,7 @@ To prevent dirty reads a transaction that reads or writes and has a timestamp gr
 
 #### Multiversion concurrency control
 IDEA: writes generate new copies (new versions) of data, a read request accesses the "right" value w.r.t. its timestamp.  
-Each write generates a new copy with its own timestamp for the write. In the end there are N copies each with its WTM_N. Old copies needs to be discarded when all transaction that could access it have completed.  
+Each write generates a new copy with its own timestamp for the write. In the end there are N copies each with its WTM_N. Old copies can be discarded when all transaction that could access it have completed.  
 With this mechanism the reads are always allowed (avoid killings) following the protocol:
 
 ```python
@@ -537,7 +537,7 @@ Collision (i.e. keys that yield the same hash) must be handled:
 
 ![hash_based_structures_with_open_hashing](assets/hash_based_structures_with_open_hashing.png)
 
-The advantage of this structure as we said is in accessing a specific record since it requires few IOPs (only 1 if no overflow bucket). We can estimate the average number of block by estimating the average length of the overflow chain that is a function of:
+The advantage of this structure as we said is in accessing a specific record since it requires few IOPs (only 1 if no overflow bucket). We can estimate the average number of IOPs by estimating the average length of the overflow chain that is a function of:
 - the block factor `B`
 - the load factor `T/(B*N_B)`, the percentage of space used in the hash table (we usually want a load factor between 50% and 80% to maintain the hash table efficient).
 
@@ -674,7 +674,7 @@ Lookups:
   query: `SELECT * FROM student WHERE id=54`
   hash built on students id:
     - if it's primary storage the cost is `1 + average length of overflow chain`
-    - if it's secondary storage the cost is `1 + average length of overflow chain` for retrieving the pointer + `1` to access the block containing the id
+    - if it's secondary storage the cost is `1 + average length of overflow chain` for retrieving the pointer + `1` to access the block containing the id (if unique id otherwise `N` accesses, one for each id)
 - intervals
   - sequential structures require a full scan, if they are sequentially ordered may have cost reduced (stop the scan when the end of the interval is reached).
   - hash structures do not support interval lookup.
@@ -692,13 +692,13 @@ If the data is too large to fit in memory special algorithms need to be used tha
   - write sorted data to a *run* file (each run is `B` blocks)
   - the total number of runs is `ceil(N/B)`
   - merging step: select `B-1` blocks from the different runs and use the remaining block (*output buffer*) to merge them. when the output buffer is full write it to disk and continue. When an input block has been completely used, load the next until the run file is finished
-  - this produces a run of length `B(B-1)` (B blocks in each run * B-1 runs used) -> each pass merges B-1 contigous runs
+  - this produces a run of length `B(B-1)` (B blocks in each run * B-1 runs used) -> each pass merges B-1 contiguous runs
   - repeat until all runs have been merged into one (each pass reduces the number of runs by a factor of `B-1` and create longer runs of the same factor)  
   Example N=40 B=5:
   - initial runs: `ceil(40/5) = 8`, each of 5 pages. To do this steps 40 read and 40 writes are needed
   - now we merge the runs using `B - 1 = 4` input pages and `1` output page. Load the first 4 runs and produce a `B(B-1) = 5*4 = 20 pages` run. Same for the next 4 runs.  
 This requires another 40 + 40 IOPs
-  - second pass: merge the two 20 pages runs into the final sorte run of length 20*2 = 40 pages, requiring another 40 + 40 IOPs.
+  - second pass: merge the two 20 pages runs into the final sort run of length 20*2 = 40 pages, requiring another 40 + 40 IOPs.
   - In total we had 3 passes, the initial pass and the two merge pass. Each pass requires reading and writing all `N` blocks, that is `2N` cost.  
   The total cost in terms of IOPs is `2N * # of passes`.
 - join operations  
@@ -851,7 +851,7 @@ create trigger <trigger_name>
 [referencing (to put aliases on old, new, etc)]
 [for each {row | statement}]
 [when condition]
-<SQL_procedural_statement>
+<SQL_procedural_statement> --actions to execute or error notification
 ```
 
 In the trigger there are specified many parameters:
@@ -860,7 +860,7 @@ In the trigger there are specified many parameters:
   - after, the trigger is executed after the event is applied to the database. It is the most common mode and it is suitable for many applications.
 - granularity
   - for each statement, the trigger is considered only once per activating statement, independently from the number of tuples affected by the change. The modification are stored in two transition tables `old table` and ` new table` containing the old and the new values of all the affected rows.
-  - for each row, the trigger is considered once for each tupleaffected by the activating statement. Easier to write but can be less efficient. The modifications are stored in two transition variables `old` and `new` that represent the prior and following value of the row that is being considered.
+  - for each row, the trigger is considered once for each tuple affected by the activating statement. Easier to write but can be less efficient. The modifications are stored in two transition variables `old` and `new` that represent the prior and following value of the row that is being considered.
 
 If there are several triggers associated with the same event the SQL standard prescribes the following execution policy
 | BEFORE | EVENT | AFTER |
@@ -906,7 +906,7 @@ Extends the possible set of activating event:
 - react on system events
 - react on user defined events
 - on specific queries
-- boolean combination of normal event (e.g. activate if any of these event happens)
+- boolean combination of normal event (e.g. activate if any of these events happens)
 
 #### Other extensions
 - definition of trigger priority
