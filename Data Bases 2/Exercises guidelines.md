@@ -80,7 +80,7 @@ MAIN CONCEPTS ([full reference](https://www.jcp.org/en/jsr/detail?id=317)):
 - ENTITY MANAGER: the interface for interacting with a persistence context. The methods offered are:
   - persist: persists an entity in the DB
   - find: find an entity instance by its primary key
-  - remove: removes an entity instance from the database
+  - remove: removes an entity instance from the DB
   - refresh: reloads data of an entity from the DB
   - flush: writes the state of an entity to the DB
 
@@ -180,7 +180,7 @@ Can be specified explicitly in the declaration of the relationship.
 #### Cascading operations
 By default the Entity Manger operations apply only to the entity that is passed to it and **will not cascade** to the related entities. This is usually the desired behaviour for some operation (e.g. remove()) but the opposite can be true for others (e.g. persist()).  
 The default behaviour can be overridden in the annotation.  
-`example: @ManyToOne(cascade=CascadeType.PERSIST`  
+`example: @ManyToOne(cascade=CascadeType.PERSIST)`  
 
 There are different possibilities for cascading, one for each operation of the entity manager:
 - PERSIST
@@ -226,18 +226,18 @@ There are 3 different strategies to implement the mapping that can be specified 
 #### Single table per hierarchy
 The different entities are mapped on the same table that has an extra column called "discriminator" to distinguish between them. 
 
-This is done using an annotation `@DiscriminatValue(value)` to specify the type.
+This is done using an annotation `@DiscriminatorValue(value)` to specify the type.
 
 ```java
 @Inheritance(strategy=SINGLE_TABLE)
-@DiscriminatorColumn (name="Discr")
+@DiscriminatorColumn(name="Discr")
 @MappedSuperclass abstract class Publication { ... }
 
-@DiscriminatorValue ("B")
+@DiscriminatorValue("B")
 @Entity
 class Book extends Publication { ... }
 
-@DiscriminatorValue ("C")
+@DiscriminatorValue("C")
 @Entity
 class Comic extends Publication { ... }
 ```
