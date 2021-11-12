@@ -4,8 +4,9 @@ What is learning?
 >“A computer program is said to
 learn from experience E
 with respect to some class of tasks T
-and performance measure P,
-improves with experience E”  
+and performance measure P, if its performance at a task in T,
+as measured by P,
+improves because of experience E”  
 Mitchell 1997
 
 Knowledge in machine learning comes from:
