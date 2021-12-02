@@ -123,3 +123,38 @@ In ES, if there is a GPP usually it exploits a RISC architecture because of thei
 ## Microcontrollers
 Embed in a single chip everything that is needed to run the system. Can achieve lower power consumption giving up raw performance. Often they do not offer interface to external memory because typically they run very simple programs and to reduce the pinout. Include serveral peripherals and interfaces (I2C, SPI, JTAG, PWN, UART, watchdog, timer, analog I/O, ... see later lectures).  
 These are programmed in C (sometimes assembly) SDK can range from a simple compiler to fully fledge develepment environments with analysis tools.
+
+Main characteristics:
+- simple arch (8, 16, 32 bits) with small pipelines
+- low clock (8 -160 MHz)
+- low cost (0.5 -10 €)
+- very low power consumption (0.1 - 300 mW)
+- designed to interact with the environments (often include ADC/DAC to get signals)
+
+The whole package includes everything it needs:
+- CPU (usually an ARM-based core)
+- RAM
+- flash
+- peripherals
+- buses to external devices
+
+Since they are very simple components, there is a variety of manufactures that produce them (contrary to the microprocessor space where basically there are only Intel and AMD).
+
+### Overview of microcontroller subsystems
+- clock, used to synchronize all subsystem (speed usually configurable). Typically there are two clocks:
+  - main clock, used for core, memory and peripherals (2 - 144 MHz)
+  - RTC clock, used mainly for timekeeping, almost always at 32,768 Hz. Can be external to the MCU. In some systems can be used as a clock for extremely low power modes.
+  - can be internal or external
+    - internal, cheap but less precise
+    - external, independent from the MCU, more reliable
+  - partitioned in domains to run different subsystems at different clock speeds or to perform power saving optimization (see clock gating). Require a network generate the different speed and distribute it to the different domains.
+- memory, often 16 or 32 bit addressing mode.  
+RAM and flash are mapped to different areas in the same address space. A small cache may be present.
+- GPIO (General Purpose I/O) can be configured as input or output. Usually organized in groups and can be digital or analog.  
+There are registers that can be used to configure the functionality of the GPIO
+- comparators, made with differential amplifiers. Usually the output is either 0 or saturated to Vdd. Can be read via interrupt (for rare events) or polling
+- ADC, encodes an input voltage to a numeric value. Require stable clock source and power supply. A single ADC can be multiplexed over multiple inputs at the expense of conversion speed.
+- timer, basically a counter. Can generate interrupt periodically, measure time intervals, count events, generate PWM signals.
+  - watchdog, particolar timer to monitor the evolution of the system and detect possible failures. It needs to be periodically reset by the sw to ensure that it is operating correctly.  
+  Since the watchdog is used to monitor the functionality of the system it is better to have an external clock for more reliable operation.
+- PLL, phase locked loop. Electronic circuit that consist of a phase detector, a low pass filter and a voltage controlled oscillator (VCO) connected in a loop to maintain the VCO frequency locked to that of the input signal frequency. Adding a multiplier/divider it is possible to obtain multiples of the input frequency allowing to synthesize different clock signals at different frequency. F_out = F_ref*(N/R)
