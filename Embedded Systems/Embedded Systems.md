@@ -158,3 +158,106 @@ There are registers that can be used to configure the functionality of the GPIO
   - watchdog, particolar timer to monitor the evolution of the system and detect possible failures. It needs to be periodically reset by the sw to ensure that it is operating correctly.  
   Since the watchdog is used to monitor the functionality of the system it is better to have an external clock for more reliable operation.
 - PLL, phase locked loop. Electronic circuit that consist of a phase detector, a low pass filter and a voltage controlled oscillator (VCO) connected in a loop to maintain the VCO frequency locked to that of the input signal frequency. Adding a multiplier/divider it is possible to obtain multiples of the input frequency allowing to synthesize different clock signals at different frequency. F_out = F_ref*(N/R)
+
+### Boot process
+Sequence of steps that brings the system from power on to a fully operational state. The complexity of this process depends on the system (what hw is used, presence of an OS, ...).
+
+Linux boot process:
+- HW
+  - poewr on the system
+  - keep in RESET state the CPU until the power supply is stable
+  - start the oscillators and waits for the PLL output to be stable
+- BIOS
+  - Power On Self Test (POST) executed from flash or ROM
+  - find and executes peripheral's BIOS
+  - find memory, ports and HDD
+  - select the device to boot from based on pior user setting
+  - executes the specific bootloader
+- Bootloader
+  - locates and loads the kernel at a fixed physical address
+  - start executing from the kernel entry point
+- Linux
+  - load additional kernel modules to
+  - start the init process
+  - init starts all the services
+  - init runs the login process
+  - on login, a shell is started to allow interaction with the system
+
+The BIOS execution is a crucial part for each system because it is the first firmware execution to start. For microcontrollers we will consider a system with:
+- microcontroller
+- flash memory where the binary is stored
+  - the binary contains all the code to run
+  - the code is run directly from flash
+  - the binary have specific formats (e.g. ELF)
+- RAM memory to store data during execution
+
+Microcontroller boot sequence.  
+The text section of the binary contains different infromation:
+- Interrupt Vector Table, fixed size table containing
+  - initial stack pointer
+  - address for the reset handler
+  - addresses of interrupt service routines
+- startup code
+  - to initialize the system, normally provided by the MCU vendor
+  - usually written in assembly
+- application code
+
+The first thing to be exectued is the second entry of the IVT (i.e. execute the reset handler). :
+- copy stack pointer in the SP register
+- invokes a system initialization function (configure clocks)
+- prepares memory
+  - copy DATA section to RAM
+  - zeroes the BSS section
+- jump to main (OS or bare metal application)
+
+What is the bootloader role in a MCU?
+Loading the binary in the flash memory requires specific hw and sw tools and can only be done in a controlled environment. If in-field firmware update is required then a bootloader is needed to handle the replacement of the old firmware with the updated version.  
+The bootloader is a separate binary from the application code, has a dedicate flash area and IVT.  
+When the bootloader has completed the replacement of the firmware it has to:
+- switch to the correct IVT of the new firmware
+- jump to the firmware
+
+There can be two cases, depending on the MCU
+- presence of an IVT offset register
+  - prepare the firmware execution
+    - disable interrupts
+    - wait for all memory operation to complete
+  - execute the firmware
+    - switch to the new IVT by changeing the value in the IVT offset register
+    - load the new stack pointer value according to the new IVT
+    - jump to reset handler
+- no IVT offset register
+  - IVT can only reside at two fixed addresses, one flash and one RAM (assume it is in flash)
+  - prepare the firmware execution
+    - disable interrupts
+    - copy IVT from flash to RAM
+  - execute firmware
+    - switch to new IVT by enabling memory remapping
+    - load the new stack pointer value according to the new IVT
+    - jump to reset handler
+
+### Programming microcontrollers
+Microcontrollers are conceived to host the final application not to support code development, also because of limited resources available. This is why there is the need to use an IDE to support development like:
+- KEIL, for ARM microcontrollers
+  - C/C++ compiler
+  - debugger support
+  - libraries, templates
+  - device driver support
+  - RTOS features
+  - Common Microcontroller Software Interface (CSIM), standardized platform for ARM Cortex based MCUs
+- Gem5, allow also to simulate the system
+- Code Composer Studio, focus on Texas Instruments products
+  - includes C/C++ compiler
+  - debugger, profile
+  - built on top of eclipse
+  - processor trace (trace instruction executed, timings, ...)
+  - support linux kernel and application development
+- CodeWarrior
+- MPLAB
+- IAR Systems
+  - targets different arch
+  - support RISC V
+
+These are frequently linked to boards they target, some features may depend on the family of MCUs.
+
+Fixed Virtual Platforms: software simulators of target boards, can execute code at near native speed, provides an environment to start developing and testing code.
