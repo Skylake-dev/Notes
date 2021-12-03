@@ -350,3 +350,55 @@ Summary of best practices
 - make user aware that there is an update to ensure ideal conditions
 - use crypto accelerators if possible
 - small scale tests before deploying to all devices to check functionality
+
+## Timer and watchdog
+A timer is a specialized type of clocks to measure time intervals while a counter stores the number of times an event occurred w.r.t. a clock signal.  
+To read a timer we can look at the value stored in the register or wait to detect the overflow.
+Timers and counters are the most pervasive peripherals in MCU design:
+- improve performance
+- replace looping CPU with timer interrupt
+- there are COTS that are tailored to support programmable timers
+- PWM for motor control to free the processor from this task
+
+Every timer needs a clock source:
+- can have different clock source
+- there can be a prescaler to divide the clock before inputting it to the counter (factors of powers of 2)
+- the count range is stored in a register and is called the modulus M
+
+Common configuration for timers:
+- select clock source
+- dividing factor of the prescaler
+- modulus value
+- enable an interrupt
+- ...
+
+Periodic timers are useful to schedule activity, sampling correctly in an ADC.
+
+### Watchdog
+It is a particular timer used to detect software anomalies and reset the processor if necessary.  
+Basic idea:
+- normally the system resets the watchdog timer to prevent it from timing out
+- in case of a fault the timer is not reset and the timeout generates an interrupt
+- the interrupt initiates the corresponding actions (not necessariliy a RESET)
+- the action usually include going in a safe state (e.g. turn off controlled motors or heaters) and restore the correct functionality
+
+Why are those critical? --> Detect and recover from faults on its own, necessary in IoT world with billions of devices.
+
+There are different ways to implement a watchdog:
+- internal vs external
+- sowftware enabled/disable vs cannot disable
+- windowed vs not windowed
+  - windowed means that there is a minimum time that needs to pass before the watchdog can be cleared. If an attempt is made before this time the watchdog forces the reset.
+
+Single stage watchdog: invokes a restart immediately after the timeout. It relies on the system reset to force outputs to safe states
+Multiple stage watchdog: more timers in cascade. Each stages kicks the next and perform a set of corrective actions and only at the end a reset will be forced.  
+
+To ensure safety there can be two sets of control states: runmode vs safemode. The timeout of the watchdog causes the selector to switch to safemode state to control the ouput and ensure that there are not potentially harmful values.
+
+To have a more reliable watchdog it needs to be implemented as an external component with a separate oscillator to generate the clock. This is called independent watchdog
+
+TIPS:
+- never disable the watchdogs
+- do not clear the watchdog using a periodic interrupt without checking functionality
+- use an independent watchdog
+- windowed is better
