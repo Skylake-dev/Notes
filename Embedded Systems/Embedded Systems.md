@@ -261,3 +261,92 @@ Microcontrollers are conceived to host the final application not to support code
 These are frequently linked to boards they target, some features may depend on the family of MCUs.
 
 Fixed Virtual Platforms: software simulators of target boards, can execute code at near native speed, provides an environment to start developing and testing code.
+
+## Firmware Update Over The Air
+NOTE: naming --> OTA DFU, FOTA, OTAF  
+
+Objective:
+- add new functionality to the system
+- address bugs and vulnerabilities
+- ship product faster and add non-core functionality later on
+
+Device Firmware Update (DFU) is the operation used to replace, partially or fully, the firmware on a device and relies on the presence of a bootloader.  
+This functionality does not come for free, there needs to be specific hw support, extra memory to store new firmware, etc... not to mention the risks involved during the update operation like a power failure.
+
+The bootloader is optimized and kept at a minumum
+- to minimize boot time
+- reduce the possiblity of having bugs
+- maximize the available space for the application code
+
+The DFU process involves many operations that add complexity:
+- update the application
+- verify the authenticity
+- verify the integrity
+- decrypt data
+- downgrade prevention
+
+Ensuring a robust OTA DFU:
+- security: encrypt + verify identity with digital signatures
+- reliability: verify integrity and recover in case of failures
+- version management: rollback prevention + versioning system
+
+Steps:
+- firmware image and manifest are encrypted, signed and uploaded to the firmware update server
+- devices query the server to fetch the new image and manifest
+- decrypt, validate and apply the update
+
+The firmware server is also a vulnerable part of the process and it must be kept secure.
+Usually the binary is split in different packets (packetizing), each packet contains part of the data toghether with the address to where to store it in memory.  
+Challenges:
+- memory
+  - new software must be organized in memory to be possible to execute it after the update
+  - keep the previous version in case the new update has problems
+  - retain the state of the device between resets and power cycles
+- communication
+  - packetization of the new binary
+  - cost, both in terms of
+    - battery energy consumed by the radio
+    - metered network connections (e.g. GPRS)
+- security, to ensure authentication, confidentiality and integrity
+
+These actions are typically carried out by a Second-Stage Boot Loader (SSBL) that only enters into action when performing an update. Using a SSBL is better than having an application on to do this work because this can cause issues:
+- if there is a RTOS, the application runs as a thread in the RTOS concurrently with other applications that can mess with the update process.  
+Since the SSBL is not a RTOS program it doesn't have concurrent code running alongside it and can do this operations safely
+- need to relocate the IVT to run the new application
+
+What does th SSBL do exactly?
+- determine which is the current application and branch to it at the start (their location is usually kept in a table of contents)
+- update the ToC when the update process completes
+- portions of the OTA update functionality can be pushed to the SSBL
+  - e.g. check the integrity of the applications
+
+Design tradeoffs
+- compression
+  - saves potential bandwidth costs and battery power for the radio
+  - more processing on device to extract the binary
+- caching
+  - *no cache* can decide to wirte directly to flash at each packet --> wear flash quicker but simple to implement
+  - *partial cache* in RAM to flash more packets in a single write --> more complex
+  - *full caching* only available if the RAM is big enough to contain the firmware
+- communication protocols
+  - may be dictated by the presence of receivers on the device that are already there for other functionality
+  - support for secure communication
+
+Addressing security:
+- keep OTA updates confidentials and verify integrity and identity of server  
+--> use encryption: shared password between client and server to encrypt data. The crypto accelerator in the MCU may support AES 128/256.  
+--> send hash of the firmware to enable integrity verification on the device.  
+--> use of asymmetric encryption to verify identity of the server. Often there are not accelerators to do this and needs to be done in sw.
+
+Summary of best practices
+- digital signing <-- critical for integrity and verify identity
+- encryption
+- protect communication channels, both physically and the protocol used
+- versioning <-- prevent downgrading
+- recoverability
+- logging and status reporting during DFU process <-- both anomaly detection and debugging purposes
+- timely updates
+- minimize downtime
+- make user aware that there is an update to ensure ideal conditions
+- use crypto accelerators if possible
+- small scale tests before deploying to all devices to check functionality
