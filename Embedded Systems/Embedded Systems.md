@@ -533,3 +533,59 @@ Boundary scan testing: use a chain of cells and multiplexers that can be used to
 - test mode --> connect the registers in a chain and use them to force inputs or read values
 
 See later for JTAG interface.
+
+## System-on-Chip
+Complete system integrated on a single silicon die:
+- reduction of discrete external components
+- small form factor
+
+However not all parts of the system can be integrated for mechanical or electrical reasons
+- high currents
+- not supported by the integrated silicon process
+- robustness of connections
+
+Why implement an SoC?
+- unit cost
+  - NOTE: this includes only the production not the design
+- performance, greater than PCB based solution
+- reduced energy and power required
+- number of requested I/O, it's like having the possibility of fusing toghether multiple components
+- security, both IP and sensitive information in memory
+
+An SoC can include a variety of components
+- one or more processors
+- different types of memories
+- dedicated accelerators for specific operations
+- time related functions --> timers, watchdogs, oscillators
+- power supply distribution
+- interfaces --> network, serial ports, ADC, DAC
+
+Similarly to a PCB design, the first step is to partition the system in different functional units.  
+The next step is to define the memory hierarchy and architecture. Classical buses solutions are falling out of favors due to bottleneck and are being substituted by a network on chip (NoC) approach.  
+A NoC basically implements a small network directly on the chip with basic funcitonality like addressing and routing to allow communications between different parts of the chip. NoC can take up to 20/30% of the hw resources but they solve several complex problem in the design of the communicaiton part and are suitable for highly scalable solutions (e.g. beyond 8 cores a NoC is necessary).  
+
+### Testability
+Testing an single chip made of different components is a difficult task because they cannot be tested independently and the integrated in the chip. This is why the design needs to account also for the testing part by preparing suitable interfaces:
+- boundary scan like in PCB
+- Built In Self Test (BIST)  to overcome the limitation of the scan (operate at lower frequency)
+
+## Distributed/Networked ES
+Processing and data storage are split over multiple devices. There is slight difference in terminology:
+- distributed when computation are equally distributed
+- networked when the nodes are just connected but are different
+
+The critical part is implementing the communication between the nodes:
+- wired
+- wireless --> more complex
+  - A relevant interest is in Sensor Networks
+
+Examples
+- domotic  
+This is more tricky because there are a variety of different devices with different computing capabilities and functionalities.
+- automotive  
+Usually in this fields distributed systems are used to ensure safety and avoid a single point of failure that can be a centralized system. the different systems are interconnected over a shareed bus (CAN bus).
+- wireless sensors networks
+  - limited possibility to connect and store energy
+  - operating in hasrsh enviroments
+  - need for redundancy, both for failure of nodes and communications  
+  The general architecture consists of a high number of sensors that communicate with a gateway to exchange information with the host. The typical approach to expose the data is using a publish-subscribe model.
