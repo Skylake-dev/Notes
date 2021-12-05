@@ -402,3 +402,134 @@ TIPS:
 - do not clear the watchdog using a periodic interrupt without checking functionality
 - use an independent watchdog
 - windowed is better
+
+## Design of hardware systems
+Different possibilities
+- COTS
+- ASIC
+- programmable logic
+- microprocessors or microcontrollers
+
+### ASIC
+Based on planar process. Use a semiconductor to realize all the main components (transistors, capacitance, diodes, ...) directly on silicon. The elements to do this are:
+- silicon n --> more free electrons
+- silicon p --> less free electrons
+- insulator --> SiO2
+- conductor --> depositions of aluminum or copper
+
+All the regions are created on silicon at the same time using diffusion masks, which are very expensive to produce. This is why ASICs are an option only on large volume components.
+
+Once the chips are ready they need to be integrated in a package to give mechanical stability and provide interconnect to the external world. There can be different choice for the package material like plastic, ceramic, metal.
+
+New packaging techniques allow to build System in Package (SIP), interconnecting different components inside the same package. 
+
+To reduce the complexit of a custom design there are so called *standard cells* that are offered by the silicon provider as a sort of "library" to develop the IC.
+
+### Programmable logic
+Hw platforms that allow fast prototyping of a system. These types of systems consume more power and take up more area than an ASIC but they have the advantage to be reprogrammable and cheaper to produce.
+
+Classification can be based on different criteria:
+- programming modes
+  - One Time Programmable OTP (fuse and antifuse)  
+    The lines are always connected and the programming step burns some connections and maintein only the one that are needed (opposite for antifuse)
+  - Reprogrammable (EEPROM)  
+    Non disruptive connections based on a floating gate. The idea is to place/remove charge from the floating gate to create/destroy a channel
+  - Reprogrammable and reconfigurable (SRAM, Flash)  
+    Allows to reprogram the system while it is running (reconfigurable)
+- connections
+  - global connection  
+    Can be shared by may components on the device --> long delays and low flexibility
+  - local connection
+    Shared among few elements --> less delay, more flexible routing although more complex
+  - hierarchical connection  
+  - other e.g. programmable switch matrix
+
+### Architecture and design
+Due to their intrinsic heterogenousity and wide variety of constraints there is no standard architecture for embedded systems. The development process is usually done by prototyping the system on a development board to see if the performance of the selected processor is fine, the range of power consumption, etc. These boards often offer also integrate FPGA modules to add pieces of logic allowing for fast development of complex application.  
+The connectivity that the board provides allow the developer to focus the effort on the application (see example on slides).  
+
+## PCB based design
+Printed Circuit Boards provide support and connectivity for the different components that will be mounted on it. They can also provide points for testing the system like monitoring power consumption or debugging interface that will be later removed from the final product.  
+Virtually any ES makes use of PCBs to connect components, except in very particular cases.
+
+The first step in designing a PCB based system is to select the componets that will be mounted on it (i.e. compile the Bill Of Materials BOM):
+- passive --> resistors, buttons, LEDs, capacitors
+- power supply --> create a specific power distribution to power the components, e.g. control power up sequences, create the different voltages, ...
+- converters and filters --> ADC, DAC, amplifiers, oscillators
+- others
+  - electro-optical components to interface electromagnetic signals and optical signals (e.g. photodiodes, laser diodes, ...)
+  - RF components like antennas
+  - display
+  - sensors --> convert physical measurements to voltages
+  - digital components (microcontroller, dedicated ICs, ...)  
+
+It is also important to evaluate the different packages available that can influence the design of the PCB:
+- mounting 
+  - Through Hole TH, more robust connection and easier prototyping
+  - Surface Mounted SMD it has several advanteges
+    - smaller parts
+    - denser layout
+    - cheaper PCB (no holes to drill)
+    - easier to shield from EMI/RFI
+    - easier to automate
+    - improved frequency response  
+    They also have disadvantages:
+    - small clearence for cleaning
+    - generate more heat
+    - difficult to visually inspect
+- pin positioning
+  - pin count
+  - pitch (distance between pins)
+- materials
+  - influence thermal conductivity, metal transfers better but it's more expensive
+
+### Structure of a PCB
+A PCB consists of 3 main components
+- conductor
+  - usually copper, used for wires and connecting components
+- insulator
+  - fiberglass epoxy
+- glue (still an insulator)
+  - adhesive materials are called pre-peg
+
+In PCB with many layers there are ground and supply layers in between.  
+The final board is a stack of layers of insulators, where their faces host the wires, separated by pre-peg. The process to realize a PCB is quite complex and there exist specific file formats  to specify the design like [*Gerber*](https://en.wikipedia.org/wiki/Gerber_format).  
+The footprint of the components that needs to be mounted on the board is necessary to make sure that all the components fits and the connections are right.
+
+The manufacturing steps are
+- realization of the dielectric supports
+- realization of the wires 
+  - use photoresist to cover parts, use acids to remove other areas and expose the wires
+- assembly of the layers
+  - stack them alternating pre-peg foils, a heated press finalize the step
+- drilling of the *vias*
+- fabricating external layers, writing the schema
+- finisching by applying a protective coating
+
+After manufacturing the boards are tested to ensure that all the connections are working properly, this involve both optical inspection and electric inspections.  
+After this we can proceed to the mounting step. For small boards and limited volumes it is done by hand, otherwise specific equipment is used. In any case the assembly requires the following steps:
+- solder paste dispensing
+- component placement
+- reflow
+  - increase the temperature to solder the components following a specific temperature profile.
+- inspection (look for misplaced components)
+  - some fixes can be carried out by hand
+- wash up the flux residuals
+- passivate the surface with insulators if necessary
+
+### PCB design criteria
+Partition the develpment in separate groups in order to work in parallel until the final integration. Partitioning is not only driven by the functionality:
+- number fo signals necessary to connect
+- bandwidth of the signals --> at high frequency is better to keep the components on a single chip
+- delays of the signals --> length and width of the wires affects the speed at which the signals can go
+
+NOTE: software to design PCB:
+- altium
+- eagle
+
+### Testing
+Boundary scan testing: use a chain of cells and multiplexers that can be used to force certain operating states/read some values:
+- normal operation --> the cells work normally
+- test mode --> connect the registers in a chain and use them to force inputs or read values
+
+See later for JTAG interface.
