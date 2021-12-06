@@ -698,3 +698,56 @@ For the static power management:
 - Runtime PM, each device can register callbacks to be called on inactivity, does not involve directly user-space. In many case a driver must perform explicit active or idle requests. There is a reference counting mechanism to make sure not to turn off a devices that is needed by someone else.
 - Generic Power Domains (PD), goup devices in groups and apply policies directly at the domain level.
 - Suspend --> standy, suspend to RAM, hybernation
+
+## Battery operating embedded systems
+Typically embedded systems are powered by rechargable batteries, factors to consider when choosing a battery are:
+- reliability
+- capacity in terms of Ah
+- maximum peak current
+- temeperature operating range
+- charging time
+- deterioration
+- cost
+
+All batteries exploit a redox reaction to produce current, today the most common are based on litium ions and alkaline (NiMH).  
+Capacity rating systems
+- reserve capacity RC: time required for a fully charged battery under a costant 25 A current draw to reach 10.5 volts at 80 °F.
+- Cold Cranking Amps (CCA): Amperes that can be provided for 30 seconds at 0 °F while maintaining 1.2 V per cell.
+
+Batteries also have a leakage current that discarge them over time (8 - 20% per year) so it is often the case that the operating period of an embedded system is more due to the battery discharging itself than the power consumption of the system.  
+Litium batteries needs protective circuitry to protect the battery from:
+- short circuit on power supply
+- complete discharge
+- high voltage during charging
+- high temperatures
+
+### Supercapacitors
+High-capacity capacitor with higher capacitance but very low voltage limits. Can store 10-100 times more energy per unit volume than electrolytic capacitors and can accept/deliver charge much faster than batteries.  
+They are used where there is the need for many rapid charge/discharge cycles and to have a burst in power delivery or store temporarily some poewr.
+
+### Power management
+Often it is needed to generate different voltages from a single battery. It is done using DC-DC converters, like an LDO.
+
+### Wireless charging
+Works using magnetic induction like in a transformer, but without the ferromagnetic core. In compact devices planar coils are used and can reach good efficiency (>90%) if the distance is small enough, usually around 0.5 cm.
+
+Example  
+Qi standard: can provide up to 5 W of power from transmetter to receiver and defines 3 key areas of the system:
+- transmitter: provides the inductive power
+- receiver: uses the energy
+- communication: unidirectional from receiver to transmitter, usually done using load modulation
+  - protocol:
+    - analog ping: detects presence of an object.
+    - digital ping: longer version of analog ping, gives the receiver time to reply to ensure that the device is capable of wireless charging.
+    - identification and configuration: receiver send necessary information to be identified and configure power trnasmission.
+    - power transfer: receiver send regular messages (every 250 ms) to increase/decrease charge
+    - end transfer: explicitly tells the transmitter to end or doesn't give signal for 1.25s
+
+### Battery models
+Energy density in battery is increasing but not at a rete to keep up with the computational and portability needs. Moreover they are non linear:
+- the amount of energy that can be extracted depends on the current drawn (discharge profile)
+- battery recovers some charge when it is given some rest
+
+Guidelines:
+- whenever possible use small current, taking into account the efficiency of the DC-DC converters
+- avoid large current variations, use (super)capacitances to absorb these peaks
