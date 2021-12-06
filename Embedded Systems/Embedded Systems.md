@@ -589,3 +589,112 @@ Usually in this fields distributed systems are used to ensure safety and avoid a
   - operating in hasrsh enviroments
   - need for redundancy, both for failure of nodes and communications  
   The general architecture consists of a high number of sensors that communicate with a gateway to exchange information with the host. The typical approach to expose the data is using a publish-subscribe model.
+
+## Thermal and power management
+Digital logic power consumption can be distinguished in two categories:
+- active power `P = C*V*f^2`  
+Related to the switching activity of the circuit, cannot be changed arbitrarily since to operate at a given frequency a certain minimum voltage is required.  
+Over the past years due to Dennard's scaling it was possible to build a chip on smaller process, increaseing density and frequency but consuming the same active power due to the possibility of operating at lower voltages and decrease in capacitance C. This is coming to an end because we are at the limits of how low the voltage can get.
+- leakage power (static power) `P = I_leak*V`  
+Increases as transistor size decreases and increases exponentially with temperature. This is not related to the circuit doing actual computations, it is just due to the fact the the system is powered on. This can only be reduced by reducing the voltage or interrupting the current flow by powering off devices via *clock gating*.
+
+High temperatures have negative effects on ICs in general:
+- increase gate delay, slowing down the operating frequency
+- lower MTBF
+- thermal runaway: leakage power increases with temperature lead to increase the temperature --> positive feedback to the destruction of the IC
+
+To model the thermals of a chip we can use a simplified model that exploits the parallelism with electrical circuit (e.g. thermal conductivity --> electrical conductivity, heat source --> voltage generator, thermal mass --> capacitance).  
+For silicon, thermal phenomenas are very fast (+20 °C in <100ms) so in chip design the approach is to run thermal simulators to builld a 2D map of the chip (e.g. 3D-ICE).  
+To model it directly an IR camera is needed and the chip needs to be delidded (i.e. change the condition w.r.t. normal operation) or use a Thermal Test Chip that is able to simulate the behaviour of the chip by heating up some areas and compare different cooling solutions.
+
+### Heat dissipations
+The Thermal Design Power (TDP) is the power rating of a computing system that represent the maximum amount of heat that the cooling system is required to dissipate. We can have different approaches to cooling based on the power dissipated by the chip:
+- Passive cooling: no heatsink, transfer heat directly from package to environment. Only viable for low power IC (single digit W)
+- Heat sinks: metal components with high surface area and thermal conductivity placed on top on the package. Can deal up to tens of W because it still relies on natural convenction.
+- Forced air cooling: a heat sink with fans mounted on it to force convenction and increase heat transfer up to a few hundred W
+- water cooling: replace air with water that can transfer heat faster, requires a radiator to cool the water
+- evaporative cooling: takes advantage of latent heat of state transitions of fluids with very specific boiling points
+- thermoelectric cooling: use Peltier effect, useful to remove heat from localized hotspot (still research in progress)
+
+### Thermal control policies
+The amount of heat that can be removed from a high end IC is limited but in many cases the thermal output is variable and depends on the load.  
+The idea is to design a MPSoC that in the worst case draws more power that it can be dissipated and use thermal control polici to limit power draw during peaks. This allows the MPSoC to be faster on average than if it were limited by worst case dissipation.
+
+Possible policies:
+- stop and go: very simple policy (idle injection). Halt the CPU if exceeding a certain temperature threshold and restart when it falls below the threshold. This has a high impact on performance so it is often kept as a last resort policy to prevent thermal runaway.
+- use Dynamic Voltage and Frequency Scaling (DVFS): very complex to implement, change dynamically the voltage and the frequency reducing the active power of the chip. Selecting the correct operating point is also complex but this allow to regulate more finely the performance.  
+Typical policies are:
+  - based on control theory and needs to be executed at a fast rate (1-100ms)
+  - optimization-based, maximize performance given certain thermal constraints
+- task migration: in multicore architectures when a core is overheating, the tasks it is executing can be moved to another core. This doesn't require to slow down cores but incurs in overhead to migrate tasks and there is still the need for a secondary policy if all cores are equally hot.
+- event based: not execute policy at a fixed rate, require hw-sw co-design. A small hw state machine monitors sensors and generates events when it detects the needs for thermal response. Those events trigger the execution of the policy.  
+This approach allows to have a faster response with less overhead.
+
+### Power management at OS level
+Power states are power saving policies that can be applied to the system. They are divided depending on the load of the system, we can have:
+- active power states, save dynamic power, regulate the operating point depending on the load. Lose some performance.
+- idle power states, save static power, put the system in sleep state by switching off components after some inactivity. Overhead to wake up the system.
+
+![power_states](assets/power_states.png)  
+
+Different power states can be defined at a device level (e.g. switch off display while CPU is active). To do this a standard interface was defined, ACPI (Advanced Configuration and Power Interface), that moves the power management under the control of the operating system by providing a standard way to discover and configure power state of the devices.  
+The power states defined by ACPI have different hierarchical levels:
+- G-states, global system states, example
+  - G0 --> system is working, processes running, peripherals powered on
+  - G1 --> sleeping, no user processes, preserve context info and resume without reboot  
+  In G1 we can be in different S-states depending on the powewr saving measures.
+  - G2 --> soft off, no code is run, no context preserved, needs a reboot (e.g. wake-on-LAN)
+  - G3 --> mechanical switch off, no power supplied, no context, require complete restart
+- S-states, system wide sleep states
+  - S1 is standby
+  - S2 CPU powered off
+  - S3 sleep or suspend to RAM:  
+  low wake up latency because all the state is saved in main memory that is kept powered on while the rest of the system is turned off.
+  - S4 hybernation or suspend to disk  
+  higher latency to recover since all context is saved to disk but all the hw and peripherals can be switched off.
+- CPU specific (note, can be applied to the single cores or at a package level)
+  - C-states for power/sleep states (more can be implemented)
+    - C0 active --> CPU is fully operational according to a P state
+    - C1 halt --> CPU is idel, scale down clock
+    - C2 stop-clock --> CPU idle, clock and frequency are scaled down
+    - C3 sleep --> cache retained but disable coherency
+  - P-states for performance states
+    - P0 full speed
+    - P1 reduced speed, scaled voltage and frequency, lower performance than P0
+    - Pn further levels of scaling up to 255 maximum but usually there are not many due to the difficulty of selecting an optimal policy
+- D-states for device level power/sleep
+  - D0 device is fully on
+  - D1 intermediate sleep, device specific, can be more than one
+  - D2 or more is switched off
+
+#### Power management philosophy
+We can have different power consumption profiles with equivalent energy consumption. Which approach is better?
+- race-to-idle: completes the tasks as fast as possible and go to sleep.  
+Good for HPC or systems that do not require interactivity due to the wake-up latency. this approach also allows to save static power but can lead to have higher peak temperatures, affecting the choice of the cooling.
+- slow down: usually adopted on ARM processors, use DVFS to save dynamic power. Takes longer to complete the task but no delays in waking up the system, suitable for interactivity (e.g. smartphones)
+
+There is not better approach overall, it depends on the applications and the requirements that we have.
+
+#### OS integration: Linux
+There is an ACPI daemon that listen to events to handle power events (e.g. close laptop lid, battery events, ...). The device tree (DT) is exploited to include also power management information. Specific frameworks are used in the kernel in order to manage active and static frameworks. For the active power we have:
+- cpuidle, manage transitions between C-states
+  - latency limitations
+  - minimum residency time (i.e. is it worth to save power?)
+  - heuristics on CPU load
+  - next predictable events (e.g. timers)
+- Operating Performance Point (OPP) library, manage the P states by setting a pair of frequeny-voltage values supported by the SoC power domains.
+- cpufreq, most popular framework to perform DVFS, several governors ara available based on the different policies:
+  - performance
+  - powersave
+  - schedutil, select according to utilization
+  - ...  
+  Interacts with the CPU driver to set the actual P-state
+- devfreq, same idea but for specific devices
+- PM QoS Interface, used to set performance goals by drivers and application, can be set system wide or device speific. Poses constraints on the other frameworks governors for the selection of C, P and D states
+
+![power_management_frameworks](assets/power_management_frameworks.png)  
+
+For the static power management:
+- Runtime PM, each device can register callbacks to be called on inactivity, does not involve directly user-space. In many case a driver must perform explicit active or idle requests. There is a reference counting mechanism to make sure not to turn off a devices that is needed by someone else.
+- Generic Power Domains (PD), goup devices in groups and apply policies directly at the domain level.
+- Suspend --> standy, suspend to RAM, hybernation
