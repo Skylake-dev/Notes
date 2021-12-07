@@ -800,3 +800,37 @@ or the spiral model
 The nice thing about the spiral model is the possibility to have fast prototyping and adjustments of the requirements down the line. It is more used in small companies or start-ups.
 
 Of course in a real world scenario the different phases are not so clearly separated and there can be overlappings. The different phases are not balanced w.r.t. the effort required to complete them.
+
+## Testing
+Need to test the hw, the sw and the communication part.  
+There can be different phases:
+- simulation, all the elements are simulated, lower accuracy
+- prototyping, some parts are simulated while others are actually implemented although they are not the final ones. Often use prototype boards and test directly on field.
+- pre-production, all elements are real, need to validate that all the requirements have been met
+- post-production, inspect quality of final product, cost of production and time required to produce. 
+- End Of Line testing (EOL), test the final products with the sw flashed on it, both to configure the system and to test the connectivity of the components. Some of the testing routines can alse be left in the final product to facilitate repair or performe some remote analysis.
+
+The transitions between the simulated and the real system can go through different steps, like testing the real sw on a simulated hw or test the hw in a simulated environment.  
+Components that can be simulated
+- sw, directly on the host platform or on an emulator.
+- CPU, can be susbistitued by one more powerful or use that to simulate the target one.
+- other hw
+  - emulated
+  - build a prototype board, like on a breadboard or some specific SDK boards
+- environment
+  - static, only generate signals.
+  - dynamic, interface with a simulation environment to have a feedback loops
+
+In addition to the unit and integration testing for software, in an ES there is also the need to test the integration between hw and sw components and the whole system. It can be also tested under some specific environmental conditions to check the behaviour in a real environment.
+
+## Documentation writing style
+The software needs to be documented thoroughly in order to be maintainable. The quality of the code needs to be ensured by following coding styles and proper testing flow.  
+Since the source code needs to be read by others it needs to be easy to understand. Optimized but messy code is more difficult to deal with while easy to read code can be optimized later.  
+The programming languages used in the ES field are mainly C/C++ and sometimes assembly for low level operations.  
+The quality of the code can be assessed using various metrics, some are more subjective, others can be properly measured:
+- defects detected after the release
+- mean time to fix a defect or add new functionality
+- follow the MISRA guidelines (can be checked automatically by some commercial tools)
+  - main goals: ensure same behaviour on different compilers/CPU
+
+The documentation can be embedded directly in the source code and generated automatically with some tools like doxygen.
