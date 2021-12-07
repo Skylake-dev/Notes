@@ -940,7 +940,40 @@ Comparison I2C and SPI:
 | need a multi-master | limited number of slaves |
 | many units connected to one bus, often not known a priori | maximum transmission speed is required |
 
-CAN (Controller Area Network), used in the automotive field. Designed to be resistant to electro magnetic interference. It is suitable for transmitting small messages and uses a CRC-15 to protect from errors. The messages are encapsulated in frames with fixed structure:
-` SoF -> arbitration (decide who is master) -> control -> data -> CRC -> ack -> EoF `
+CAN (Controller Area Network), used in the automotive field. Designed to be resistant to electro magnetic interference. It is suitable for transmitting small messages and uses a CRC-15 to protect from errors. The messages are encapsulated in frames with fixed structure:  
+` SoF -> arbitration (decide who is master) -> control -> data -> CRC -> ack -> EoF `  
 The speed that can be achieved depends on the distance, it can reach up to 1km.  
 The bus has no need for arbitration because it is based on priority.
+
+## Sensors
+Device that translates a physical measurements in a voltage/current value. There are many types of sensors both in terms of accuracy and form factors, not to mention power consumption.  
+A sensor can be modeled as an equation that links the quantity we want to measure to the output, that can be fed into an ADC to get a digital value.  
+
+Typically sensors only have a range of values in which the activity is linear and there is a uncertainty on the measure given depending on the sensitivity. Some sensors are not linear anywhere and typically have an exponential or logarithmic curve.  
+Often integrated in the sensors there is the required electronics to convert the signal to digital and smooth the reading.
+
+A specific class of sensors is becoming popular in the embedded/IoT field is called MEMS, Micro Electro Mechanical Systems, a combination of electronics and mechanics that can be integrated in the IC, they can be mass produced at a low cost.  
+They are very used today from consumer electronics to automotive and areonautics because of their low cost. The main classes of MEMS are:
+- pressure sensure
+  - piezoresistive sensors
+  - capacitive sensors
+- inertial sensors
+  - accelerometers  
+  Used to detect crash, free-fall, pedometer, ...
+  - gyroscopes  
+  Vibration reduction for camera, roll-over detection
+- optical
+- RF
+  - resonators
+  - switches
+
+Producers of sensors: Texas Instruments, Denso, STMicroelectronics, Seiko, Lexmark, Hewlett Packard, Bosch.  
+MEMS improvements followed the same trends of the Moore's law.
+
+### Energy harvesting
+Is there a way to recover energy directly from the environment instead of relying on batteries?  
+the most common approach in those case is to use a solar cell but in some cases this is not possible so a wide variety of techniques can be used:
+- vibrations
+- thermoelectric
+
+The problem of these approaches is that they are not always applicable and usually not enough energy is harvested to guardantee operativity wihout a battery.
