@@ -834,3 +834,113 @@ The quality of the code can be assessed using various metrics, some are more sub
   - main goals: ensure same behaviour on different compilers/CPU
 
 The documentation can be embedded directly in the source code and generated automatically with some tools like doxygen.
+
+## Communication in ES
+The communication is a critical part of and embedded system, it is implemented using some buses. There is a wide variety of protocols that can be used, it depends on the affordable cost and the requirements.  
+A bus is a set of wires (that can be uni or bi-directional) with a single function. An associated protocol is used on top of the bus to perform the communication.  
+Timing diagrams are the most common method to describe a protocol, representing the sequence of signals involved in the communication. To fully describe a protocol we need to identify the different parts involved:
+- actors, entities involved in the communication
+- data direction
+- addresses, special kind of data to specify a certain memory location, peripheral or register.
+- time multiplexing, share the bus for multiple pieces of data, used to save wires at the expense of time.
+
+Control methods
+- strobe
+  - master assert a `req` to receive the data
+  - servant puts data on bus within a certain time window
+  - master receives data and de-asserts `req`
+- handshake
+  - master assert a `req` to receive the data
+  - servant puts data on bus and asserts `ack`
+  - master receives data and de-asserts `req`
+
+Can have both approaches combined to adapt the master to fast or slow servants.
+
+A microprocessor communicates with other devices using its pins. In a bus-based I/O we can have:
+- memory mapped I/O
+  - a peripheral is assigned a specific address in the memory.  
+  Do not require special instruction, accessing the peripheral is just like any other memory operation.
+- standard I/O, no loss of addresses to peripherals.  
+Require specific instruction to be accessed but simplify address decoding logic in the peripheral.  
+If more peripherals are connected to the same bus there is the need to arbitrate the access. The access can be based on some kind of priority policy or in a round robin fashion. Daisy chaining is also possible (can have starvation issues for the peripheralls further down the chain).
+
+The communication with the peripherals can also be done using:
+- polling
+- interrupt
+  - fixed, ISR is positioned at a fixed address
+  - vectored, peripheral provide the address of the service routine
+
+Interrupt controllers allow the CPU to increase the number of interrupt that it can handle and set different priority.
+
+NOTE: DMA  
+Direct memory access, used to allow peripherals to access directly the memory instead of passing thoru the processor every time. This minimize the overhead.
+
+### Communication protocols
+A signal can have different properties depending on the purpose and the scale of the communication. Some general attributes are
+- bandwidth
+- encoding
+- simplex, half-duplex, full duplex
+
+In any case there are some control signals used to synchronize both ends to correctly decode the data. The main goals are:
+- prevent errors in the transmission
+- correct errors
+- avoid conflict in accessing the media
+
+#### Parallel communication
+Suitable for short distance (a few meters). The transmission is done in groups of 8-16 bits toghether with additional wires for control signals to provide synchronization. Some examples of parallel protocols are SCSI, PCI, PCIe.
+
+#### Serial communication
+Can be used on longer distances, use of a single signal to trasmit bits one after the other toghether with control signals.  
+- isochronous trasmission, synchronization is based on the single clock signal that is shared from sender to receiver, only suitable for small scale communication due to clock skew.
+- asynchronous tramsission, tx and rx have their own clock but of similar frequency, require synchronization at each byte transmitted. Typical sequence  
+` start -> LSB -> ... -> MSB -> parity -> stop `  
+- synchronous transmission, receiver has a PLL that can extract the clock from the signal and use it for the synchornization
+
+Error detection and correction can be done at character level with the parity bit or at a message level using checksums or CRC.
+
+Typical protocols: RS-232, UART, I2C and SPI.
+
+I2C (Inter IC) was developed in the '80 by philips, the goal was to connect devices on a small scale with low bandwidth (100 kbit/s - 3.4 Mbit/s). It uses only 2 lines:
+- Serial Data Line (SDA)
+- Serial Clock line (SCL)
+
+The different devices can be master or slave, only masters can start the communication. there can be more than one master and there is a simple mechanism to negotiate the bus.  
+The bus is async and there is synchronization between every symbol and the receiver replies with an ack message.  
+
+SPI (Serial Peripheral Interface) synchronous, bidrectional with only 1 master. There are 4 lines for each slave:
+- SCLK Serial CLocK
+- MOSI master output slave input
+- MISO master input slave output
+  - wired-or on a single line, when not selected the slave needs to keep an high impedance mode
+- SS slave select for each slave
+
+The pros of SPI are:
+- higher frequency
+- MOSI and MISO lines allow a full duplex communication
+- arbitrary length of data (not limited to 8 bits)
+- simplicity
+- robust hw structure
+- clock produced by a single source
+- signals can be buffered or isolated
+
+The cons of SPI are:
+- use more lines
+- new pin for each slave
+- not possible to have multi master
+- no confirmation of transmission (ack)
+- no peripheral addressing, can only select using SS signal
+
+Comparison I2C and SPI:  
+- both are synchrounous
+- SPI has higheer thoughput
+- SPI is simpler
+
+| I2C is recommended when | SPI is recommended when |
+| -- | -- |
+| need a multi-master | limited number of slaves |
+| many units connected to one bus, often not known a priori | maximum transmission speed is required |
+
+CAN (Controller Area Network), used in the automotive field. Designed to be resistant to electro magnetic interference. It is suitable for transmitting small messages and uses a CRC-15 to protect from errors. The messages are encapsulated in frames with fixed structure:
+` SoF -> arbitration (decide who is master) -> control -> data -> CRC -> ack -> EoF `
+The speed that can be achieved depends on the distance, it can reach up to 1km.  
+The bus has no need for arbitration because it is based on priority.
