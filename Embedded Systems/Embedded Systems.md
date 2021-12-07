@@ -751,3 +751,52 @@ Energy density in battery is increasing but not at a rete to keep up with the co
 Guidelines:
 - whenever possible use small current, taking into account the efficiency of the DC-DC converters
 - avoid large current variations, use (super)capacitances to absorb these peaks
+
+## Design space exploration
+Build a system with the desired functionality while optimizing various metrics:
+- unit cost
+- NRE cost, one time monetary cost of the design
+- size
+- performance
+  - not only average performance but also best and worst case.
+- power
+- flexibility, adapt functionality without incurring in heavy NRE costs
+- time to prototype, time needed to build a working version of the system, not the final product
+- time to market, time to daploy a system that can be sold
+- maintainability
+- correctness
+- safety
+- ...
+
+Those metrics typically compete with one another, it is not possibile to optimize all of them at the same time, there is always a trade-off.  
+Of course those metrics needs to be estimated during the design time and needs to be evaluated when the prototype is complete. There can be different indicators of the goodness of an estimation:
+- accuracy `A = 1 - (E(D) - M(D))/M(D)` where E(D) and M(D) are the estimations and measurements of metric D. The perfect estimate have `A = 1`.
+- fidelity, percentage of correctly predicted comparisons between design implementations, allows to discard the less promising alternatives.  
+In practice take all the comparisons `if E(D_i) < E(D_j) then M(D_i) < M(D_j)` and viceversa. The fidelity measures how many of these actually hold.
+
+### Automatic design space exploration
+Frame the DSE as an optimization process to tune the different options while optimizing some target metric. The design space can be explored following different policies:
+- random
+- full factorial --> more entry leads to more accuracy but it takes more time
+
+In these experiments we need to consider the statistica significance of variations between different options.
+
+## Development cycle of an ES
+The traditional development cycles is similar to the waterfall approach of software engineering.  
+The main phases of development are:
+- requirement identificaiton
+- design the hw and the sw parts
+- production
+- maintenace
+
+In ES there is the so called V-model, more used in large companies  
+
+![v_model_for_development](assets/v_model_for_development.png)  
+
+or the spiral model  
+
+![spiral_model_for_development](assets/spiral_model_for_development.png)  
+
+The nice thing about the spiral model is the possibility to have fast prototyping and adjustments of the requirements down the line. It is more used in small companies or start-ups.
+
+Of course in a real world scenario the different phases are not so clearly separated and there can be overlappings. The different phases are not balanced w.r.t. the effort required to complete them.
