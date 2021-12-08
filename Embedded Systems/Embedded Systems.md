@@ -977,3 +977,250 @@ the most common approach in those case is to use a solar cell but in some cases 
 - thermoelectric
 
 The problem of these approaches is that they are not always applicable and usually not enough energy is harvested to guardantee operativity wihout a battery.
+
+## Real time systems
+A real time system is a system in which the correctness depends both on the logical correctness of the task's output and the time within the output is produced.  
+An alternative definition is a system that has to respond to external inputs within a finite and specified period.  
+` sensor and data processing -> computation -> actuation`  
+`^------------------response time----------------------^`  
+Example: airbag, when a collision is detected the trigger of the inflation within 10-20 ms.  
+Timing constraints sometimes require the code to be on bare metal to avoid entirely OS overhead or directly in hw. When timing requirements are more shallow a Real Time Operating System (RToS) can be used.  
+We can distinguish 3 classes of real time, depending on the consequences of missing a deadline:
+- hard real time, lead to a catastrophic event on people or the system under control
+- firm real time, invalid output value
+- soft real time, degradation of performance
+
+Properties:
+- timeliness --> system must include time management mechanisms.
+- predicatability, very hard to guarantee
+  - predicting a priori if the timing constraints can be guaranteed
+  - analyze temporal behaviour of the system at design-time
+- determinism --> timing guarantees on the task execution at runtime also in case of external events to handle.
+
+### Possible sources of unpredictability
+- processor
+  - modern processors include hw mechanisms to improve performance (prefetching, speculative execution, ...), it's ok for averate perfromance but are a source of non determinism
+- cache
+  - memory access can require unpredictable access time due to cache hit/miss
+
+To overcome this problems there is the need to specifically design simple mirocontrollers or adopt processors with specific real-time features, example ARM have different families of CPU depending on the purpose:
+- Cortex-A, highest performance.
+- Cortex-R, fast response, optimized for hard real time.
+- Cortex-M, lowest power, optmized for discrete processing and microcontrollers.
+
+Other sources of unpredictability are
+- DMA, can "steal" bus cycles from the CPU to perform memory transfers
+  - can be solved using a time-slice method: share deterministically the bus between CPU and DMA
+- interrupts, can interrupt the exectuion of a task causing the missing af a deadline
+  - can disable the interrupts except the timer interrupt and switch to polling to manage I/O (not efficient)
+  - queue the interrupts and work on them periodically
+  - minimize time spent in the ISR and handle it only 
+- system calls, may delay termination of the task with the risk of missing a deadline
+  - interruptible kernel routines: high priority tasks approaching the deadline should preempt also system calls
+- memory management, page faults causes the same problems as cache misses but with higher latencies
+- locking mechanisms
+- programming languages, most programming languages do not provide constructs to express time constraints, moreover some techniques introduce not predictable latencies (recursion, switch statements, loops, ...).
+  - use a specific language for real time
+  - avoid recursion
+  - avoid dynamic memory allocation
+  - maximum number of loop iteration must be know a priori
+
+### RTOS
+OS specifically designed to guarantee real time requirements. There are many advantages in using an RTOS:
+- part of the complexity and unpredictability is managed by the OS
+- faster development w.r.t. bare metal programming
+- real time schedulers manage timing constraints
+
+The structure of an RTOS is similar to a normal OS with particular care to the time management and scheduler and often target small microcontrollers.
+
+Common features:
+- multi-tasking and concurrency support (small number of task)
+  - creation and execution of tasks
+  - real time scheduling policies
+  - inter-task synch mechanisms
+- low-level user control
+  - select task priority
+  - prevent pages from being evicted from memory
+  - select scheduling policy
+  - select power management strategies, if present
+- reliability and robustness support
+  - mangae failures to prevent data loss and system capabilities
+  - multiple attempts to improve data consistency
+  - guarantee minimum service level for some critical systems
+- small memory footprint, usually require few kB of memory
+- preemptive kernel
+- bounded context-switch and interrupt management latencies
+- determinism, handle external events such that no deadlines are missed
+
+Examples of RTOS: VxWorks, FreeRTOS, Erika Enterprise, Miosix, ...
+
+#### Tasks
+In RTOS, tasks are characterized by timing constraints:
+- d_i, absolute deadline, time before which the task should be completed
+- D_i, relative deadline, difference between absolute deadline and arrival time a_i
+- L_i, lateness, delay of completion w.r.t. its deadline --> `L_i = f_i - d_i`
+- X_i, laxity or slack time, maximum time a task can be delayed to complete within the deadline --> `X_i = d_i - a_i - C_i` where C_i is the computational time required by the task to complete  
+
+![RTOS_task](assets/RTOS_task.png)  
+
+Tasks can be either periodic (e.g. sensor reads) or aperiodic (e.g. interrupts). The first type are more predictable and more easily manageable and make up the most task in a typical ES.  
+For periodic task we can define the *jitter*, the deviation of start time between two consecutive instances (jobs) of the task.
+
+#### Real time scheduling
+Schedulers that take into account also the timing constraints.  
+A schedule is *feasible* if all the tasks of the given set can be completed without violationg time constraints.  
+A set of task is *schedulable* if there exists at least one algorithm capable of producing a feasible schedule in a reasonable time.  
+
+Assumptions:
+- instances of periodic tasks are activated regularly at a constant rate
+- all instances have the worst case execution time
+- all instances have the same deadline equal to the period
+- all tasks are independent (no precedence relation or resource constraints)
+- tasks cannot suspend themselves
+- release time coincides with the arrival of the task
+- kernel overheads are considered zero
+
+Define CPU utilization as the sum over all the tasks of the computational time over the period of activation, useful to check the feasibility of a schedule (U > 1 --> not feasible). A good compromise is to design the system not to use more tha 70% of the resources available to have some headroom for some unpredictable events or longer than expected tasks.  
+Given a scheduling algorithm the *least upper bound* U(A) is the minimum utilization factor over all the tasks set that fully utilize the processor.  
+
+Scheduling classes:
+- timeline scheduling, also known as cyclic executive scheduling, used for military and traffic control application
+  - divide temporal axis in equal length slots
+  - one or more tasks are activated per slots
+  - greatest common divisor of the activation periods is the time slot length (minor cycle)
+  - least commond multiple of activation periods for the time interval after which the schedule repeats itself (major cycle)
+  - schedulability: Worst Case Execution Time WCET is lower than the minor slot
+  - pros: simple, low overhead, no jitter
+  - cons: not robust, sensitivity to application changes, hard to handle aperiodic tasks
+- rate monotonic
+  - assign priority according to the activation rate: higher rates (short period) --> higher priority
+  - fixed priority
+    - optimal among all fixed priority algorithms
+  - preemptive, a new task preempts the current one if it has a shorter period
+  - actually exploited in industrial solutions
+  - stable in case of transient system problems
+- earliest deadline first EDF
+  - dynamic priority assignement --> according to the absolute deadline, i.e. the more a deadline is close, the more the task has priority
+  - preemptive, if a task with earlier deadline is activated it prevents the current one
+  - agnostic w.r.t. to periodicity
+  - EDF is optimal for single core processors
+  - higher overhead w.r.t. rate monotonic due to dynamic priority but less context switch
+- deadline monotonic DM
+  - generalization of rate monotonicit
+  - fixed priority, inversely proportional to the relative deadline
+
+#### WCET analysis
+How can the designer of a system estimate the worst case execution time of tasks? This is a particularly problematic job in hard real time systems to properly schedule the tasks and guarantee timing requirements.  
+To start, during design it is possible to collect some samples of the execution time in different conditions to have an estimation of the WCET.  
+Ideally we want a tradeoff between having a safe value of the WCET and not wasting resources.  
+
+![WCET_estimation](assets/WCET_estimation.png)  
+
+We need a way to approximate the WCET as accurately as possbile since we cannot explore esaustively the input space (jumps, branches, FP operation depend on operands) and machine state (cache, pipelines, peripheral statuses, DMA, multicore, concurrent tasks, ...).
+Possible intereferences in estimating the WCET:
+- intra-task, self inflicted by the task itself, e.g. evicting a cache line that is later needed
+- intra-core, another concurrent task running on the same core e.g. evitcs a shared cache line
+- inter-core, tasks running on other cores e.g. occupation of shared bus
+
+Computing a safe and tight WCET when taking into account the task interference is hard expecially with multicore and multilevel caches are present.  
+
+Other sources of intereference can come from the hw itself:
+- memory controller: variability in latency for memory operations
+- NoC traffic: routing algorithms can not always guarantee latenciies
+- access to front side bus
+- cache state
+- cache latencies
+- power and thermal management: techniques like DVFS can impact execution time
+- system management interrupts: special purpose interrupts managed directly by hw
+- instruction prefetching and speculation: optimize average time but often worsen the worst case.
+
+Due to this complexity, many hard real time systems try to cut the complexity:
+- use of single core
+- only 1 level of cache
+- no prefetching
+- no speculation
+- use stable and old technology
+
+The WCET clearly depends on the target machine. Is it better to analyze the binary code instead of the source code:
+- have direct one-to-one match with machine instruction
+- not susceptible to compiler optimization or use of different compilers
+
+The steps that traditional analysis tools are the following  
+
+![WCET_analysis](assets/WCET_analysis.png)  
+
+However, exploring all the possible combination is unfeasible because the state space is too large.  
+Other issues:
+- computing the correct WCET is an undecidable problem
+- scheduler decision and task interference impact the WCET
+- architectural analysis of moder arch is computationally unfeasible
+- approximate architecture is not easy due to *timing anomalies*
+  - e.g. cache hit/miss --> should we always assume a miss? NO, timing anomalies may happen.  
+  This appen because of data dependency between instruction that can lead to have higher exectution time in case of a cache hit  
+  ![WCET_timing_anomalies](assets/WCET_timing_anomalies.png)
+
+Estimation of WCET for concurrently running tasks:
+- murphy approach: compute WCET of each task considering all possible interference
+  - pros: simple
+  - cons: very pessimistic analysis
+- integrated analysis: take into account all possible interferences among all the tasks in the entire task set
+  - pros: very high precision in the estimation
+  - cons: computationally unfeasible even for 2 tasks
+- isolation approach: partition resources to avoid interference (e.g. isolate tasks on specific cores, time-slice for buses, ...) --> probably most used approach
+  - pros: easy to analyze
+  - cons: underutilization of resources, partitioning require hw support
+- time composability: compute WCET without interference --> compute interferences associated to each resource --> recompute WCET of each task accounting for the interfences at each resource
+  - pros: precise and efficient
+  - cons: hard to compute interferences, often assumption-based and hard to verify
+
+##### Evolutions
+- probabilistic approaches
+  -  provide a probabilistic-WCET, a statistical distribution given a probability of failure P(ex_time > WCET).  
+Technically the WCET is underestimated and therefore unsafe but sometimes it is good enough, not yet suitable for real life-critical systems.
+  - Static Probabilistic Timing Analyss (SPTA), add probability values to the CFG analysis, statistical operators are used to combine different execution time estimations.
+  - Measurement Bases Probabilistic Timing Analysis (MBPTA), treat the system as a black box and measure the timings giving inputs to the system using Extreme Value theory EVT
+  - pros: 
+    - probabilistic analysis provides lower WCET than traditional approaches, expoliting better the resources
+    - system complexity is not an issue
+  - cons:
+    - difficult to perform some fine grained analysis of the system to identify problems
+    - hard to prove the necessary EVT hypotheses for MBPTA
+
+NOTE: WCET is related to the WCEC (Worst Case Energy Consumption), a measurememnt crucial in energy constrained envoironment to guarantee uptime.
+
+#### Mixed-criticality systems
+Modern systems are composed by tens of subsystems/microcontrollers to control different parts (e.g. think of a car).  
+Problems:
+- development cost
+- underutilization of resources
+- reliability and safety
+- system interoperability --> how do all of these systems communicate and syncrhornize
+
+Possible solutions:
+- system consolidation (not typical in automotive for safety)
+  - more difficult than it seems because this places on a single system different parts with different criticality (e.g. steering control and infotainment system).
+  - pros:
+    - lower deisgn cost
+    - better power and energy optimization
+    - improves reliability of the overall system
+    - lower maintenance costs
+    - reduce bus congestion
+  - cons:
+    - increase shared resources contentions and unpredictable behaviour
+    - large integration effort require
+    - how to manage different criticality levels
+
+A mixed-criticality system is a system running tasks with different criticality levels.  
+Criticality is determined by considering both the impact of failure and the required rate of failure.  
+Trivial solution: consider all the tasks in hard real time --> unfeasible for cost or impossibility to compute WCET for some tasks (e.g. infotainment)  
+
+Mixed-criticality task model, all tasks have:
+- criticality level, can be expressed in the form of [ASIL levels](https://en.wikipedia.org/wiki/Automotive_Safety_Integrity_Level).
+- a set of WCET for each criticality level
+
+When a task overrides its WCET, a system mode switch occurs, each task that is under the current critical mode is dropped and not scheduled, only the higher criticality tasks are scheduled (NOTE: ASIL-D tasks are never dropped, the most critical).  
+A good system should be designed to
+- ASIL-D tasks are executed in any condition
+- mode switches accure rarely to minimize disruption of other tasks
+
+Multiple scheduling algorithms have been proposed, the most famous is a variation of EDF, called EVF-VD (Virtual Deadline) that takes into account possible mode switches.
