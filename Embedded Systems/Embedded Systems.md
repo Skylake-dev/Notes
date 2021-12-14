@@ -121,7 +121,7 @@ In ES, if there is a GPP usually it exploits a RISC architecture because of thei
 - Network processors, optimized for packet managing in routers/switches (e.g. CRC computations, crypto operations)
 
 ## Microcontrollers
-Microcontroller Units (MCU) embed in a single chip everything that is needed to run the system. Can achieve lower power consumption giving up raw performance. Often they do not offer interface to external memory because typically they run very simple programs and to reduce the pinout. Include serveral peripherals and interfaces (I2C, SPI, JTAG, PWN, UART, watchdog, timer, analog I/O, ... see later lectures).  
+Microcontroller Units (MCU) embed in a single chip everything that is needed to run the system. Can achieve lower power consumption giving up raw performance. Often they do not offer interface to external memory because typically they run very simple programs and to reduce the pinout. Include serveral peripherals and interfaces (I2C, SPI, JTAG, PWM, UART, watchdog, timer, analog I/O, ... see later lectures).  
 These are programmed in C (sometimes assembly). SDKs can range from a simple compiler to fully fledged develepment environments with analysis tools.
 
 Main characteristics:
@@ -157,7 +157,7 @@ There are registers that can be used to configure the functionality of the GPIO.
 - timer, basically a counter. Can generate interrupts periodically, measure time intervals, count events, generate PWM signals.
   - watchdog, particolar timer to monitor the evolution of the system and detect possible failures. It needs to be periodically reset by the sw to ensure that it is operating correctly.  
   Since the watchdog is used to monitor the functionality of the system it is better to have an external clock for more reliable operation.
-- PLL, phase locked loop. Electronic circuit that consist of a phase detector, a low pass filter and a voltage controlled oscillator (VCO) connected in a loop to maintain the VCO frequency locked to that of the input signal frequency. Adding a multiplier/divider it is possible to obtain multiples of the input frequency allowing to synthesize different clock signals at different frequency. F_out = F_ref*(N/R)
+- PLL, phase locked loop. Electronic circuit that consists of a phase detector, a low pass filter and a voltage controlled oscillator (VCO) connected in a loop to maintain the VCO frequency locked to that of the input signal frequency. Adding a multiplier/divider it is possible to obtain multiples of the input frequency allowing to synthesize different clock signals at different frequency. `F_out = F_ref*(N/R)`
 
 ### Boot process
 Sequence of steps that brings the system from power on to a fully operational state. The complexity of this process depends on the system (what hw is used, presence of an OS, ...).
@@ -202,7 +202,7 @@ The text section of the binary contains different information:
   - usually written in assembly
 - application code
 
-The first thing to be exectued is the second entry of the IVT (i.e. execute the reset handler):
+The first thing to be executed is the second entry of the IVT (i.e. execute the reset handler):
 - copy stack pointer in the SP register
 - invokes a system initialization function (configure clocks)
 - prepares memory
@@ -244,7 +244,7 @@ Microcontrollers are conceived to host the final application not to support code
   - libraries, templates
   - device driver support
   - RTOS features
-  - Common Microcontroller Software Interface (CSIM), standardized platform for ARM Cortex based MCUs
+  - Common Microcontroller Software Interface Standard (CMSIS), standardized platform for ARM Cortex based MCUs
 - Gem5, allow also to simulate the system
 - Code Composer Studio, focus on Texas Instruments products
   - includes C/C++ compiler
@@ -255,8 +255,8 @@ Microcontrollers are conceived to host the final application not to support code
 - CodeWarrior
 - MPLAB
 - IAR Systems
-  - targets different arch
-  - support RISC V
+  - targets different architectures
+  - support for RISC V
 
 These are frequently linked to boards they target, some features may depend on the family of MCUs.
 
@@ -273,8 +273,8 @@ Objective:
 Device Firmware Update (DFU) is the operation used to replace, partially or fully, the firmware on a device and relies on the presence of a bootloader.  
 This functionality does not come for free, there needs to be specific hw support, extra memory to store new firmware, etc... not to mention the risks involved during the update operation like a power failure.
 
-The bootloader is optimized and kept at a minumum
-- to minimize boot time
+The bootloader is optimized and kept at a minumum:
+- minimize boot time
 - reduce the possiblity of having bugs
 - maximize the available space for the application code
 
@@ -309,13 +309,13 @@ Challenges:
     - metered network connections (e.g. GPRS)
 - security, to ensure authentication, confidentiality and integrity
 
-These actions are typically carried out by a Second-Stage Boot Loader (SSBL) that only enters into action when performing an update. Using a SSBL is better than having an application on to do this work because this can cause issues:
+These actions are typically carried out by a Second-Stage Boot Loader (SSBL) that only enters into action when performing an update. Using a SSBL is better than having an application to do this work because it can cause issues:
 - if there is a RTOS, the application runs as a thread in the RTOS concurrently with other applications that can mess with the update process.  
 Since the SSBL is not a RTOS program it doesn't have concurrent code running alongside it and can do this operations safely.
 - need to relocate the IVT to run the new application.
 
 What does th SSBL do exactly?
-- determine which is the current application and branch to it at the start (their location is usually kept in a table of contents)
+- determine which is the current application and branch to it at the start (their location is usually kept in a Table of Contents)
 - update the ToC when the update process completes
 - portions of the OTA update functionality can be pushed to the SSBL
   - e.g. check the integrity of the applications
@@ -334,9 +334,9 @@ Design tradeoffs
 
 Addressing security:
 - keep OTA updates confidentials and verify integrity and identity of server  
---> use encryption: shared password between client and server to encrypt data. The crypto accelerator in the MCU may support AES 128/256.  
---> send hash of the firmware to enable integrity verification on the device.  
---> use of asymmetric encryption to verify identity of the server. Often there are not accelerators to do this and needs to be done in sw.
+  - use encryption: shared password between client and server to encrypt data. The crypto accelerator in the MCU may support AES 128/256.  
+  - send hash of the firmware to enable integrity verification on the device.  
+  - use of asymmetric encryption to verify identity of the server. Often there are not accelerators to do this and needs to be done in sw.
 
 Summary of best practices
 - digital signing <-- critical for integrity and verify identity
@@ -352,7 +352,7 @@ Summary of best practices
 - small scale tests before deploying to all devices to check functionality
 
 ## Timer and watchdog
-A timer is a specialized type of clocks to measure time intervals while a counter stores the number of times an event occurred w.r.t. a clock signal.  
+A timer is a specialized type of clock used to measure time intervals while a counter stores the number of times an event occurred w.r.t. a clock signal.  
 To read a timer we can look at the value stored in the register or wait to detect the overflow.
 Timers and counters are the most pervasive peripherals in MCU design:
 - improve performance
@@ -390,7 +390,7 @@ There are different ways to implement a watchdog:
 - windowed vs not windowed
   - windowed means that there is a minimum time that needs to pass before the watchdog can be cleared. If an attempt is made before this time the watchdog forces the reset.
 
-Single stage watchdog: invokes a restart immediately after the timeout. It relies on the system reset to force outputs to safe states
+Single stage watchdog: invokes a restart immediately after the timeout. It relies on the system reset to force outputs to safe states.  
 Multiple stage watchdog: more timers in cascade. Each stages kicks the next and perform a set of corrective actions and only at the end a reset will be forced.  
 
 To ensure safety there can be two sets of control states: runmode vs safemode. The timeout of the watchdog causes the selector to switch to safemode state to control the ouput and ensure that there are not potentially harmful values.
@@ -411,7 +411,7 @@ Different possibilities
 - microprocessors or microcontrollers
 
 ### ASIC
-Based on planar process. Use a semiconductor to realize all the main components (transistors, capacitance, diodes, ...) directly on silicon. The elements to do this are:
+Based on planar process. Use a semiconductor to realize all the main components (transistors, capacitances, diodes, ...) directly on silicon. The elements to do this are:
 - silicon n --> more free electrons
 - silicon p --> less free electrons
 - insulator --> SiO2
@@ -440,12 +440,12 @@ Classification can be based on different criteria:
   - global connection  
     Can be shared by may components on the device --> long delays and low flexibility
   - local connection  
-    Shared among few elements --> less delay, more flexible routing although more complex
+    Shared among few elements --> less delay, more flexible but also more complex routing 
   - hierarchical connection  
   - other e.g. programmable switch matrix
 
 ### Architecture and design
-Due to their intrinsic heterogenousity and wide variety of constraints there is no standard architecture for embedded systems. The development process is usually done by prototyping the system on a development board to see if the performance of the selected processor is fine, the range of power consumption, etc. These boards often offer also integrate FPGA modules to add pieces of logic allowing for fast development of complex application.  
+Due to their intrinsic heterogeneity and wide variety of constraints there is no standard architecture for embedded systems. The development process is usually done by prototyping the system on a development board to see if the performance of the selected processor is fine, the range of power consumption, etc. These boards often offer also integrate FPGA modules to add pieces of logic allowing for fast development of complex application.  
 The connectivity that the board provides allow the developer to focus the effort on the application (see example on slides).  
 
 ## PCB based design
@@ -460,8 +460,8 @@ The first step in designing a PCB based system is to select the componets that w
   - electro-optical components to interface electromagnetic signals and optical signals (e.g. photodiodes, laser diodes, ...)
   - RF components like antennas
   - display
-  - sensors --> convert physical measurements to voltages
-  - digital components (microcontroller, dedicated ICs, ...)  
+  - sensors --> convert physical measurements to voltage/current
+  - digital components (microcontrollers, dedicated ICs, ...)  
 
 It is also important to evaluate the different packages available that can influence the design of the PCB:
 - mounting 
@@ -484,15 +484,15 @@ It is also important to evaluate the different packages available that can influ
   - influence thermal conductivity, metal transfers better but it's more expensive
 
 ### Structure of a PCB
-A PCB consists of 3 main components
+A PCB consists of 3 main components:
 - conductor
   - usually copper, used for wires and connecting components
 - insulator
   - fiberglass epoxy
 - glue (still an insulator)
-  - adhesive materials are called pre-peg
+  - adhesive materials that are called pre-peg
 
-In PCB with many layers there are ground and supply layers in between.  
+In PCBs with many layers there are ground and power supply layers in between.  
 The final board is a stack of layers of insulators, where their faces host the wires, separated by pre-peg. The process to realize a PCB is quite complex and there exist specific file formats  to specify the design like [*Gerber*](https://en.wikipedia.org/wiki/Gerber_format).  
 The footprint of the components that needs to be mounted on the board is necessary to make sure that all the components fits and the connections are right.
 
@@ -501,12 +501,12 @@ The manufacturing steps are
 - realization of the wires 
   - use photoresist to cover parts, use acids to remove other areas and expose the wires
 - assembly of the layers
-  - stack them alternating pre-peg foils, a heated press finalize the step
+  - stack them alternating pre-peg foils, a heated press finalizes this step
 - drilling of the *vias*
 - fabricating external layers, writing the schema
 - finishing by applying a protective coating
 
-After manufacturing the boards are tested to ensure that all the connections are working properly, this involve both optical inspection and electric inspections.  
+After manufacturing the boards are tested to ensure that all the connections are working properly, this involve both optical and electrical inspections.  
 After this we can proceed to the mounting step. For small boards and limited volumes it is done by hand, otherwise specific equipment is used. In any case the assembly requires the following steps:
 - solder paste dispensing
 - component placement
@@ -518,12 +518,12 @@ After this we can proceed to the mounting step. For small boards and limited vol
 - passivate the surface with insulators if necessary
 
 ### PCB design criteria
-Partition the develpment in separate groups in order to work in parallel until the final integration. Partitioning is not only driven by the functionality:
-- number fo signals necessary to connect
+Partition the development in separate groups in order to work in parallel until the final integration. Partitioning is not only driven by the functionality:
+- number of signals necessary to connect components
 - bandwidth of the signals --> at high frequency is better to keep the components on a single chip
-- delays of the signals --> length and width of the wires affects the speed at which the signals can go
+- delays of the signals --> length and width of the wires affect the speed at which the signals can go
 
-NOTE: software to design PCB:
+Software to design PCB:
 - altium
 - eagle
 
@@ -532,7 +532,7 @@ Boundary scan testing: use a chain of cells and multiplexers that can be used to
 - normal operation --> the cells work normally
 - test mode --> connect the registers in a chain and use them to force inputs or read values
 
-See later for JTAG interface.
+See [JTAG interface](https://en.wikipedia.org/wiki/JTAG).
 
 ## System-on-Chip
 Complete system integrated on a single silicon die:
@@ -548,7 +548,7 @@ Why implement an SoC?
 - unit cost
   - NOTE: this includes only the production not the design
 - performance, greater than PCB based solution
-- reduced energy and power required
+- reduction of energy and power required
 - number of requested I/O, it's like having the possibility of fusing toghether multiple components
 - security, both IP and sensitive information in memory
 
@@ -565,12 +565,12 @@ The next step is to define the memory hierarchy and architecture. Classical buse
 A NoC basically implements a small network directly on the chip with basic functionality like addressing and routing to allow communications between different parts of the chip. NoC can take up to 20/30% of the hw resources but they solve several complex problem in the design of the communicaiton part and are suitable for highly scalable solutions (e.g. beyond 8 cores a NoC is necessary).  
 
 ### Testability
-Testing an single chip made of different components is a difficult task because they cannot be tested independently and the integrated in the chip. This is why the design needs to account also for the testing part by preparing suitable interfaces:
+Testing an single chip made of different components is a difficult task because they cannot be tested independently. This is why the design needs to account also for the testing part by preparing suitable interfaces:
 - boundary scan like in PCB
-- Built In Self Test (BIST)  to overcome the limitation of the scan (operate at lower frequency)
+- Built In Self Test (BIST)  to overcome the limitation of the scan (like operating at lower frequency)
 
 ## Distributed/Networked ES
-Processing and data storage are split over multiple devices. There is slight difference in terminology:
+Processing and data storage are split over multiple devices. There is a slight difference in terminology:
 - distributed when computation are equally distributed
 - networked when the nodes are just connected but are different
 
@@ -579,39 +579,39 @@ The critical part is implementing the communication between the nodes:
 - wireless --> more complex
   - A relevant interest is in Sensor Networks
 
-Examples
+Examples:
 - domotic  
 This is more tricky because there are a variety of different devices with different computing capabilities and functionalities.
 - automotive  
 Usually in this fields distributed systems are used to ensure safety and avoid a single point of failure that can be a centralized system. the different systems are interconnected over a shared bus (CAN bus).
 - Wireless Sensors Networks (WSN)
   - limited possibility to connect and store energy
-  - operating in hasrsh enviroments
+  - operating in harsh enviroments
   - need for redundancy, both for failure of nodes and communications  
-  The general architecture consists of a high number of sensors that communicate with a gateway to exchange information with the host. The typical approach to expose the data is using a publish-subscribe model.
+  The general architecture consists of a high number of sensors that communicate with a gateway to exchange information with the host. The typical approach to expose data is using a publish-subscribe model.
 
 ## Thermal and power management
 Digital logic power consumption can be distinguished in two categories:
 - active power `P = C*V*f^2`  
 Related to the switching activity of the circuit, cannot be changed arbitrarily since to operate at a given frequency a certain minimum voltage is required.  
-Over the past years due to Dennard's scaling it was possible to build a chip on smaller process, increasing density and frequency but consuming the same active power due to the possibility of operating at lower voltages and decrease in capacitance C. This is coming to an end because we are at the limits of how low the voltage can get.
+Over the past years due to Dennard's scaling it was possible to build a chip on smaller process, increasing density and frequency but consuming the same active power due to the possibility of operating at lower voltages and decrease in capacitance `C`. This is coming to an end because we are at the limits of how low the voltage can get.
 - leakage power (static power) `P = I_leak*V`  
-Increases as transistor size decreases and increases exponentially with temperature. This is not related to the circuit doing actual computations, it is just due to the fact the the system is powered on. This can only be reduced by reducing the voltage or interrupting the current flow by powering off devices via *clock gating*.
+Increases as transistor size decreases and increases exponentially with temperature. This is not related to the circuit doing actual computations, it is just due to the fact the the system is powered on. This can only be reduced by reducing the voltage or interrupting the current flow by powering off devices via *power gating*.
 
 High temperatures have negative effects on ICs in general:
 - increase gate delay, slowing down the operating frequency
 - lower MTBF
-- thermal runaway: leakage power increases with temperature lead to increase the temperature --> positive feedback to the destruction of the IC
+- thermal runaway: leakage power increases with temperature lead to increase the temperature --> positive feedback to the destruction of the IC.
 
-To model the thermals of a chip we can use a simplified model that exploits the parallelism with electrical circuit (e.g. thermal conductivity --> electrical conductivity, heat source --> voltage generator, thermal mass --> capacitance).  
+To model the thermals of a chip we can use a simplified model that exploits the parallelism with electrical circuits (e.g. thermal conductivity --> electrical conductivity, heat source --> voltage generator, thermal mass --> capacitance).  
 For silicon, thermal phenomenas are very fast (+20 °C in <100ms) so in chip design the approach is to run thermal simulators to builld a 2D map of the chip (e.g. 3D-ICE).  
 To model it directly an IR camera is needed and the chip needs to be delidded (NOTE: this changes the conditions w.r.t. normal operation) or use a Thermal Test Chip that is able to simulate the behaviour of the chip by heating up some areas and compare different cooling solutions.
 
 ### Heat dissipations
 The Thermal Design Power (TDP) is the power rating of a computing system that represent the maximum amount of heat that the cooling system is required to dissipate. We can have different approaches to cooling based on the power dissipated by the chip:
 - Passive cooling: no heatsink, transfer heat directly from package to environment. Only viable for low power IC (single digit W).
-- Heat sinks: metal components with high surface area and thermal conductivity placed on top on the package. Can deal up to tens of W because it still relies on natural convenction.
-- Forced air cooling: a heat sink with fans mounted on it to force convenction and increase heat transfer up to a few hundred W.
+- Heat sinks: metal components with high surface area and thermal conductivity placed on top on the package. Can deal up to tens of W because it still relies on natural convection.
+- Forced air cooling: a heat sink with fans mounted on it to force convection and increase heat transfer up to a few hundred W.
 - water cooling: replace air with water that can transfer heat faster, requires a radiator to cool the water.
 - evaporative cooling: takes advantage of latent heat of state transitions of fluids with very specific boiling points.
 - thermoelectric cooling: use Peltier effect, useful to remove heat from localized hotspot (still research in progress).
@@ -655,7 +655,7 @@ The power states defined by ACPI have different hierarchical levels:
 - CPU specific (note, can be applied to the single cores or at a package level)
   - C-states for power/sleep states (more can be implemented)
     - C0 active --> CPU is fully operational according to a P state
-    - C1 halt --> CPU is idel, scale down clock
+    - C1 halt --> CPU is idle, scale down clock
     - C2 stop-clock --> CPU idle, clock and frequency are scaled down
     - C3 sleep --> cache retained but disable coherency
   - P-states for performance states
@@ -665,30 +665,31 @@ The power states defined by ACPI have different hierarchical levels:
 - D-states for device level power/sleep
   - D0 --> device is fully on
   - D1 --> intermediate sleep, device specific, can be more than one
-  - D2 --> or more is switched off
+  - D2 --> switched off
 
 #### Power management philosophy
 We can have different power consumption profiles with equivalent energy consumption. Which approach is better?
-- race-to-idle: completes the tasks as fast as possible and go to sleep.  
+- race-to-idle: completes the tasks as fast as possible and goes to sleep.  
 Good for HPC or systems that do not require interactivity due to the wake-up latency. This approach also allows to save static power but can lead to have higher peak temperatures, affecting the choice of the cooling.
-- slow down: usually adopted on ARM processors, use DVFS to save dynamic power. Takes longer to complete the task but no delays in waking up the system, suitable for interactivity (e.g. smartphones).
+- slow down: usually adopted on ARM processors, use DVFS to save dynamic power.  
+Takes longer to complete the task but no delays in waking up the system, suitable for interactivity (e.g. smartphones).
 
-There is not better approach overall, it depends on the applications and the requirements that we have.
+The best approach depends on the applications and the requirements that we have.
 
 #### OS integration: Linux
-There is an ACPI daemon that listen to events to handle power events (e.g. close laptop lid, battery events, ...). The device tree (DT) is exploited to include also power management information. Specific frameworks are used in the kernel in order to manage active and static frameworks. For the active power we have:
+There is an ACPI daemon that listen to events to handle power events (e.g. close laptop lid, battery events, ...). The device tree (DT) is exploited to also include power management information. Specific frameworks are used in the kernel in order to manage active and static frameworks. For the active power we have:
 - cpuidle, manage transitions between C-states
   - latency limitations
   - minimum residency time (i.e. is it worth to save power?)
   - heuristics on CPU load
   - next predictable events (e.g. timers)
-- Operating Performance Point (OPP) library, manage the P states by setting a pair of frequeny-voltage values supported by the SoC power domains.
+- Operating Performance Point (OPP) library, manage the P states by setting a pair of frequency-voltage values supported by the SoC power domains.
 - cpufreq, most popular framework to perform DVFS, several governors ara available based on the different policies:
   - performance
   - powersave
   - schedutil, select according to utilization
   - ...  
-  Interacts with the CPU driver to set the actual P-state
+  Interacts with the CPU driver to set the actual P-state.
 - devfreq, same idea but for specific devices
 - PM QoS Interface, used to set performance goals by drivers and application, can be set system wide or device speific. Poses constraints on the other frameworks governors for the selection of C, P and D states
 
@@ -711,11 +712,11 @@ Typically embedded systems are powered by rechargable batteries, factors to cons
 
 All batteries exploit a redox reaction to produce current, today the most common are based on litium ions and alkaline (NiMH).  
 Capacity rating systems
-- Reserve Capacity RC: time required for a fully charged battery under a costant 25 A current draw to reach 10.5 volts at 80 °F.
+- Reserve Capacity (RC): time required for a fully charged battery under a costant 25 A current draw to reach 10.5 volts at 80 °F.
 - Cold Cranking Amps (CCA): Amperes that can be provided for 30 seconds at 0 °F while maintaining 1.2 V per cell.
 
-Batteries also have a leakage current that discarge them over time (8 - 20% per year) so it is often the case that the operating period of an embedded system is more due to the battery discharging itself than the power consumption of the system.  
-Litium batteries needs protective circuitry to protect the battery from:
+Batteries also have a leakage current that discarge them over time (8 - 20% per year) so it is often the case that the operating period of an embedded system is more limited by the battery discharging itself than the power consumption of the system.  
+Litium batteries needs specific circuitry to protect the battery from:
 - short circuit on power supply
 - complete discharge
 - high voltage during charging
@@ -744,7 +745,7 @@ Qi standard: can provide up to 5 W of power from transmitter to receiver and def
     - end transfer: explicitly tells the transmitter to end or doesn't give signal for 1.25s
 
 ### Battery models
-Energy density in battery is increasing but not at a rete to keep up with the computational and portability needs. Moreover they are non linear:
+Energy density in battery is increasing but not at a rate to keep up with the computational and portability needs. Moreover they are non linear:
 - the amount of energy that can be extracted depends on the current drawn (discharge profile)
 - battery recovers some charge when it is given some rest
 
@@ -777,9 +778,9 @@ In practice take all the comparisons `if E(D_i) < E(D_j) then M(D_i) < M(D_j)` a
 ### Automatic design space exploration
 Frame the DSE as an optimization process to tune the different options while optimizing some target metric. The design space can be explored following different policies:
 - random
-- full factorial --> more entry leads to more accuracy but it takes more time
+- full factorial --> more entries leads to more accuracy but it takes more time
 
-In these experiments we need to consider the statistica significance of variations between different options.
+In these experiments we need to consider the statistical significance of variations between different options.
 
 ## Development cycle of an ES
 The traditional development cycles is similar to the waterfall approach of software engineering.  
@@ -808,7 +809,7 @@ There can be different phases:
 - prototyping, some parts are simulated while others are actually implemented although they are not the final ones. Often use prototype boards and test directly on field.
 - pre-production, all elements are real, need to validate that all the requirements have been met
 - post-production, inspect quality of final product, cost of production and time required to produce. 
-- End Of Line testing (EOL), test the final products with the sw flashed on it, both to configure the system and to test the connectivity of the components. Some of the testing routines can alse be left in the final product to facilitate repair or performe some remote analysis.
+- End Of Line testing (EOL), test the final products with the sw flashed on it, both to configure the system and to test the connectivity of the components. Some of the testing routines can alse be left in the final product to facilitate repair or perform some remote analysis.
 
 The transitions between the simulated and the real system can go through different steps, like testing the real sw on a simulated hw or test the hw in a simulated environment.  
 Components that can be simulated:
@@ -858,9 +859,9 @@ Can have both approaches combined to adapt the master to fast or slow servants.
 
 A microprocessor communicates with other devices using its pins. In a bus-based I/O we can have:
 - memory mapped I/O, a peripheral is assigned a specific address in the memory.  
-Do not require special instruction, accessing the peripheral is just like any other memory operation.
+Do not require special instructions, accessing the peripheral is just like any other memory operation.
 - standard I/O, no loss of addresses to peripherals.  
-Require specific instruction to be accessed but simplify address decoding logic in the peripheral. 
+Require specific instructions to be accessed but simplify address decoding logic in the peripheral. 
 
 If more peripherals are connected to the same bus there is the need to arbitrate the access. The access can be based on some kind of priority policy or in a round robin fashion. Daisy chaining is also possible (can have starvation issues for the peripherals further down the chain).
 
@@ -873,7 +874,7 @@ The communication with the peripherals can also be done using:
 Interrupt controllers allow the CPU to increase the number of interrupt that it can handle and set different priority.
 
 NOTE: DMA  
-Direct memory access, used to allow peripherals to access directly the memory instead of passing thoru the processor every time. This minimize the overhead.
+Direct memory access, used to allow peripherals to access directly the memory instead of passing through the processor every time. This minimizes the overhead.
 
 ### Communication protocols
 A signal can have different properties depending on the purpose and the scale of the communication. Some general attributes are
@@ -891,28 +892,28 @@ Suitable for short distance (a few meters). The transmission is done in groups o
 
 #### Serial communication
 Can be used on longer distances, use of a single signal to trasmit bits one after the other toghether with control signals.  
-- isochronous trasmission, synchronization is based on the single clock signal that is shared from sender to receiver, only suitable for small scale communication due to clock skew.
-- asynchronous tramsission, tx and rx have their own clock but of similar frequency, require synchronization at each byte transmitted. Typical sequence  
+- isochronous transmission, synchronization is based on the single clock signal that is shared from sender to receiver, only suitable for small scale communication due to clock skew.
+- asynchronous transmission, tx and rx have their own clock but of similar frequency, require synchronization at each byte transmitted. Typical sequence  
 ` start -> LSB -> ... -> MSB -> parity -> stop `  
-- synchronous transmission, receiver has a PLL that can extract the clock from the signal and use it for the synchornization.
+- synchronous transmission, receiver has a PLL that can extract the clock from the signal and use it for the synchronization.
 
 Error detection and correction can be done at character level with the parity bit or at a message level using checksums or CRC.
 
 Typical protocols: RS-232, UART, I2C and SPI.
 
-I2C (Inter IC) was developed in the '80 by philips, the goal was to connect devices on a small scale with low bandwidth (100 kbit/s - 3.4 Mbit/s). It uses only 2 lines:
+I2C (Inter IC) was developed in the '80 by philips, the goal was to connect devices on a small scale with low bandwidth (100 kbit/s - 3.4 Mbit/s) in an half duplex communication. It uses only 2 lines:
 - Serial Data Line (SDA)
 - Serial Clock line (SCL)
 
 The different devices can be master or slave, only masters can start the communication. there can be more than one master and there is a simple mechanism to negotiate the bus.  
-The bus is async and there is synchronization between every symbol and the receiver replies with an ack message.  
+The bus is synchronous and there is an ack message between every symbol sent by the receiver.  
 
 SPI (Serial Peripheral Interface) synchronous, bidrectional with only 1 master. There are 4 lines for each slave:
 - SCLK Serial CLocK
-- MOSI master output slave input
-- MISO master input slave output
+- MOSI Master Output Slave Input
+- MISO Master Input Slave Output
   - wired-or on a single line, when not selected the slave needs to keep an high impedance mode
-- SS slave select for each slave
+- SS Slave Select, one for each slave
 
 The pros of SPI are:
 - higher frequency
@@ -939,6 +940,7 @@ Comparison I2C and SPI:
 | -- | -- |
 | need a multi-master | limited number of slaves |
 | many units connected to one bus, often not known a priori | maximum transmission speed is required |
+| need confirmation of received messages |  |
 
 CAN (Controller Area Network), used in the automotive field. Designed to be resistant to electromagnetic interference. It is suitable for transmitting small messages and uses a CRC-15 to protect from errors. The messages are encapsulated in frames with fixed structure:  
 ` SoF -> arbitration (decide who is master) -> control -> data -> CRC -> ack -> EoF `  
@@ -950,9 +952,9 @@ Device that translates a physical measurements in a voltage/current value. There
 A sensor can be modeled as an equation that links the quantity we want to measure to the output, that can be fed into an ADC to get a digital value.  
 
 Typically sensors only have a range of values in which the activity is linear and there is a uncertainty on the measure given depending on the sensitivity. Some sensors are not linear anywhere and typically have an exponential or logarithmic curve.  
-Often integrated in the sensors there is the required electronics to convert the signal to digital and smooth the reading.
+Often integrated in the sensors there is the required electronics to convert the signal to digital and to smooth out the reading.
 
-A specific class of sensors is becoming popular in the embedded/IoT field is called MEMS, Micro Electro Mechanical Systems, a combination of electronics and mechanics that can be integrated in the IC, they can be mass produced at a low cost.  
+A specific class of sensors that is becoming popular in the embedded/IoT field is called MEMS, Micro Electro Mechanical Systems, a combination of electronics and mechanics that can be integrated in the IC, they can be mass produced at a low cost.  
 They are very used today from consumer electronics to automotive and aeronautics because of their low cost. The main classes of MEMS are:
 - pressure sensors
   - piezoresistive sensors
@@ -976,15 +978,15 @@ The most common approach in those case is to use a solar cell but in some cases 
 - vibrations
 - thermoelectric
 
-The problem of these approaches is that they are not always applicable and usually not enough energy is harvested to guardantee operativity without a battery.
+The problem of these approaches is that they are not always applicable and usually not enough energy is harvested to guarantee operativity without a battery.
 
 ## Real time systems
 A real time system is a system in which the correctness depends both on the logical correctness of the task's output and the time within the output is produced.  
 An alternative definition is a system that has to respond to external inputs within a finite and specified period.  
 ` sensor and data processing -> computation -> actuation`  
 `^------------------response time----------------------^`  
-Example: airbag, when a collision is detected the trigger of the inflation within 10-20 ms.  
-Timing constraints sometimes require the code to be on bare metal to avoid entirely OS overhead or directly in hw. When timing requirements are more shallow a Real Time Operating System (RToS) can be used.  
+Example: airbag, when a collision is detected it needs to trigger the inflation within 10-20 ms.  
+Timing constraints sometimes require the code to be on bare metal to avoid entirely OS overhead or implement some functionality directly in hw. When timing requirements are more shallow a Real Time Operating System (RToS) can be used.  
 We can distinguish 3 classes of real time, depending on the consequences of missing a deadline:
 - hard real time, lead to a catastrophic event on people or the system under control
 - firm real time, invalid output value
@@ -999,11 +1001,11 @@ Properties:
 
 ### Possible sources of unpredictability
 - processor
-  - modern processors include hw mechanisms to improve performance (prefetching, speculative execution, ...), it's ok for average performance but are a source of non determinism
+  - modern processors include hw mechanisms to improve performance (prefetching, speculative execution, ...), it's ok for average performance but they are a source of non determinism
 - cache
-  - memory access can require unpredictable access time due to cache hit/miss
+  - memory accesses can require an unpredictable amount of time due to cache hit/miss
 
-To overcome this problems there is the need to specifically design simple microcontrollers or adopt processors with specific real-time features, example ARM have different families of CPU depending on the purpose:
+To overcome this problems there is the need to specifically design simple microcontrollers or adopt processors with specific real-time features, for example ARM has different families of CPU depending on the purpose:
 - Cortex-A, highest performance.
 - Cortex-R, fast response, optimized for hard real time.
 - Cortex-M, lowest power, optmized for discrete processing and microcontrollers.
@@ -1026,12 +1028,12 @@ Other sources of unpredictability are
   - maximum number of loop iteration must be know a priori
 
 ### RTOS
-OS specifically designed to guarantee real time requirements. There are many advantages in using an RTOS:
+OS specifically designed to guarantee real time requirements. There are many advantages in using a RTOS:
 - part of the complexity and unpredictability is managed by the OS
 - faster development w.r.t. bare metal programming
 - real time schedulers manage timing constraints
 
-The structure of an RTOS is similar to a normal OS with particular care to the time management and scheduler and often target small microcontrollers.
+The structure of an RTOS is similar to a normal OS with particular care to the time management and scheduler and often targets small microcontrollers.
 
 Common features:
 - multi-tasking and concurrency support (small number of task)
@@ -1063,8 +1065,8 @@ In RTOS, tasks are characterized by timing constraints:
 
 ![RTOS_task](assets/RTOS_task.png)  
 
-Tasks can be either periodic (e.g. sensor reads) or aperiodic (e.g. interrupts). The first type are more predictable and more easily manageable and make up the most task in a typical ES.  
-For periodic task we can define the *jitter*, the deviation of start time between two consecutive instances (jobs) of the task.
+Tasks can be either periodic (e.g. sensor reads) or aperiodic (e.g. interrupts). The first type are more predictable and more easily manageable and make up most of the tasks in a typical ES.  
+For periodic tasks we can define the *jitter*, the deviation of start time between two consecutive instances (jobs) of the task.
 
 #### Real time scheduling
 Schedulers that take into account also the timing constraints.  
@@ -1081,15 +1083,15 @@ Assumptions:
 - kernel overheads are considered zero
 
 Define CPU utilization as the sum over all the tasks of the computational time over the period of activation, useful to check the feasibility of a schedule (U > 1 --> not feasible). A good compromise is to design the system not to use more tha 70% of the resources available to have some headroom for some unpredictable events or longer than expected tasks.  
-Given a scheduling algorithm the *least upper bound* U(A) is the minimum utilization factor over all the tasks set that fully utilize the processor.  
+Given a scheduling algorithm the *least upper bound* U(A) is the minimum utilization factor over all the tasks set that fully utilizes the processor.  
 
 Scheduling classes:
-- timeline scheduling, also known as cyclic executive scheduling, used for military and traffic control application
+- timeline scheduling, also known as cyclic executive scheduling
   - divide temporal axis in equal length slots
   - one or more tasks are activated per slots
   - greatest common divisor of the activation periods is the time slot length (minor cycle)
-  - least commond multiple of activation periods for the time interval after which the schedule repeats itself (major cycle)
-  - schedulability: Worst Case Execution Time WCET is lower than the minor slot
+  - least common multiple of activation periods for the time interval after which the schedule repeats itself (major cycle)
+  - schedulability: Worst Case Execution Time (WCET) is lower than the minor slot
   - pros: simple, low overhead, no jitter
   - cons: not robust, sensitivity to application changes, hard to handle aperiodic tasks
 - rate monotonic
@@ -1099,9 +1101,9 @@ Scheduling classes:
   - preemptive, a new task preempts the current one if it has a shorter period
   - actually exploited in industrial solutions
   - stable in case of transient system problems
-- earliest deadline first EDF
+- earliest deadline first (EDF)
   - dynamic priority assignement --> according to the absolute deadline, i.e. the more a deadline is close, the more the task has priority
-  - preemptive, if a task with earlier deadline is activated it prevents the current one
+  - preemptive, if a task with earlier deadline is activated it preempts the current one
   - agnostic w.r.t. to periodicity
   - EDF is optimal for single core processors
   - higher overhead w.r.t. rate monotonic due to dynamic priority but less context switch
@@ -1116,15 +1118,15 @@ Ideally we want a tradeoff between having a safe value of the WCET and not wasti
 
 ![WCET_estimation](assets/WCET_estimation.png)  
 
-We need a way to approximate the WCET as accurately as possbile since we cannot explore esaustively the input space (jumps, branches, FP operation depend on operands) and machine state (cache, pipelines, peripheral statuses, DMA, multicore, concurrent tasks, ...).
-Possible intereferences in estimating the WCET:
+We need a way to approximate the WCET as accurately as possible since we cannot explore exhaustively the input space (jumps, branches, FP operation depend on operands) and machine state (cache, pipelines, peripheral statuses, DMA, multicore, concurrent tasks, ...).  
+Possible interferences in estimating the WCET:
 - intra-task, self inflicted by the task itself, e.g. evicting a cache line that is later needed
 - intra-core, another concurrent task running on the same core e.g. evitcs a shared cache line
 - inter-core, tasks running on other cores e.g. occupation of shared bus
 
-Computing a safe and tight WCET when taking into account the task interference is hard expecially with multicore and multilevel caches are present.  
+Computing a safe and tight WCET when taking into account the task interference is hard, especially with multicore and multilevel caches.  
 
-Other sources of intereference can come from the hw itself:
+Other sources of interference can come from the hw itself:
 - memory controller: variability in latency for memory operations
 - NoC traffic: routing algorithms can not always guarantee latencies
 - access to front side bus
@@ -1142,21 +1144,21 @@ Due to this complexity, many hard real time systems try to cut the complexity:
 - use stable and old technology
 
 The WCET clearly depends on the target machine. Is it better to analyze the binary code instead of the source code:
-- have direct one-to-one match with machine instruction
+- have direct one-to-one match with machine instructions
 - not susceptible to compiler optimization or use of different compilers
 
-The steps that traditional analysis tools are the following  
+The steps that traditional analysis tools follow are:  
 
 ![WCET_analysis](assets/WCET_analysis.png)  
 
-However, exploring all the possible combination is unfeasible because the state space is too large.  
+However, exploring all the possible combinations is unfeasible because the state space is too large.  
 Other issues:
 - computing the correct WCET is an undecidable problem
-- scheduler decision and task interference impact the WCET
+- scheduler decisions and task interference impact the WCET
 - architectural analysis of moder arch is computationally unfeasible
 - approximate architecture is not easy due to *timing anomalies*
   - e.g. cache hit/miss --> should we always assume a miss? NO, timing anomalies may happen.  
-  This appen because of data dependency between instruction that can lead to have higher exectution time in case of a cache hit  
+  This appen because of data dependency between instructions that can lead to have higher exectution time in case of a cache hit  
   ![WCET_timing_anomalies](assets/WCET_timing_anomalies.png)
 
 Estimation of WCET for concurrently running tasks:
@@ -1178,7 +1180,7 @@ Estimation of WCET for concurrently running tasks:
   -  provide a probabilistic-WCET, a statistical distribution given a probability of failure P(ex_time > WCET).  
 Technically the WCET is underestimated and therefore unsafe but sometimes it is good enough, not yet suitable for real life-critical systems.
   - Static Probabilistic Timing Analyss (SPTA), add probability values to the CFG analysis, statistical operators are used to combine different execution time estimations.
-  - Measurement Bases Probabilistic Timing Analysis (MBPTA), treat the system as a black box and measure the timings giving inputs to the system using Extreme Value theory EVT
+  - Measurement Bases Probabilistic Timing Analysis (MBPTA), treat the system as a black box and measure the timings giving inputs to the system using Extreme Value Theory EVT
   - pros: 
     - probabilistic analysis provides lower WCET than traditional approaches, exploiting better the resources
     - system complexity is not an issue
@@ -1186,7 +1188,7 @@ Technically the WCET is underestimated and therefore unsafe but sometimes it is 
     - difficult to perform some fine grained analysis of the system to identify problems
     - hard to prove the necessary EVT hypotheses for MBPTA
 
-NOTE: WCET is related to the WCEC (Worst Case Energy Consumption), a measurememnt crucial in energy constrained environment to guarantee uptime.
+NOTE: WCET is related to the WCEC (Worst Case Energy Consumption), a measurement crucial in energy constrained environments to guarantee uptime.
 
 #### Mixed-criticality systems
 Modern systems are composed by tens of subsystems/microcontrollers to control different parts (e.g. think of a car).  
@@ -1194,21 +1196,21 @@ Problems:
 - development cost
 - underutilization of resources
 - reliability and safety
-- system interoperability --> how do all of these systems communicate and syncrhornize?
+- system interoperability --> how do all of these systems communicate and synchronize?
 
 Possible solutions:
 - system consolidation (not typical in automotive for safety)
   - more difficult than it seems because this places on a single system different parts with different criticality (e.g. steering control and infotainment system).
   - pros:
-    - lower deisgn cost
+    - lower design cost
     - better power and energy optimization
     - improves reliability of the overall system
     - lower maintenance costs
     - reduce bus congestion
   - cons:
     - increase shared resources contentions and unpredictable behaviour
-    - large integration effort require
-    - how to manage different criticality levels
+    - large integration effort required
+    - how to manage different criticality levels?
 
 A mixed-criticality system is a system running tasks with different criticality levels.  
 Criticality is determined by considering both the impact of failure and the required rate of failure.  
