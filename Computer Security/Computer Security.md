@@ -2,7 +2,7 @@
 
 ## Basic concepts
 Security requirements: CIA paradigm
-- Confidentiality: information can only be accessed by thos who are authorized
+- Confidentiality: information can only be accessed by those who are authorized
 - Integrity: information can only be modified by authorized entities and only in the way such entities are entitled to modify them
 - Availability: information must be available to all the parties that have the right to access it, within specified time constraint
 
@@ -13,7 +13,7 @@ Starting from here we can see that "A" conflicts with "C" and "I" and this is wh
 - Exploit: a specific way to use one or more vulnerabilities to accomplish a specific objective that violates the constraint
 
 There can be a vulnerability without having a working exploit.  
-Also some vulnerabilities cannot be completely removed because it would be too inconvenient (impacting usability) or because they are too embedded in the system (hw vulnerabilites like spectre and meltdown). In those case we can only mitigate the vulnerability, we try to make it more difficult to exploit.
+Also some vulnerabilities cannot be completely removed because it would be too inconvenient (impacting usability) or because they are too embedded in the system (hw vulnerabilities like spectre and meltdown). In those case we can only mitigate the vulnerability, we try to make it more difficult to exploit.
 
 Security != protection -> it depends on the threat model we are defending against. We can only make comparisons in the same environment for the same type of threat.
 
@@ -25,7 +25,7 @@ Security != protection -> it depends on the threat model we are defending agains
 
 IMPORTANT NOTE:  
 attacker != hacker  
-an hacker is just someone with advanced understanding of computers and networks while an attakcer seeks to do damage and it's not necessarily knowledgable (see "cybercrime as a service" in DFC course)
+an hacker is just someone with advanced understanding of computers and networks while an attakcer seeks to do damage and it's not necessarily knowledgeable (see "cybercrime as a service" in DFC course)
 
 - Risks: Evaluation of the probability of something bad happening to our assets and the damage that it would cause.
 
@@ -37,7 +37,7 @@ ANOTHER NOTE:
 more money does not imply more security, we need to configure it appropriately and make sure that our users will not have to leave password on sticky notes under the monitor!
 
 ### Trust
-We need to define boundaries, some part of the system that will be assumed to be secure (*trusted elements*). Those boundaries change depending on the threat model and on how much trouble/cost are we willing to go through to check everything. Examples of trusted elements for normal users can be the hw of the machine we are using or the operating system that is running. If you are a high profile target (like NSA) maybe you also want also to check those.  
+We need to define boundaries, some part of the system that will be assumed to be secure (*trusted elements*). Those boundaries change depending on the threat model and on how much trouble/cost are we willing to go through to check everything. Examples of trusted elements for normal users can be the hw of the machine we are using or the operating system that is running. If you are a high profile target (like NSA) maybe you also want to check those.  
 Of course if an attacker is able to compromise something in our trusted elements then all our security assumptions will fall.
 
 ## Cryptography
@@ -56,7 +56,7 @@ A perfect cipher is a cipher in which an attacker doesn't gain any more knowledg
 
 In a perfect cipher we have that:  
 `P(M=m) = P(M=m|C=c)`  
-In order to achieve this we need to have a key that is at least as large as the message. This immedialtely highlights the impracticality of such ciphers even if they are practically possible: i need to share a key as long as the message before starting the communication ([One Time Pad](https://en.wikipedia.org/wiki/One-time_pad)).
+In order to achieve this we need to have a key that is at least as large as the message. This immediately highlights the impracticality of such ciphers even if they are practically possible: i need to share a key as long as the message before starting the communication ([One Time Pad](https://en.wikipedia.org/wiki/One-time_pad)).
 
 ### Breaking ciphers
 A real world cipher is not perfect and we say that a cipher is broken when there exists a faster way to break it than bruteforcing. There are different types of attacks:
@@ -64,10 +64,10 @@ A real world cipher is not perfect and we say that a cipher is broken when there
 - known plaintext attacks: the attacker has a set of pairs of corresponding plaintext-ciphertext.
 - chosen plaintext attacks: the attacker can choose plaintexts and obtain the respective ciphertext.  
 
-We cannot prove that a certain cipher is not broken, we can only find out if it is broken by trying to break it. This is why it is important in cryptogrphy to always use well known and tested techniques that have been around for some time and not trying to reinvent the wheel.
+We cannot prove that a certain cipher is not broken, we can only find out if it is broken by trying to break it. This is why it is important in cryptography to always use well known and tested techniques that have been around for some time and not trying to reinvent the wheel.
 
 ### Symmetric encryption
-A type of encryption that uses the same key for ecnrypting and decrypting the message. The key needs to be exchanged securely by the two parties.
+A type of encryption that uses the same key for encrypting and decrypting the message. The key needs to be exchanged securely by the two parties.
 
 Symmetric ciphers are based on two principles (see [confusion and diffusion](https://en.wikipedia.org/wiki/Confusion_and_diffusion)):
 - substitution: replace each byte with another one, provides confusion
@@ -75,14 +75,14 @@ Symmetric ciphers are based on two principles (see [confusion and diffusion](htt
   - polyalphabetic: transformation table depends on the position
 - transposition: swaps bytes with one another, provides diffusion
 
-Moder ciphers use a mix of both techniques repeated for many *rounds* and ties them to the bit of the key. The length of the key plays a big role in the security of the cipher because a key that is too short can be bruteforced:
+Modern ciphers use a mix of both techniques repeated for many *rounds* and ties them to the bit of the key. The length of the key plays a big role in the security of the cipher because a key that is too short can be bruteforced:
 - DES key -> 56 bits -> 2^56 combination -> can be bruteforced on modern hw with little time and effort.
 - AES key -> 128 bits -> 2^128 combination -> cannot be bruteforced even by supercomputers, it will take millions of years and we can always extend it to 256 bits.
 
 Of course since it is not feasible to attack directly the key or the cipher a threat actor will find some other, easier ways to break into the system ([like this...](https://en.wikipedia.org/wiki/Rubber-hose_cryptanalysis) [;)](https://xkcd.com/538/))
 
 ### Asymmetric encryption
-The concept is: we have a cipher that uses two keys, one foe encrypting and one for decrypting. Thos keys can be retrieved from each other and are generated using a one way mathematical function (we will not go into the details).  
+The concept is: we have a cipher that uses two keys, one for encrypting and one for decrypting. Those keys can be retrieved from each other and are generated using a one way mathematical function (we will not go into the details).  
 The advantage over symmetric encryption is that we can exchange the key to encrypt messages directly on the internet (public key) and keep the decryption key secret (private key).  
 But this arise a new problem: how can i be sure that the key i am using to encrypt a message belongs to the one i want to send the message to? See PKI after.
 
@@ -105,17 +105,17 @@ How does the exchange work? Suppose that we have two entities A and B that want 
 An attacker listening on the channel cannot compute `a^xy` without knowing one of the two secrets `x` or `y` and he cannot get them from `a^x` or `a^y` since it is not feasible to compute the logarithm.
 
 ### Hash functions
-Funciton `H` that maps an input `x` of arbitrary length to a fixed length output `h`. Since the dimension of the output space is lower than the one of the input there are going to be *collisions*: two (or more) inputs mapped onto the same output.  
-For cryptogrphic applications we want to limit as much as possible the probability of this happening, in particular it must be computationally unfeasible to:
-1. find and input `x` such that `H(x) = h'`. I don't want to be possible that i can generate a input `x` to obtain a specific hash `h'`. This is called preimage attack resistance.
+Function `H` that maps an input `x` of arbitrary length to a fixed length output `h`. Since the dimension of the output space is lower than the one of the input there are going to be *collisions*: two (or more) inputs mapped onto the same output.  
+For cryptographic applications we want to limit as much as possible the probability of this happening, in particular it must be computationally unfeasible to:
+1. find and input `x` such that `H(x) = h'`. I don't want to be possible that i can generate an input `x` to obtain a specific hash `h'`. This is called preimage attack resistance.
 2. given `x`, find an input `y != x` such that `H(x) = H(y)`. This is called second preimage attack resistance.
 3. find a couple of inputs `x` and `y` such that `H(x) = H(y)`. This is called collision resistance.
 
-NOTE: 1 implies 2 but not viceversa.
+NOTE: 1 implies 2 but not vice versa.
 
 A hash function is broken if a collision can be found faster than bruteforcing, that means (`n` is the hash length):
-- for 1 and 2 choosing at random: collision once in `2^n-1`
-- for 3 always at random: collision once in `2^n/2`
+- for 1 and 2 choosing at random: collision once in `2^(n-1)`
+- for 3 always at random: collision once in `2^(n/2)`
 
 Why do we want hash functions?  
 They can be used to ensure integrity of files (compute hash at source and destination and compare them to see if they are the same, if not the file is corrupted/modified) and in general they provide a unique "signature" to a certain file that uniquely identifies it.  
@@ -125,7 +125,7 @@ The most used hash functions are the one in the SHA family:
 
 ### Digital signature
 Aims at solving the problem of authenticating a certain message, that is guaranteeing that it comes from a certain person.  
-This is achieved using the same asymmetric encryption algorithms but with public and private key's roles are swapped:
+This is achieved using the same asymmetric encryption algorithms but with public and private key's roles swapped:
 - the (hash of the) message is encrypted with the private key, only the one who possess that is able to produce it. This is what we call *signature*
 - the signature can be verified by anyone that possess the public key:
   - decrypt the (hash of the) message with the public key
@@ -134,17 +134,17 @@ This is achieved using the same asymmetric encryption algorithms but with public
 
 The digital signature is stronger than a handwritten signature because it is tied to the content of the message, so a message that has been signed cannot be modified without also altering the resulting signature and the signature itself cannot be copied and pasted on a different document.  
 We need to ensure WYSIWYS "What You See Is What You Sign"!  
-For examples it is not good to sign documents that can contain macros that modifies the **displayed** content of file because this will allow the content to change without changing the signature.
+For example it is not good to sign documents that can contain macros that modifies the **displayed** content of file because this will allow the content to change without changing the signature.
 
 ### Public key infrastructure (PKI)
 We need a system to correctly associate each public key with its respective owner in order to be sure to use the correct key for sending messages.  
 This is achieved using *certificates* issued by *certification authorities* (CA). A CA is a **trusted** third party that digitally signs a certificate that binds an identity to a public key (see [X.509](https://en.wikipedia.org/wiki/X.509)).  
 The idea behind the mechanism is similar to how a government issues identity documents to his citizens. As long as i trust the state that released the document i can trust the content of the document.  
-In certificates we can check which CA has signed the certificate and decide to trust it or not. But how can we verifiy the CA key? It's signed by another CA! Then this CA can be recursively verified until we reach the a ROOT CA, a CA that signed it's own certificate (basically saying "i am myself").  
-This root CA is a trusted element of the infrastructure. There exists many root CAs and most of their certificates are bundler directly into the OSes and browsers that we use.
+In certificates we can check which CA has signed the certificate and decide to trust it or not. But how can we verify the CA key? It's signed by another CA! Then this CA can be recursively verified until we reach a ROOT CA, a CA that signed its own certificate (basically saying "i am myself").  
+This root CA is a trusted element of the infrastructure. There exists many root CAs and most of their certificates are bundled directly into the OSes and browsers that we use.
 
 #### Certificate revocation
-Since digital signature cannot be destryoed once they are issued we need ways to make a certificate invalid (for example if we discover that the private key of the CA has been leaked):
+Since digital signature cannot be destroyed once they are issued we need ways to make a certificate invalid (for example if we discover that the private key of the CA has been leaked):
 - Expiration dates on certificates, to ensure that eventually they will be removed.
 - Certificate Revocation List (CRL) where all the revoked certificates are published, expired or not.
 
@@ -159,7 +159,7 @@ Since digital signature cannot be destryoed once they are issued we need ways to
 All this process assumes that the root CA is a trusted element and all the intermediate CAs have not been compromised. If they are, there is no automatic way to tell.
 
 ## Authentication
-Authentication is the act of proving that a certain entity is actually who it says to be. There are 3 main mechanism to perform authentication that involve using:
+Authentication is the act of proving that a certain entity is actually who it says to be. There are 3 main mechanisms to perform authentication that involve using:
 - something you KNOW (*to know factor*): pin, password
 - something you HAVE (*to have factor*): door key, smart card
 - something you ARE (*to be factor*): face, voice, fingerprints
@@ -179,15 +179,15 @@ Disadvantages and mitigations against those:
 - can be guessed --> make it not connected to the user
 - can be cracked (bruteforced) --> ensure that it is long and complex enough to make it unfeasible
 
-However those countermeasures have a cost, they impact on the usability and user experience. Also we cannot expect all user to remeber long and complex password (they are going to write on sticky notes and make it easier to be stolen).
+However those countermeasures have a cost, they impact on the usability and user experience. Also we cannot expect all users to remember long and complex passwords (they are going to write on sticky notes and make it easier to be stolen).
 
 #### Secure password exchange
 - use mutual authentication to ensure that we are sending the information to the correct place
 - use a challenge-response scheme
-- random data with each request to avoid replay attacks
+- random data with each request to avoid [replay attacks](https://en.wikipedia.org/wiki/Replay_attack)
 
 #### Secure password storage
-If we have an archive of passwords we need to protect it against attackers that may want to stel it. First thing is to **never** store passwords in plain text. We always need to at least hash it using a strong cryptographic hash function and preferrably salt it with a random salt (see [salting](https://en.wikipedia.org/wiki/Password_salting)) to avoid the use of rainbow tables. Additionally we need to be careful in password recovery schemes not to leak secrets (we should not be able to if we only have hash). The most effective way is to send a link to log in the user on a verified email address and have him change the password immediately on login.
+If we have an archive of passwords we need to protect it against attackers that may want to steal it. First thing is to **never** store passwords in plain text. We always need to at least hash it using a strong cryptographic hash function and preferably salt it with a random salt (see [salting](https://en.wikipedia.org/wiki/Password_salting)) to avoid the use of rainbow tables. Additionally we need to be careful in password recovery schemes not to leak secrets (we should not be able to if we only have hash). The most effective way is to send a link to log in the user on a verified email address and have him change the password immediately on login.
 
 ### To have factor
 The user needs to have a specific object in order to authenticate.
@@ -199,12 +199,12 @@ Advantages:
 
 Disadvantages and mitigations against those:
 - harder to deploy --> none
-- can be lost or stolen --> use toghether with another factor
+- can be lost or stolen --> use together with another factor
 
 Some examples of this are:
-- OTP generators: small devices containing a secret key for the user that are given by the organization. The general approach is tu generate some numeric codes pseudorandomly using the secret key and the current time. Today we use a software version of these based on TOTP that are generally easier to deploy and manage.
+- OTP generators: small devices containing a secret key for the user that are given by the organization. The general approach is to generate some numeric codes pseudorandomly using the secret key and the current time. Today we use a software version of these based on TOTP that are generally easier to deploy and manage.
 - smart cards: a physical card containing a CPU and some non volatile memory that contains the private key of the user. When a smart card is connected to a reader it boots up and authenticates itself using a challenge-response mechanism. The advantage of using it is that the smart card can perform operations like signing without the private key ever leaving the card (can only be retrieved by physically destroying the card -> tamper evident)
-- static OTP list: cheaper alternative for OTP that is also easier to implement, maybe used in a transition phase. Basically the OTP are printed on a card and the authentication system asks for a specific one each time. The drawback is that they can be stolen without the user noticing (e.g. take a photo).
+- static OTP list: cheaper alternative for OTP that is also easier to implement, may be used in a transition phase. Basically the OTP are printed on a card and the authentication system asks for a specific one each time. The drawback is that they can be stolen without the user noticing (e.g. take a photo).
 
 ### To be factor
 Use some specific characteristics of the user to authenticate.
@@ -230,14 +230,14 @@ Since we cannot get rid of both at the same time we need to correctly balance be
 - High FRR -> Low FAR, good security but usability nightmare  
 ![FAR_FRR_graph](assets/FAR_FRR_graph.png)
 
-### Single sign-on
-Goal: authenticate seamlessly a user across multiple domains using and identity provider. The advantage from the user point of view is obvious: he only needs to authenticate once and will be logged in all every service. The mechanism basically works like this:
+### Single Sign-On (SSO)
+Goal: authenticate a user seamlessly across multiple domains using an identity provider. The advantage from the user point of view is obvious: he only needs to authenticate once and will be logged in all every service. The mechanism basically works like this:
 - for the first login, the user is redirected to the identity provider
 - log in to the identity provider
-- the identity provider confirm to the website the identiy of the user
+- the identity provider confirms to the website the identity of the user
 - in all subsequent logins:
-  - the website contacts the identiy provider
-  - since the user already logged in, the identiy provider confirms the user identity to the website
+  - the website contacts the identity provider
+  - since the user already logged in, the identity provider confirms the user identity to the website
   - the website logs the user in
 
 Some protocols that implements this are OAuth2 and shibboleth. Many services allow to use this method (e.g. log in with Google/Facebook).
@@ -259,16 +259,16 @@ NON FUNCTIONAL:
 - safety
 - security
 
-Creating inherently secure application is hard and often is a skill that programmers lack because they were not taught about it. An unmet specification is a bug, a unmet *security* specification leads to a vulnerability. 
+Creating inherently secure application is hard and often is a skill that programmers lack because they were not taught about it. An unmet specification is a bug, an unmet *security* specification leads to a vulnerability. 
 
-In the early 2000s reporting vulnerabilites to company was not a good experience since they often [treated with hostility](https://marc.info/?l=vuln-dev&m=95602682515862&w=2) or threatened with lawsuits. So the only way to receive attention was to publish the vulnerability in the wild and force the vendor to fix it in order not to have it used against its user. This is what we call *full disclosure*.  
+In the early 2000s reporting vulnerabilities to company was not a good experience since they often [treated with hostility](https://marc.info/?l=vuln-dev&m=95602682515862&w=2) or threatened with lawsuits. So the only way to receive attention was to publish the vulnerability in the wild and force the vendor to fix it in order not to have it used against its users. This is what we call *full disclosure*.  
 ![vulnerability_full_disclosure](assets/vulnerability_full_disclosure.png)  
-Of course `te`, `td` and `t0` can happen in different order. Anyways the objective is to minimize the windows of exposure, ideally:
+Of course `te`, `td` and `t0` can happen in different order. Anyways the objective is to minimize the window of exposure, ideally:
 - the vendor finds the vulnerability
 - the vendor patches the vulnerability
 - vulnerability disclosed
 
-This is why nowadays companies use *bug bounty* programs to encourage hackers and researches to share the vulnerabilities that they find in order to have them patched as quickly as possible (*coordinated disclosure*). Big companies often have an internal group dedicated to finding vulnerabilities in their products.
+This is why nowadays companies use *bug bounty* programs to encourage hackers and researchers to share the vulnerabilities that they find in order to have them patched as quickly as possible (*coordinated disclosure*). Big companies often have an internal group dedicated to finding vulnerabilities in their products.
 
 ## Buffer overflows
 The concepts here are shared basically across all architectures and OSes. We will consider a 32 bit x86 architecture. See [appendix](#Appendix:-x86-assembly-crash-course) for information about x86 stack and calling conventions
@@ -276,7 +276,7 @@ The concepts here are shared basically across all architectures and OSes. We wil
 Let's start with an example:  
 ```C
 [...]
-int foo()
+int foo(int a, int b)
 {
   int c = 14;
   char buf[8];
@@ -324,7 +324,7 @@ The solution to this is to put before our code a so called *NOP sled*, a sequenc
 ![buffer_overflow_scheme](assets/buffer_overflow_scheme.png)
 
 Now we need to decide what to put on the buffer to be executed. In this example we try to open a shell (which is why historically it is called shellcode) and close the program. In general we can put code to do [anything](http://shell-storm.org/shellcode/).  
-To do this we use tha system call `execve` that we will invoke using and interrupt (`int 0x80` on Linux) after preparing its parameters. To obtain the assembly for the shellcode we first write the program in C and compile it. Then we disassemble it and pick the relevant parts. What we want to execute is this:
+To do this we use the system call `execve` that we will invoke using an interrupt (`int 0x80` on Linux) after preparing its parameters. To obtain the assembly for the shellcode we first write the program in C and compile it. Then we disassemble it and pick the relevant parts. What we want to execute is this:
 
 ```C
 int main() 
@@ -364,7 +364,7 @@ We need to rewrite the shellcode in an equivalent way but avoiding putting in by
 - use some `jmp short` instead of `jmp`
 - if we need to write some 0, do this by xoring something with itself, like `xor eax, eax     mov [esi+7], eax` that puts 0 in eax and then puts it at esi+7
 
-The idea is that we can almost always equivalent code but without 0, so it is just something to look for not a real issue.  
+The idea is that we can almost always write equivalent code but without 0, so it is just something to look for not a real issue.  
 The resulting shellcode is:
 
 ```C
@@ -389,16 +389,16 @@ python -c "print 'our_shellcode'" | ./vulnerable_executable
 ### Alternative techniques
 This is just a schematic list, not treated in this course
 - ENVIRONMENT VARIABLES  
-We can put our code in environmentaò variables and have it loaded on launch.  Then we can overwrite the return address with the address of the environment varible we set.
+We can put our code in environmental variables and have it loaded on launch.  Then we can overwrite the return address with the address of the environment variable we set.
   - Advantages
-    - easy to implement beacuse we are not constrained by the space
+    - easy to implement because we are not constrained by the space
     - easy to target because we can know the exact address
   - Disadvantages:
     - we can only exploit if we have access to the machine and set the env
     - a wise program may wipe env. variables that he does not need
     - memory must be marked as executable (more on this in [mitigation section](#mitigations))
-- BUILT-IN, EXISTING FUNCITONS  
-Point the return address to some code that is already present in memory like other function or some library function.
+- BUILT-IN, EXISTING FUNCTIONS  
+Point the return address to some code that is already present in memory like other functions or some library function.
   - Advantages:
     - works remotely and reliably
     - no need for executable stack
@@ -406,7 +406,7 @@ Point the return address to some code that is already present in memory like oth
     - need to prepare the stack carefully
     - more difficult to do properly
 
-There can also be practical problem that make the exploitation difficult or impossible, for example the buffer could be too small to fit all of our shellcode + NOP sled.
+There can also be practical problems that make the exploitation difficult or impossible, for example the buffer could be too small to fit all of our shellcode + NOP sled.
 
 ### Mitigations
 We can implement some defense at different levels:
@@ -423,17 +423,17 @@ We can implement some defense at different levels:
 - embed stack protection measures
 
 The last one is the most successful in stopping these attacks and is based on the concept of *canary*. The basic idea is:
-- between the local variables and the saved registers sEBP adn sEIP, put a canary word of random data chosen at each execution
+- between the local variables and the saved registers sEBP and sEIP, put a canary word of random data chosen at each execution
 - before returning, check that the canary is still the same.  
 The canary can also be xored with those values to ensure they are not modified by means other than a simple buffer overflow.
 
 #### OS level
-- mark the stack as non executable. Today this is widely supported at a hw level thanks to the [NX bit](https://en.wikipedia.org/wiki/NX_bit). Can be bypassed by some technique that relies on built-in function or code that is already present (return oriented programming).
-- use Address Space Layout Randomization (ASLR) that relocates the stack and other section of the code at the start of the program by a different amount each time. With offset in the order of some MBs makes it impossible to correctly guess the address to jump to.
+- mark the stack as non executable. Today this is widely supported at a hw level thanks to the [NX bit](https://en.wikipedia.org/wiki/NX_bit). Can be bypassed by some techniques that rely on built-in function or code that is already present (return oriented programming).
+- use Address Space Layout Randomization (ASLR) that relocates the stack and other section of the code at the start of the program by a different amount each time. With offset in the order of some MBs it's impossible to correctly guess the address to jump to.
 
 ## Format string bugs
 Format strings are a way to specify to a print function how a string should be formatted. They are present in basically any programming language.  
-The basic mechanism is to specify which items to substitute in the string using place holders with specific meaning and passing to the print function the values to put. Because of this print function are variadic functions, they can accept in input an indefinite number of arguments.  
+The basic mechanism is to specify which items to substitute in the string using placeholders with specific meaning and passing to the print function the values to put. Because of this print function are variadic functions, they can accept in input an indefinite number of arguments.  
 Example:
 ```C
 void main()
@@ -476,7 +476,7 @@ We can choose precisely how many words to go back in the stack because we can sp
 
 FIRST RESULT: we can read the stack and we can read what we put on the stack at an arbitrary offset.
 
-The second things is that there also is the possibility to write to a specified position by using a special placeholder in the format string:  
+The second thing is that there also is the possibility to write to a specified position by using a special placeholder in the format string:  
 `%n  //write in the address pointed by the corresponding argument the number of characters written so far`  
 Example:  
 ```C
@@ -518,14 +518,14 @@ Where:
 - `pos` and `pos+1` are the displacements
 - `lower_value` and `higher_value` are the two 16 bits value that we will compose to make to whole 32 bit address
 
-How do we compute those value? It is not as simple ad dividing the 32 bit in two 16 bit halves and write them independently because we write them using %n that is only able to write the total number of characters written so far.  
-Suppose that we want to write the value `0x45434241` at the address `0xbffff6cc`. What we have to to is
+How do we compute those value? It is not as simple as dividing the 32 bit in two 16 bit halves and write them independently because we write them using %n that is only able to write the total number of characters written so far.  
+Suppose that we want to write the value `0x45434241` at the address `0xbffff6cc`. What we have to do is:
 - separate in half and convert to decimal  
   - `0x4543` -> 17731
   - `0x4241` -> 16961
 - since the value written by `%n` can only increment, we need to first write the smaller value and then bigger one. So the two writes will be done as follow:
   - first we write 16961 - 8, where 8 is the number of bytes written so far (the two target addresses) `%16953c`
-  -  second we neet to write the remaining chars to get to 17731 --> 17731 - 16961 = 770  `%770c` or `%00770c` to maintain the same structure (leading 0s are ignored)
+  -  second we need to write the remaining chars to get to 17731 --> 17731 - 16961 = 770  `%770c` or `%00770c` to maintain the same structure (leading 0s are ignored)
 - the two target addresses are
   - `0xbffff6cc`
   - `0xbffff6cc + 2 = 0xbffff6ce`
@@ -555,7 +555,7 @@ Memory protection seen in the buffer overflow section can be applied here to hel
   - variable number of parameters
   - resolved at runtime
 - placeholders to read/write to arbitrary locations
-- the abilty to control those placeholders
+- the ability to control those placeholders
 
 ## Web applications vulnerabilities
 Web applications are the current paradigm for delivering software. The basic structure of a web app is the following:  
@@ -573,7 +573,7 @@ For the last reason, we need to carefully filter and validate what comes from th
 How do we filter? There are basically 3 approaches:
 - whitelisting: only allow through what we expect
 - blacklist: discard known-bad stuff
-- escaping: transfrom potentially harmful characters into something equivalent but not dangerous (e.g. the "<" character maybe interpreted as the start of an HTML tag, substitute with &lt\;)
+- escaping: transform potentially harmful characters into something equivalent but not dangerous (e.g. the "<" character maybe interpreted as the start of an HTML tag, substitute with &lt\;)
 
 The general rule is to go with whitelisting if possible because it is easier and safer, then proceed to blacklist/escaping if needed.
 
@@ -642,9 +642,9 @@ It is true that client-side code executed in the browser is sandboxed and cannot
 - manipulation of transaction (e.g. substitute form fields)
 - drive-by downloads
 
-XSS effectively bypasses the Same-Origin Policy (SOP), where client-side code loaded from a certain origin can only access and modify elements from that same orgin (e.g. javascript from google.com can only access elements created by google.com).
+XSS effectively bypasses the Same-Origin Policy (SOP), where client-side code loaded from a certain origin can only access and modify elements from that same origin (e.g. javascript from google.com can only access elements created by google.com).
 
-#### Protecting agains XSS
+#### Protecting against XSS
 How do we filter user data in order to make it harmless? Consider the example of comments on a page.  
 As we said, the first thing is to design a whitelist for the characters that we want to allow:
 - allow alpahnumeric characters a-zA-Z0-9 and punctuation symbols ".", ",", "!", "?", "(", ")", " ", ...
@@ -684,7 +684,7 @@ The problems at the moment with this approach are that:
 Code injection technique used to modify or retrieve data from SQL databases.  
 Consider a web app with a simple login page:  
 ![login_page](assets/login_page.png)  
-Suppose that tha backend code, in order to check if the user exists and the password is correct, does somthing like this:  
+Suppose that the backend code, in order to check if the user exists and the password is correct, does somthing like this:  
 ```java
 public void onLogon(Field txtUser, Field txtPassword) {
   SqlCommand cmd = new SqlCommand(String.Format("SELECT * FROM Users 
@@ -698,7 +698,7 @@ SqlDataReader reader = cmd.ExecuteReader();
 Looking at the query we can see that it accepts user input as is and uses it to build the query --> the user can modify the structure of the query!  
 For example, if the user puts int the `txtUser` field field something like `username'; --` when the query is build it will be like:  
 `SELECT * FROM Users WHERE username='username'; --'AND password='not_relevant';`  
-This will execute only up untile the semicolon because `--` in SQL generally means comment (there can be different syntax for different DBMSs, like `#` for MySql). The result is that the user is logged in as `username` without knowing the password.  
+This will execute only up until the semicolon because `--` in SQL generally means comment (there can be different syntax for different DBMSs, like `#` for MySql). The result is that the user is logged in as `username` without knowing the password.  
 Note that this procedure can be done for every existing user --> an attacker can log in pretending to be whoever he wants, provided that he knows its username.
 
 There are other things that an attacker can do:
@@ -724,7 +724,7 @@ Also in this case we need to filter our input in. In this case is the `'` charac
 $stmt = $db->prepare(SELECT * FROM users WHERE username = ? AND password = ?” )
 $stmt -> execute(array($username,$psw));
 ```
-- limit query privilegies, not all queries needs to be run with administrator rights. This limits the damage in case a vulnerablility is found.
+- limit query privileges, not all queries needs to be run with administrator rights. This limits the damage in case a vulnerability is found.
 - do not use table name as field name to avoid revealing information
 
 ### Recap: XSS and SQLI
@@ -732,7 +732,7 @@ These vulnerabilities are there because we have conflicting requirements:
 - functional requirement: mix code and data (e.g. comments on a page, use input to perform queries)
 - security requirement: never mix code and data!
 
-So if some routine inadvertedly reacts to data treating it as some control sequence we have a vulnerability.
+So if some routine inadvertently reacts to data treating it as some control sequence we have a vulnerability.
 
 ### Other possible vulnerabilities
 
@@ -766,7 +766,7 @@ Compromise solution:
 do not limit the number of attempts per account or IP but "throttle" them using captchas to slow down the attacker and prevent automated requests while alerting the user of the failed attempts.
 
 ### Cookies
-Solution developed to make HTTP somewhat stateful. The basic idea is to have the web server store a small text file (containing an id or some preferences settings) on the browser of the user that visisted the website in order to recognize it later.  
+Solution developed to make HTTP somewhat stateful. The basic idea is to have the web server store a small text file (containing an id or some preferences settings) on the browser of the user that visited the website in order to recognize it later.  
 This idea was (and is) also abused to track a specific user across website (for instance, for advertisement purposed).  
 Cookies are also used to store sessions for the users in order not to have them log in each time. This poses other problems because it can lead to sessions being stolen or created if the mechanism that builds the random tokens is predictable.
 
@@ -840,7 +840,7 @@ Windows 95 bug, sending a packet with source IP = destination IP and the SYN fla
 
 These killer packets attacks work because:
 - incomplete protocol specifications, do not say how to handle special cases
-- programmers tested agains reasonable cases
+- programmers tested against reasonable cases
 
 It was actually considered good practice not to be too strict in accepting packets that were not strictly formatted to increase intercompatibility between different TCP/IP stacks. See [here](https://en.wikipedia.org/wiki/Robustness_principle).  
 >"be conservative in what you do, be liberal in what you accept from others"    Postel
@@ -865,7 +865,7 @@ The information about the half open connection is not stored but is encoded in t
 In this case the attacker can control a large number of machines (e.g. a botnet) and have them send requests to a target server to consume its bandwidth. The multiplier is in those machines that the attacker controls, sending one packet/command will be multiplied by the number of machines.
 
 Example: Smurf  
-The attacker sends a broadcast ping to a network using as source address the spoofed IP address of the target. All the machine will reply to the ping flooding the target server. If there is a suffcient number of machines doing this the server bandwidth will be saturated and it would become unreachable.  
+The attacker sends a broadcast ping to a network using as source address the spoofed IP address of the target. All the machine will reply to the ping flooding the target server. If there is a sufficient number of machines doing this the server bandwidth will be saturated and it would become unreachable.  
 Also in this case we can see that there is nothing wrong with this behaviour, it is the expected behaviour of ping packets.
 
 Mitigation:  
@@ -915,14 +915,14 @@ Since the source IP of a packet is not authenticated it can be modified by an at
   ![TCP_hijack](assets/TCP_hijack.png)
 
 #### Man in the middle (MITM)
-Broad category of attacks where the attacker is able to impersonate the server w.r.t. the client and viceversa. Must always be aware of this possibility (e.g. what happens if the attacker is able to ARP spoof the address of the default gateway?).  
+Broad category of attacks where the attacker is able to impersonate the server w.r.t. the client and vice versa. Must always be aware of this possibility (e.g. what happens if the attacker is able to ARP spoof the address of the default gateway?).  
 We can have two types: half and full duplex.  
 ![MITM_half_and_full_duplex](assets/MITM_half_and_full_duplex.png)  
 
 #### DNS cache poisoning
 The objective is to poison the cache of a non authoritative name server to have a symbolic name associated with an IP chosen by the attacker.  
 The basic mechanism is:
-- attacker makes a recursive quey to the victim's DNS server
+- attacker makes a recursive query to the victim's DNS server
 - the victim DNS server (the non authoritative one) contacts the authoritative server
 - the attacker impersonates the authoritative server and replies with the address that he wants
   - needs to sniff the query id somehow
@@ -942,13 +942,13 @@ DHCP is another unauthenticated protocol since it needs to work without any conf
 Of course the attacker needs to be on the local network and reply first.
 
 #### ICMP redirect
-There is a message in ICMP called *redirect* that is used by routers to communicate to hosts the existance of a better route for a certain destination and have them update their routing table with the new gateway for that route.  
+There is a message in ICMP called *redirect* that is used by routers to communicate to hosts the existence of a better route for a certain destination and have them update their routing table with the new gateway for that route.  
 An attacker can forge those messages and:
 - redirect the host to another malicious gateway
 - perform a denial of service attack
 - establishing an half duplex MITM
 
-Also in this case the attacker needs to be on the same network. Modern OS ignore by defualt ICMP redirect messages.
+Also in this case the attacker needs to be on the same network. Modern OS ignore by default ICMP redirect messages.
 
 #### Route mangling
 Similar concept of altering the spanning tree but for routers. Attacker can advertise better routes for certain traffic and having it redirected to those routes. Can also happen by accident if some service provider routers are configured incorrectly (e.g. advertise very cheap routes). [More here](https://en.wikipedia.org/wiki/BGP_hijacking).
@@ -972,7 +972,7 @@ An attacker can go through a firewall if he finds a way to do what it wants whil
 
 The right approach to build the rules of a firewall is *default deny*, negate everything and allow only specific things to go through (basically a whitelisting approach).  
 There are different types of firewall:
-- Network leyer firewalls
+- Network layer firewalls
   - packet filters
   - stateful packet filters
 - Application layer firewalls
@@ -1005,8 +1005,8 @@ Advantages:
 Disadvantages:
 - performance is limited also by the number of concurrent connection
 
-#### Circut level firewalls
-Basically a proxy at TCP level. Relay TCP connections by having the clients connecting to the firewall. The main problem is that these are not transparent to the application and because of this are basically non-existant nowadays.  
+#### Circuit level firewalls
+Basically a proxy at TCP level. Relay TCP connections by having the clients connecting to the firewall. The main problem is that these are not transparent to the application and because of this are basically non-existent nowadays.  
 An example of a protocol that does this is SOCKS5.
 
 #### Application proxies
@@ -1030,9 +1030,9 @@ The general idea to solve this is to split the network in multiple zones by furt
 
 ![DMZ_example](assets/DMZ_example.png)  
 
-Of course this does not protect agains everything.  
+Of course this does not protect against everything.  
 Example:  
-the application on the web server is vulnerable to SQL injection and an attacker is able to pull the data from the database in the private zone. The firewall can't do (almost) anythhing about it because the connection from the web server to the database is allowed.
+the application on the web server is vulnerable to SQL injection and an attacker is able to pull the data from the database in the private zone. The firewall can't do (almost) anything about it because the connection from the web server to the database is allowed.
 
 More complex separation can be put in place to further divide portions of the network and control traffic between those.
 
@@ -1078,7 +1078,7 @@ SSL, Secure Socket Layer, originally developed by Netscape for securing communic
 TLS enforces:
 - confidentiality and integrity of communication
 - the authentication of the server
-- [optional] the authenticaiton of the user  
+- [optional] the authentication of the user  
 
 TLS uses a combination of symmetric (encrypt messages) and asymmetric encryption (key exchange) for performance reason.
 
@@ -1100,7 +1100,7 @@ So yes, TLS is resilient to MITM attack by design, assuming that there is no mis
 
 #### Advantages and disadvantages
 Advantages:
-- protects trasmission confidentiality and integrity
+- protects transmission confidentiality and integrity
 - ensure authentication of server and optionally the client
 
 Disadvantages:
@@ -1117,7 +1117,7 @@ Defend against *SSL stripping* by forcing the connection to happen only over HTT
 - Certificate pinning [DEPRECATED]  
 Website can specify which CAs are trusted to verify the certificate.
 - Certificate transparency  
-CA send logs of every issued certificate and browser can refuse to accept certificates that have not been logged, even if it is valid. Defend against certificate misissuance. Owners of websites can also check if certificates are issued for somthing they manage. [Example](https://crt.sh).
+CA send logs of every issued certificate and browser can refuse to accept certificates that have not been logged, even if it is valid. Defend against certificate misissuance. Owners of websites can also check if certificates are issued for something they manage. [Example](https://crt.sh).
 
 ### SET
 Joint effort of VISA and Mastercard developed to protect transactions.  
@@ -1140,8 +1140,8 @@ Nowadays the approach used to make transactions more secure is to have the custo
 
 ## Malicious software
 Malicious software (malware) is code intentionally written to violate a security policy. There are different types of malware:
-- VIRUS: self replicate by infecting other files or programs but it is not a standalone program by itself.
-- WORMS: programs that self propagate by exploiting vulnerabilities or social engineering.
+- VIRUS: self-replicate by infecting other files or programs but it is not a standalone program by itself.
+- WORMS: programs that self-propagate by exploiting vulnerabilities or social engineering.
 - TROJAN: apparently benign program that hide a malicious program or functionality and allow remote control.
 - RANSOMWARE: encrypts data on the computer of the victim and asks for a ransom to have the key to decrypt it.
 
@@ -1151,7 +1151,7 @@ This means that anti-malware software need to use a blacklisting approach, they 
 
 ### Malware lifecycle
 Reproduce, infect, stay hidden, run payload.  
-Many malware nowadays do not self propagate but are diffused via e-mail or drive-by download in order to remain hidden. Malware wants to remain hidden because it is often used to create botnets.
+Many malware nowadays do not self-propagate but are diffused via e-mail or drive-by download in order to remain hidden. Malware wants to remain hidden because it is often used to create botnets.
 
 #### Infection techniques
 Viruses can be divided on the basis of their infection technique:
@@ -1235,7 +1235,7 @@ Not everything needs an antivirus. Systems that do not need to do general comput
 Try to hide malware in order to make it difficult to detect.
 
 - entry point obfuscation: hijack control of the program later.
-- polymorphism: change layout of the malware at every infection by encrypting it with a different key. Then a decription engine will decrypt and execute it (anti-malware can look for this engine).
+- polymorphism: change layout of the malware at every infection by encrypting it with a different key. Then a decryption engine will decrypt and execute it (anti-malware can look for this engine).
 - metamorphism: create different versions of the code that looks different but have the same behaviour.
   - insert nops
   - reorder sections
@@ -1245,7 +1245,7 @@ Try to hide malware in order to make it difficult to detect.
   - dormant period in which they don't do anything 
   - try to evade the sandbox
 - packing: similar to polymorphism but more advanced.  
-Encrypt the malware and use a decryption routine to run the malware. This routine also checks for debuggers or if it is a virtual environement. If it detects some analysis technique it will not unpack the malware.
+Encrypt the malware and use a decryption routine to run the malware. This routine also checks for debuggers or if it is a virtual environment. If it detects some analysis technique it will not unpack the malware.
 
 ### Rootkits
 Enable privileged access to a machine while staying hidden from the sysadmin. There are two categories:
@@ -1262,7 +1262,7 @@ Enable privileged access to a machine while staying hidden from the sysadmin. Th
     - filter their output (easier)
   
 #### Recognize rootkits
-- intuition of the sysasmin
+- intuition of the sysadmin
 - post-mortem on a different system
 - cross-layers examination
 - use a trusted computing base. The typical way to do it is called *tripwire*: store hashes of the executables on a server or some non-writable media and check against the executables that you have.
@@ -1270,7 +1270,7 @@ Enable privileged access to a machine while staying hidden from the sysadmin. Th
 #### BIOS level rootkits
 There are very advanced techniques that theoretically can allow an attacker to put its rootkit in the bios itself or in the firmware of other components (like video cards or network interfaces). It is even possible to use pieces of codes that are already in the BIOS and doesn't need to change anything except for some specific memory location (Brossard's Rakshasa). There are also rootkits that act as hypervisors. 
 
-All these rootkits are basically undetectetable and impossible to remove, the only way to do it is to change hw.  
+All these rootkits are basically undetectable and impossible to remove, the only way to do it is to change hw.  
 The point is that for the vast majority of people this is outside the threat model. We cannot be absolutely certain that a machine has not been trojanized (although in many cases it probably isn't).
 
 ## Appendix: x86 assembly crash course
@@ -1280,7 +1280,7 @@ Basics for the x86 architecture that we will use. The architecture was born in 1
 - general purpose EAX, EBX, ECX, EDX  
 They can also be referenced partly in 8 bit or 16 bit  
 ![x86_registers](assets/x86_registers.png)
-- for string funcitons: ESI, EDI
+- for string functions: ESI, EDI
 - base pointer EBP
 - stack pointer ESP
 - instruction pointer EIP, can't be accessed directly
@@ -1325,9 +1325,9 @@ How the different sections of the binary are mapped into memory. We will deal wi
 - .bss, contains allocated but uninitialized data, zeroed at the beginning.
 
 ![program_layout](assets/program_layout.png)  
-Stack and Heap are dinamically allocated during the exectuion of the program:
+Stack and Heap are dynamically allocated during the execution of the program:
 - stack contains the frames of the functions as well as local variables
-- heap contains dinamically allocated data (e.g. malloc)
+- heap contains dynamically allocated data (e.g. malloc)
 
 ### Stack
 LIFO data structure used to manage function calls and local variables. The register ESP always points at the top of the stack while EBP points at the base of the current frame (function invocation).
@@ -1336,7 +1336,7 @@ INSTRUCTIONS:
 - push, decreases ESP and places the value passed at the top of the stack (example `push EAX`, `push 0h`)
 - pop, copy to the specified register the value at the top of the stack and increases ESP (example `pop EBP`)
 
-The important thing to remember is that the stach grows from high addresses to low addresses so increasing ESP actually means reducing the stack and viceversa. Variables on the stack are instead allocated from low to high address (e.g. a 64 char string will start at a low address and end in a high address)
+The important thing to remember is that the stack grows from high addresses to low addresses so increasing ESP actually means reducing the stack and vice versa. Variables on the stack are instead allocated from low to high address (e.g. a 64 char string will start at a low address and end in a high address).
 
 ### Functions
 At assembly level they are managed using two instructions:
