@@ -16,6 +16,9 @@ A.Y. 2020/2021
 A.Y 2021/2022
 - 🟩 Embedded Systems, teacher William Fornaciari
 
+A.Y. 2022/2023
+- 🟨 Advanced Operating Systems, teacher Vittorio Zaccaria
+
 ### Commit messages
 All commits regarging the notes start with an identifier of the course:
 - [DFC] Digital Forensics and Cybercrime
@@ -23,5 +26,6 @@ All commits regarging the notes start with an identifier of the course:
 - [ML] Machine Learning
 - [DB2] Data Bases 2
 - [ES] Embedded Systems
+- [AOS] Advanced Operating Systems
 
 Other commits (i.e. readme or other) do not have a prefix.
