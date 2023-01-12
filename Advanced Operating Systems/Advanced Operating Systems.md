@@ -320,3 +320,257 @@ Choosing which IPC method do use is not trivial and can impact performance. The 
 - ...
 
 See [this link](https://www.cl.cam.ac.uk/research/srg/netos/projects/ipc-bench/) for a study on IPC performance.
+
+## Task scheduling
+
+Scheduler: OS component responsible of establishing the order of execution of the tasks. The ordering alg. is called scheduling policy.
+
+Idea:
+
+- tasks are preeempted by the OS in order to dispatch another task
+  - can be task triggered also but it's unusual
+  - the OS also dispatches another task when the current one is blocked waiting for I/O operations
+- preemption is performed via context switch: save current registers and load back the other task
+
+Tasks can be in different states:
+
+![task_state_diagram](assets/task_state_diagram.png)
+
+- new: task just created
+- ready: task can be dispatched at any time
+- running: currently using the CPu
+- blocked: waiting on an I/O request
+- terminated: the task has exited
+
+In reality there are much more states defined in the Linux kernel, but those are the major ones.
+
+### Task model
+
+|[task_model](assets/task_model.png)
+
+- `a_i` arrival time, when the tasks is ready to be scheduled
+- `s_i` start time, starts execution
+- `W_i` wait time, time spent waiting in the queue `W_i = s_i - a_i`
+- `f_i` finishing time, when the execution terminates
+- `C_i` computation time (or burst time), time necessary for the processor to execute the task (without interruptions)
+- `Z_i` turnaround time, total time taken from whne the task is ready to when it completes `Z_i = f_i - a_i` (NOTE: not the same as `W_i + C_i` because there can be interruptions)
+
+Based on the operation done by the task we distinguish between:
+
+- CPU-bound
+  - spends most of the time executing stuff
+  - `Z_i ~ W_i + C_i`
+- I/O bound
+  - spends most of the time waiting for I/O operation
+  - `Z_i >> W_i + C_i`
+
+### Platform model
+
+A computing system is composed of:
+
+- `m` processing elements (PE) CPU
+  - to each CPU, at each time `t`, it is assigned zero or one task
+- `s` additional resources R
+  - each resource, at each time `t` is assigned to zero or more tasks
+
+### Problem statement
+
+Given
+
+- a set of `n` tasks
+- a set of `m` PE
+- a set of resources `R`
+
+Compute an optimal schedule and allocation. (NP-complete problem)
+
+This is very difficult: what does optimal mean? There can be different objective that require different policies to be in place in order to achieve it:
+
+- maximize processor utilization
+- maximize throughput: number of tasks completing per time unit
+- minimize waiting time: time spent ready in the wait queue
+- ensure fairness
+- minimize scheduling overhead
+- minimize turnaround time
+- and many more: energy, power, temps, ....
+
+These objective are generally in contrast with each other, we need to find a good balance.
+
+#### Starvation
+
+Undesirable condition in which one or more task cannot execute due to lack of resources (e.g. low priority task that always get pushed back in favor of higher priority tasks)
+
+### Scheduling algorithms classification
+
+- preemptive vs not preemptive
+  - preemptive schedulers, can interrupt tasks to allocate CPU to another task, required for responsive systems
+  - not preemptive, a task when it's scheduled runs until completion. Has minimum overhead but bad for responsiveness
+- static vs dynamic
+  - static, scheduler decisions are based on fixed parameters known before task activation (not very realistic in general)
+  - dynamic, scheduler decisions are based on parameters that change at run time and new tasks can be added
+- offline vs online
+  - offline, run once before activation, when the schedule is decided it doesn't change
+  - online, executed at run time during task execution, new tasks can be added
+- optimal vs heuristic
+  - optimal can give some guarantees but usually has much higher overhead
+  - heuristic has no guarantees but in practice it can be almost as good with much lower overhead
+
+### Scheduling algorithms
+
+Simple algorithms that target systems with only one processor.
+#### First-In-First-Out (FIFO)
+
+First-In-First-Out (FIFO) scheduler:
+
+- tasks scheduled in order of arrival
+- non preemptive
+
+The advantage is that it is very simple to implement and doesn't need to know anything about processes but it is not good for responsive systems (long tasks monopolize the CPU, short tasks are penalized)
+
+![FIFO_scheduler](assets/FIFO_scheduler.png)
+
+#### Shortest Job First (SJF)
+
+Shortest Job First (SJF) scheduler:
+ 
+- tasks scheduled in ascending order of computation time `C_i`
+- non preemptive
+
+It is the optimal non preemptive scheduler w.r.t. minimizing waiting time, but there is the risk of starving long tasks. Moreover, we need to know the time required to complete ahead of time.
+
+![SJF_scheduler](assets/SJF_scheduler.png)
+
+#### Shortest Remaining Time First (SRTF)
+
+Shortest Remaining Time First (SRTF) scheduler:
+
+- preemptive variant of SJF
+- it uses the remaining execution time instead of the total to schedule next task
+
+It is more responsive than SJF but shares the same disadvantages
+
+![STRF_scheduler](assets/STRF_scheduler.png)
+
+The preemption occurs when a new tasks arrives but only if the new tasks has a shorter remaining time than the current task, otherwise the current task continues.
+
+#### Highest Response Ratio Next (HRRN)
+
+Highest Response Ratio Next (HRRN) scheduler:
+
+- select task with the highest response ration, computed as
+  - `RR_i = (W_i + C_i) / C_i`
+- not preemptive
+
+It prevents starvation of longer tasks w.r.t. SJF but again, we need to know `C_i` in advance.
+
+![HRRN_scheduling](assets/HRRN_scheduling.png)
+
+#### Round Robin (RR)
+
+Round Robin (RR) scheduler:
+
+- task are scheduled to run for a given amount of time `q` (quantum or time slice)
+- preemptive
+
+This approach has several advantages:
+
+- computable maximum waiting time `(n - 1) * q`
+- no need to know `C_i` in advance
+- good to achieve fairness and responsiveness goals
+- no starvation
+
+However, it has a worse turnaround than SJF.
+
+![RR_scheduler](assets/RR_scheduler.png)
+
+Preemption occurs at the end of the time quantum that the task has allocated (or before if the tasks ends). The preempted task is put back at the end of the queue. New tasks are added to the ready queue in a FIFO fashion.
+
+NOTE: if a task is preempted at the same time a new arrives the order of operation is
+
+- add new tasks at the end of the queue
+- preempt the current task and put at the end of queue
+
+The value of the quantum of time is very important:
+
+- long quantum:
+  - tend to FIFO scheduler
+  - favors CPU-bound tasks
+  - low overhead (less context switches)
+- short quantum:
+  - reduce average waiting time
+  - favors I/O-bound tasks
+  - good for responsiveness and fair scheduling
+  - higher overhead (more context switches have to occur)
+
+In Linux the default time quantum for RR scheduler is stored in `/proc/sys/kernel/sched_rr_timeslice_ms` (default 100ms)
+
+### Priority-based scheduling and multi-level scheduling
+
+Can assign a priority to each task to specify its importance. Can be fixed at design time or change dynamically at run time. It is usually expressed using an integer value, the lower the value the higher the priority.
+
+In a priority-based scheduler usually there are multiple ready queues, divided by priority. The first task to schedule is picked from the topmost non-empty queue. Tasks can be preempted if a higher priority task arrives.
+
+![priority-based_scheduling](assets/priority-based_scheduling.png)
+
+For each of these queues i can use a different scheduling algorithm. 
+
+Of course this approach could cause starvation of tasks with lower priority, so we need to use correctly the scheduling algorithms at the different queues.
+
+Example:  
+use RR for each queue, but use a longer quantum for lower priority tasks to compensate for the long wait. Then we can assign lower priority to CPU-bound tasks (so they get a longer time slice) and high priority for I/O bound tasks (increase responsiveness).
+
+How can we determine if a task is CPU-bound?
+
+- information provided by the user
+- use some feedback mechanism in the scheduler using a dynamic priority (Multi-Level Feedback Queue Scheduling)
+  - new tasks are put in the highest priority
+  - if the tasks uses the whole quantum, then when it's preempted move it to a lower priority queue
+    - the idea is that CPU-bound tasks will use more CPU, so they will be moved to queues with longer quantums, while I/O-bound tasks, since they will block before finishing the quantum, will remain in high priority
+
+This doesn't solve the problem of starvation. To do so we need to do time slicing between all the queues, for instance:
+
+- i have a 100ms time window
+- 80ms assigned to first queue (high priority)
+- 15ms assigned to intermediate priority
+- 5ms assigned to lower priority
+
+This way i can guarantee that all queues get at least a certain percentage of CPU time.
+
+Another option to prevent starvation is the concept of *aging*: the more a task spends time in the ready queue the more its priority is increased. This prevents it from being postponed indefinitely by the arrival of newer tasks.
+
+### Multi-processor scheduling
+
+This problem is way harder, the scheduler also has to choose which CPU to assign the task:
+
+- task synchronization my occur across parallel executions
+- difficult to achieve high utilization of all CPU cores
+  - need to migrate tasks across cores to balance the load, but this leads to cache miss penalties (the data needs to be loaded in the cache of the new core)
+- simultaneous access to shared resources (e.g. chache memory)
+  - task scheduled on the same core may trash each other data from the cache (i.e. they need two resources that maps on the same cache address) slowing each other down, it would be more efficient to schedule those on different cores
+  - they could still interfere on higher level caches that are shared across cores...
+
+There could be different design choiches for the scheduler:
+
+- single queues vs multiple queues
+  - single queue:
+    - all tasks wait in a global queue
+    - simple design
+    - good fairness
+    - good for managing CPU utilization
+    - issues with scalability, the scheduler runs in any core and require synchronized access to the ready queue (semaphore/mutexes)
+  - multiple queues:
+    - ready queue for each processor
+    - more scalable
+    - easier to exploit more easily data locality in caches
+    - can use one global scheduler or a per-CPU scheduler
+    - potentially more overhead (more data structures to manage)
+    - needs load balancing --> rebalance queues if necessary to achieve good utilization and reduce waiting time (i.e. move waiting tasks to idling or less loaded cores)
+      - also useful to manage thermals (spread load across cores to avoid hot spots)
+      - this has also impact on power consumption and reliability
+      - task migration may happen in two ways:
+        - push model: a dedicated task periodically checks each queue and rebalances if necessary
+        - pull model: a processor may notify an empty queue and pick tasks from other queues
+- single scheduler vs multiple per-processor scheduler
+- can also use a hierchical queue: global queue that dispatches tasks to the queue of each CPU:
+  - better utilization and load balancing
+  - good scalability
+  - more complex to implement
