@@ -574,3 +574,74 @@ There could be different design choiches for the scheduler:
   - better utilization and load balancing
   - good scalability
   - more complex to implement
+
+## Concurrency
+
+Concurrency is when a program is composed by activities where one activity can start before the previous one has finished. This is what we will see:
+
+- thread execution model
+  - need context switching to save state between threads
+  - hw parallelism (multicore)
+  - sw parallelism (timesharing)
+- lightweight execution model
+  - do not require context switches, supported by programming languages
+  - coroutines
+  - generators
+  - event-based models
+    - continuation passing (callbacks)
+    - async/await constructs
+
+Why concurrency if it is harder? Because we are reaching the limits of single core improvements
+
+![microprocessor_evolution](assets/microprocessor_evolution.png)
+
+### Properties and issues
+
+We characterize concurrent programs with two properties:
+
+- safety (correctness): never reach error states. Possible issues are
+  - data race: program behaviour depends in an uncontrolled way from the memory model and the interleaving of threads. If it is not what the programmer wants it is a bug
+  - atomicity violation: operation supposed to be atomic in reality they are not and can lead to problems
+  ```C
+    // Thread 1::
+  if (thd->proc_info) {
+  fputs(thd->proc_info, ...);
+  // proc_info can become NULL after the check if interleaves with thread 2
+  }
+  ...
+  // Thread 2::
+  thd->proc_info = NULL;
+  ```
+  - order violation: assume a specific order of execution when there is no guarantee that it will be that way
+- liveness (progress): eventually all activities will be able to finish. Issues that concern liveness are
+  - deadlocks: no task can take action because it is waiting for another task to take action (e.g. t1 waits for t2 and t2 waits for t1)
+    - mutual exclusion, only one can access a specific resource
+      - preventable if there are some atomic instructions to read and act on the data (need to be supported by CPU)
+    - hold-and-wait, threads hold some resource and wait for the release of another
+      - preventable by using appropriate API to release a resource if the acquisition of further resources fails
+      ```C
+      lock(M1);  // blocks until the lock is obtained
+      if(!try_lock(M2)) {  // doesn't block, if resource not available it returns
+      release(M1);  // if i cannot get M2, release the first resource
+      }
+      else {
+      update(R1);  // when i get them both, use them
+      update(R2);
+      release(M1,M2);  // and release those in the end
+      }
+      ```
+    - no preemption, resources cannot be forcibly take away from a thread that is holding them
+    - circular wait, at the end this is the cause of all deadlocks
+      - need to ensure a certain order in the locking of the resources (or exclude unwanted orders)
+  - priority inversion: this causes higher priority tasks to be delayed because they need to wait for a lower priority task to release a lock on a resource. This doesn't cause deadlocks but dealys a high priority task and can lead to missing some deadline (see [1997 pathfinder mission](https://people.cs.ksu.edu/~hatcliff/842/Docs/Course-Overview/pathfinder-robotmag.pdf)). This can be solved in different ways:
+    - highest locker priority protocol: raise the priority of a task holding a lock to the highest priority task that holds that resource.
+    - priority inheritance protocol: similar as before but the lower priority task gets his priority increased only when the high priority task tries to enter the critical section.
+    - priority ceiling protocol: a priority ceiling for a semaphore is the highest priority among the tasks that could lock it. In this context a task is allowed to enter a critical section only if its priority is higher than all the priority ceilings of the resources currently locked by other tasks that it has to access.
+
+### Linux user space concurrency
+
+Based on the concept of *futex* (fast user-level lock) and have the following objectives:
+
+- avoid unnecessary system calls (they are expensive)
+- avoid unnecessary context switches
+- avoid thundering herd problem (see later)
