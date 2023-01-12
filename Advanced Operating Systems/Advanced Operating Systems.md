@@ -644,4 +644,77 @@ Based on the concept of *futex* (fast user-level lock) and have the following ob
 
 - avoid unnecessary system calls (they are expensive)
 - avoid unnecessary context switches
-- avoid thundering herd problem (see later)
+- avoid thundering herd problem (wake up multiple threads but only one can run)
+
+![futex_vs_traditional_lock](assets/futex_vs_traditional_lock.png)
+
+futex allow uncontended locks (i.e. only one thread is trying to use the resource) to be locked/unlocked without switching to kernel mode. If a thread is holding the lock and another thread tries to lock it (contended) it is necessary to have the kernel intervene and put the thread in a wait queue. If uncontended access is frequent this approach allows to avoid lots of system calls.
+
+For this to work the lock needs to stay in the runtime instead of the kernel, it is usually implemented as a 32 bit integer managed with **atomic** instructions:
+
+- 31 bits encode the number of waiters
+- 1 bit flags the state (lock/unlocked), it is the MSB
+  - check if set
+    - not set --> set the bit
+    - set --> syscall to put the thread in waiting, call `futex` with `FUTEX_WAIT` flag
+  - remember that the check and set is done in an atomic operation (depends on the platform)
+
+This functionality is implemented like
+
+```C
+void futex_based_lock(int *mutex) {
+  int v;
+  if (atomic_bit_test_set(mutex, 31) == 0) 
+    return;
+  atomic_increment(mutex);
+  while (1) {
+  if (atomic_bit_test_set(mutex, 31) == 0) {
+    atomic_decrement(mutex);
+  return;
+  }
+  v = *mutex;
+  // technicality, if 32th bit is set the number is negative
+  // i want to call the syscall only if i'm sure that the bit is set
+  // v > 0 --> unlocked 
+  // v < 0 --> locked
+  if (v >= 0) continue;
+    futex(mutex, FUTEX_WAIT, v); /* sleeps only if mutex still has v */
+  }
+}
+
+void futex_based_unlock(int *mutex) {
+  // unlock and if the mutex is zero return
+  // the add is basically adding 1 to the 32 bit
+  // if the result is zero it means that
+  // - 32th bit is 0 --> unlocked
+  // - other bits are 0 --> no more waiters
+  // so it wakes up a thread only if there is something waiting
+  if (atomic_add_zero(mutex, 0x80000000))
+    return;
+  futex(mutex, FUTEX_WAKE, 1); // wake up only one thread
+}
+```
+
+NOTE: futexes are also used to implement condition variables and try to avoid thundering herd problem.
+
+#### Event-based concurrency
+
+DIfferent style of concurrent programming. Multiple activity whose progress is triggered by external events. Locks in these cases are not the optimal way to go about it. 
+The classical example is some GUI-based program waiting for user interaction or internet based services.
+
+The general idea is:
+- wait for some event to occur
+- check what type of event arrived and identify which activity it belongs
+- do the small amount of work it requires (I/O requests, other events, ...)
+- repeat
+
+We want to avoid the cost of context switches if not necessary. To implement this we use an *event loop*: a single thread that blocks on all events and calls other activities as functions... sort of, because they need to restore the state that the activity had before. This is done using callbacks (continuation passing style)
+
+The advantages of this approach is that:
+- when a handler processes an event, it is the only activity taking place in the system (in the event loop thread)
+  - no locking needed
+  - no context switch needed
+- network I/O via the `select` or `poll` API
+- ability to run blocking I/O in a separate thread pool and register a callback when to call when the data is ready (avoid blocking entire app). `libuv` offers an interface to do so
+
+Limits of event loops --> it runs in a single thread, it is difficult to extend to multicore  
