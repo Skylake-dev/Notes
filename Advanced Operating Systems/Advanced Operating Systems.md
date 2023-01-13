@@ -1171,3 +1171,151 @@ To protect against new attacks based on **Meltdown** that exploit the processor 
 The idea is to use different PGDs for user mode and kernel mode. The two page tables are adjacent so that to switch mode it is sufficient to change the base.
 
 ![KPTI](assets/KPTI.png)
+
+## Virtualization
+
+An efficient, isolated duplicate of the real machine dedicated to an OS. It is based on a virtual machine monitor (hypervisor) that creates an environment for an OS and is in complete control of the system resources.
+
+The requisites that the virtual machine must have are:
+
+- fidelity: behaviour equivalent to a real machine
+- safety: the VM cannot override the hypervisor's control over the resources
+- efficiency: should have little impact on performance of processes
+
+Why would we want to use a VM?
+
+- consolidate hw resources
+  - fully utilize each machine resources
+- react to variable workload
+  - extend the VM resources when needed
+- standardize the infrastructure
+  - easy to replicate a specific environment
+- security sandboxing
+- fault tolerance
+  - can checkpoint or snapshot the machine to be able to rollback to a good state
+
+Some definitions:
+
+- host system: OS where the VM is running
+- guest system: OS that is running in the VM
+- virtual machine monitor (VMM) or hypervisor
+  - mediates access to system resources
+  - ensures isolation
+  - type 1 --> runs on bare metal (vmware, esx, hyper-v)
+  - type 2 --> runs in the context of another OS (KVM, VirtualBox)
+    - note: sometimes KVM is categorized as type 1 because when enabled it basically turns the OS in an hypervisor (so it's not running in an OS but it is itself the OS)
+
+The idea of virtualization is to execute all instruction (and so also privileged instructions that would normally trap in user mode) in user mode and thus allowing an OS to be executed on top of another.
+
+Instructions that are important for virtualization are those ones that are:
+
+- control-sensitive: if it modifies directly the machine status (e.g. interrupt disabling, modify IVT, ...)
+- behaviour-sensitive: instructions that behave differently when used in supervisor mode, those may affect fidelity
+
+THEOREM (Popek and Goldberg): For any computer a VMM can be built if the set of sensitive instructions is a subset of the privileged instructions.
+
+(basically if there is a way for the hypervisor to catch and manage all actions that could change the machine status or behaviour, i.e. have the complete control of the machine, then it is possible to build it)
+### Software based virtualization
+
+Based on the ideas of *deprivileging* and *shadowing*
+
+- deprivileging: running kernel mode instructions in user mode
+  - sensitive instructions need to be taken care of to ensure fidelity
+- shadowing: used when the guest needs to access the page table or interrupt descriptor table
+  - VMM intercepts this calls and redirects the access to a virtual (shadow) copy that is presented to the guest
+
+privileged instructions are trapped and intercepted by the hypervisor that regulates access or presents a shadow copy of that resource
+
+#### Page table access
+
+![guest_os_page_table_access](assets/guest_os_page_table_access.png)
+
+VMM intercepts writes to the page directory `cr3` and redirects to the virtual `cr3`. Physical pages of the guest are actually virtual pages of the host OS, that are then mapped on actual physical memory.
+
+Since the page table of the guest is set to read only by the host, every access that tries to modify it causes a trap to allow the host to build the correct shadows mapping. 
+Read access doesn't need traps since the mapping is already built.
+
+#### Making it work
+
+The problem of sw virtualization on x86 is that some sensitive instructions are unprivileged (i.e. manipulation of interrupt flags, segment descriptors).
+The guest OS could not run unmodified on a sw virtualization.
+
+- ring aliasing problem --> by running certain instruction the guest OS can tell that it is not running in privileged mode. It's a correctness problem.
+- excessive faulting --> all syscalls needed to be trapped by the hypervisor and need to be handled. This is a performance problem.
+
+The solution that was used is to use some binary machine code translation done by the hypervisor --> convert code that was problematic into other instructions that would perform the desired function.
+This was done on a basic block level and stored in a translation cache.
+
+However, this is still not ideal to do. A better virtualization system needs to rely on some sort of hw support from the platform.
+
+### Hardware assisted virtualization
+
+The goals of adding hw support to virtualization:
+
+- avoid problems of deprivileging by adding new modes for the hypervisor
+- allow to save and resume the state of the guest
+- adapt x86 to obey the Popek-Goldberg
+- improve performance
+  - reduce number of traps
+  - avoid shadown paging overhead
+
+![hw_assisted_virtualization](assets/hw_assisted_virtualization.png)
+#### Speeding it up
+
+- Extended page table
+
+![extended_page_table](assets/extended_page_table.png)
+
+Using the extended page table there are still two page tables but the guest OS is able to manipulate directly its table.
+The composition of the two level of indirection is done directly in hw. 
+
+This allows to reduce the number of traps caused by shadowing.
+
+- I/O passthrough
+
+Make the guest OS access directly a device withouth going through the hypervisor.
+This can be done by placing a IOMMU (I/O Memory Management Unit) between the OS and the devices to allow them to write directly in the memory of the guest OS by translating to the correct addresses.
+
+### KVM
+
+Loadable kernel module of the Linux kernel that allows to start and stop VMs. It runs the VM as if it is a normal kernel thread, it can be stopped and restarted, the state is saved in a shared memory area called `vm control block (vmcb)`
+
+Minimal VMM using KVM
+
+```C
+int kvm_fd = open("/dev/kvm", O_RDWR);
+int vm_fd = ioctl(kvm_fd, KVM_CREATE_VM, 0);
+chat buf[]= {/* memory initialization data */};
+// setup memory of the guest by mapping local buffers
+// into the physical space of the vm
+ioctl(vm_fd, KVM_SET_USER_MEMORY_REGION, {&buf})
+int vcpu_fd = ioctl(vm_fd, KVM_CREATE_VCPU, 0);
+// the exchange of information between us and
+// the vcpu is via a 'kvm_run' data structure
+// in shared memory which we map from vcpu_fd
+kvm_run *kr = mmap(... vcpu_fd...);
+// run the VM
+ioctl(vcpu_fd, KVM_RUN, 0);
+// on return can inspect the status in the kr struct
+cout << "Exit reason: " << kr->exit_reason << endl;
+kvm_regs regs;
+ioctl(vcpu_fd, KVM_GET_REGS, ®s)
+cout << regs.rax << endl;
+```
+
+### Paravirtualization
+
+Instead of trying to run an unmodified OS, what if i modified it to make it work better with an hypervisor?
+From an implementation point of view is like porting the kernel to a new platform, the hypervisor, and explicitly cooperate with it (e.g. instead of accessing the MMU call the hypervisor).
+
+This is also useful to write device driver that are installed in the guest too cooperate with the host and avoid excessive trapping --> `virtio`
+
+### Containerization
+
+Containers are a way to isolate a set of processes as if they were the only ones running in the system. They may only see a subset of all the available resources.
+
+Containers are not VMs:
+
+- they are normal processes, they run normally on the host OS
+- no guest OS
+- kernel is shared across all the containers
