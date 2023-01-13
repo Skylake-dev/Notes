@@ -914,6 +914,81 @@ The idea is:
   - when one CPU releases the lock it notifies the next one in line
   - no coherency needs to be enforced because each CPU is on a different variable and are given the lock in order on release
 
+### Memory models
+
+Defines the behaviour and the consistency of how operations done by one thread are seen by the other threads in a multiprocessor system. Due to write buffering, speculative execution and cache coherency the order of access of the memory may not be seen in the same way by another thread.
+This depends on the way the architecture manages memory, for instance:
+
+```C
+// thread 1
+x = 1;
+done = 1;
+
+// thread 2
+while(done == 0) { /* loop */ }
+print(x);
+```
+On an x86 machine it will always print `1` while on and ARM processor it can also print `0`.
+
+We can distinguish 2 types of ordering:
+
+- program order: order in which a thread does the memory accesses, denoted by `<_p` (happens before in program order)
+- memory order: order in which the operation are seen by the shared memory, denoted by `<_m` (happens before in memory order)
+
+We will cover 3 models:
+
+- sequential: strongest possible and more difficult to achieve, do not exist in practice
+  - if `i <_p j` then `i <_m j`, operations of each processor appear in the same order specified by the program that is running.
+- total store order (TSO): model of x86
+
+  ![total_store_order](assets/total_store_order.png)
+  - each thread interfaces with the shared memory through a store buffer, so writes can be seen "delayed"
+    - if the thread wants to read data that is still in the store buffer then it will read it from there --> the processor sees the data that it has written, even if other threads have not yet seen it
+    - otherwise the data is pulled from the shared memory
+    - all other threads see the write at the same time when it is written back to the shared memory
+  - there is a `mfence` instruction that forces the flush of the write buffer. There are also `.L` (locked) instructions that require to get a global lock on the resource before executing (unlocking flushes the write buffer)
+  - reads may be issued before writes due to speculation
+- partial store order (PSO): model of ARM, much weaker model
+
+  ![partial_store_order](assets/partial_store_order.png)
+  - each processor reads from and writes as if it had its own complete copy of the memory
+    - writes can be reordered by out-of-order execution in the same processor
+    - no mechanism to ensure that all other processors see the writes at the same time
+
+#### Data races
+
+The PSO model can allow something like this to happen
+
+![data_race_in_PSO](assets/data_race_in_PSO.png)
+
+Because there is no enforcement of an happens before operation. We need to use some synchronization instructions. Not quite the same thing as a memory barrier, we just enforce that after a specific write, all the writes that happened before have been committed to the shared memory (note: doesn't mean that all the previous writes are committed in order, like TSO, just that they have been committed).
+That specific write is called a *release* and to exploit it when reading it is needed to do an *acquire* operation.
+
+This eliminates the data race.
+
+If all data races can be removed then the program will appear as if it was sequentially consistent.
+
+#### Software memory models
+
+Compilers can introduce additional reordering of instructions that might appear as if the machine had a weaker memory model. Higher level languages must give programmers the ability to enforce some happen-before relationships. This is called language memory model.
+
+If you write a data race free program then it will behave like a sequentially consistent one.
+
+(see slides for C++ memory model)
+
+##### Linux Kernel Memory Model (LKMM)
+
+The model is essence the lowest common denominator of the guarantees of all the CPU families where the kernel can run.
+
+- happens-before relationships can be enforced using `smp_store_release` and `smp_load_acquire`
+- provides `atomic_t` and `atomic64_t`. Operations on this type are guaranteed to be non interruptible
+  
+  ```C
+  atomic_t v = ATOMIC_INIT(0);
+  atomic_set(&v, 4);
+  atomic_add(2, &v);
+  atomic_inc(&v);
+  ```
 ## Virtual memory
 
 Linux (as any other modern OS) uses virtual memory.
