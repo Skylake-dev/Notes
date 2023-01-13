@@ -718,3 +718,200 @@ The advantages of this approach is that:
 - ability to run blocking I/O in a separate thread pool and register a callback when to call when the data is ready (avoid blocking entire app). `libuv` offers an interface to do so
 
 Limits of event loops --> it runs in a single thread, it is difficult to extend to multicore  
+
+### Linux kernel space concurrency
+
+There are multiple sources of concurrency in the kernel:
+
+- interrupts
+- multiple processors
+- kernel preemption: multiple thread in the kernel can share the same resources
+
+#### Interrupts
+
+An interrupts can occur asynchronously almot at any time, interrupting the code currently executing in kernel mode. If the interrupt and the interrupted task need to use the same resource then access must be regulated.
+
+Code that is safe from concurrenct access from interrupt handler is said to be interrupt-safe (example the global variable `jiffies` that keeps track of the uptime).
+
+#### Multiprocessors
+
+Kernel code must be able to simultaneously run on multiple processors, therefore there is the need to regulate access to resources that are shared (true concurrency).
+
+Code that is safe from true concurrency on symmetrical multiprocessor machines is sai to be SMP-safe.
+
+Do all processor see the memory in the same way?
+
+#### Kernel preemption
+
+![preemptive_kernel](assets/preemptive_kernel.png)
+
+Scheduling can be called during some kernel mode code execution and switch to another activity that is deemed more important. This allows for increased responsiveness. 
+
+From 2.6, the Linux kernel became preemptable and the preemption points are:
+
+- end of an interrupt handling, when `TIF_NEED_RESCHED` flag is set in the thread (forced context switch)
+- if a task in the kernel explicitly blocks, which causes `schedule()` to be called (planned context switch)
+
+How can we ensure that a context switch occurs only if it is safe to do so?
+
+A variable is used, called `preempt_count`, that keeps track of the preemptions:
+
+- set at 0 when the process enters kernel mode
+- increase by 1 on lock acquisition (critical section)
+- increase by 1 on interrupt
+
+![preemption_count](assets/preemption_count.png)
+
+As long as `preempt_count > 0` the kernel cannot switch.
+
+NOTES:
+
+- can compile kernel to avoid preemption
+- can also do the opposite, increase the responsiveness of the kernel to be suitable for more "real-time" operations:
+  - apply the `PREEMPT_RT` patch that tries to maximize the preemptability of the kernel
+    - preempt critical sections in the kernel
+    - manage interrupt in their own separate thread
+
+### Kernel synchronization
+
+#### Spinlocks
+
+Locking operation doesn't put to sleep the activity that is trying to lock, it's a busy wait. The thread keeps "spinning" on the lock variable until it can get the lock. It requires platform support to do the atomic operation on the locking variable.
+
+For instance in [x86](https://en.wikipedia.org/wiki/Spinlock)
+
+```asm
+; Intel syntax
+
+locked:                      ; The lock variable. 1 = locked, 0 = unlocked.
+     dd      0
+
+spin_lock:
+     mov     eax, 1          ; Set the EAX register to 1.
+     xchg    eax, [locked]   ; Atomically swap the EAX register with
+                             ;  the lock variable.
+                             ; This will always store 1 to the lock, leaving
+                             ;  the previous value in the EAX register.
+     test    eax, eax        ; Test EAX with itself. Among other things, this will
+                             ;  set the processor's Zero Flag if EAX is 0.
+                             ; If EAX is 0, then the lock was unlocked and
+                             ;  we just locked it.
+                             ; Otherwise, EAX is 1 and we didn't acquire the lock.
+     jnz     spin_lock       ; Jump back to the MOV instruction if the Zero Flag is
+                             ;  not set; the lock was previously locked, and so
+                             ; we need to spin until it becomes unlocked.
+     ret                     ; The lock has been acquired, return to the calling
+                             ;  function.
+
+spin_unlock:
+     xor     eax, eax        ; Set the EAX register to 0.
+     xchg    eax, [locked]   ; Atomically swap the EAX register with
+                             ;  the lock variable.
+     ret                     ; The lock has been released.
+```
+
+Of course if the wait is long the spinlock becomes a wasteful way of locking since the thread keeps the CPU without doing anything except waiting. On uniprocessor machines this is just a call to `preempt_disable`, only on multiprocessor system the thread actually spins.
+
+Variants:
+
+- Readwrite locks
+
+  Distinguish between readers and writers, multiple readers can access the object but only a writer at a time is allowed. 
+  This is used to maximize concurrent access when there is no risk of concurrent modification.
+
+- Seqlocks
+
+  Similar to readwrite locks but want to prevent the starvation of writers. The idea is
+
+  - when writer acquire lock it increments a counter (starting from 0)
+  - when it releases it, the counter is incremented again
+
+  This means that if the counter is even there are no writes going on, while if it is odd a write is currently holding the lock.
+
+  Readers check the counter when trying to lock:
+  - odd: busy wait
+  - even: return counter
+    - do work but before releasing check if the counter changed, if it did redo the work
+  
+  ```C
+  // what the write does
+  write_seqlock(&mr_seq_lock); // increment seq. counter
+  /* write lock is obtained... */
+  write_sequnlock(&mr_seq_lock); // increment seq. counter
+  
+  // what the read does
+  do {
+  // loops if seq. counter odd
+  seq = read_seqbegin(&mr_seq_lock);          // ^
+  /* read/copy data here ...              | check if seq. counter equal. */
+  } while (read_seqretry(&mr_seq_lock, seq)); // V
+  ```
+
+  Example, the `jiffies` variable is frequently read by interrupt handler. For machines that do not have atomic 64 bit reads, it is read using a seqlock.
+
+#### Sleeping locks
+
+Tasks trying to lock and already locked resource are put to sleep. Implemented by a semaphore. Better choice if the time that we have to wait is unknown or expected to be long.
+
+MEMO: semaphore, basically a counter, lock decrements, unlock increments, blocked when trying to lock a 0 semaphore.
+
+```C
+/* define and declare a semaphore, named mr_sem, with a count of one */
+static DECLARE_MUTEX(mr_sem);
+/* attempt to acquire the semaphore (can also specify interruptible) ... */
+if (down_interruptible(&mr_sem)) {
+/* signal received, semaphore not acquired ... */
+}
+/* critical region ... */
+/* release the given semaphore */
+up(&mr_sem);
+```
+
+#### Read copy update locks (RCU)
+
+The goal is to have low latency reads to shared data that is read often but updated infrequently. The idea works as follow and it's an improvement over seqlocks:
+
+- readers
+  - avoid locks
+  - should tolerate concurrent writers
+  - might see old version of the data for a short time
+- writers
+  - create a new copy of the data structure
+  - publish new version with a single atomic operation
+
+Basically the idea is that writers update the data "offline" and then commit the changes atomically when they are done. The reader can read old data while the writer is modifying but not committed the data.
+
+Of course, the writer needs to wait some *grace period* to allow all readers of the old structure to finish their work on the old struct before deallocating it.
+
+![read_copy_update_locks](assets/read_copy_update_locks.png)
+
+So to recap:
+
+- avoid deadlocks
+- read locks acquisition are easy (they don't lock at all)
+- writer might delay the completion of destructive operations
+
+#### Locks and multiprocessing
+
+In a SMP system, an attempt to acquire a lock requires moving the cache line containing that lock to the local CPU cache. 
+If another CPU tries to check the lock it forces the value held in the cache of the first CPU to be written back to memory (to ensure consistency). If multiple processors are spinning on the same lock there is a overhead because of the need to ensure memory consistency
+
+Mellor-Crummey and Scott lock (MCS or `queued spinlocks`) are a way to better implement spinlocks on multicore systems to avoid this overhead.
+
+![MCS_lock](assets/MCS_lock.png)
+
+The idea is:
+
+- start with a spinlock that is not taken
+- P1 comes and takes the lock
+  - when the lock is taken, it allocates a processor specific data structure (each processor has it's own version of that data structure)
+  - the lock points to that specific data structure
+- if P3 arrives an tries to take the lock
+  -  gets it's own copy of the struct
+  - the P1 struct will point to P3 as `next locker`
+- this way we have two advantages
+  - each CPU spins on its own lock variable
+  - when one CPU releases the lock it notifies the next one in line
+  - no coherency needs to be enforced because each CPU is on a different variable and are given the lock in order on release
+
+## Virtual memory
