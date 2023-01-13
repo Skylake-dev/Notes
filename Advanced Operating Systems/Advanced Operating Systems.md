@@ -915,3 +915,184 @@ The idea is:
   - no coherency needs to be enforced because each CPU is on a different variable and are given the lock in order on release
 
 ## Virtual memory
+
+Linux (as any other modern OS) uses virtual memory.
+
+Physical pages are mapped to virtual pages, each process has a memory structure `mm_struct` that is used by the kernel to keep track of the mapping. 
+Each task has it's own value for the register that points to the base of the page directory (`RC3` in x86).
+
+Both kernel and user space code use virtual memory:
+
+- higher memory addresses for the kernel
+- lower memory addresses for user space programs
+
+How it this managed?
+
+- `KERNEL VIRTUAL` used for remapping some pages (e.g. pages that need to be contiguous in the virtual space but not necessarily in the physical). Allocated by `vmalloc`.
+- `KERNEL LOGICAL` direct image of all the physical memory (offsetted by some address in order to live in the kernel memory area). Contiguous pages are also contiguous in the physical memory. Allocated by `kalloc`. Typically used for DMA.
+
+Virtual pages can be mapped:
+
+- directly to a physical memory pages
+- not mapped to physical (e.g. swapped out to disk)
+  - used to manage data that doesn't fit in memory
+- neither of those, for instance pages allocated via `brk` to expand some area that are not mapped until they are used
+
+A user mode process memory is composed of many Virtual Memory Areas (VMAs) and are stored in the `mm_struct` of the process and can be inspected in the `/proc/<name>/maps`.
+
+![process_VMA](assets/process_VMA.png)
+
+A VMA can be:
+
+- anonymous: exists only in memory, not corresponding to a file (until they need to be swapped)
+- file_backed (backing store): there is a corresponding file on disk, for instance the code for a program, a library
+
+Also there are flags to specify what action can be done on them (read/write/exec/...)
+
+Multiple VMA can point to the same physical pages to share resources (for instance library code)
+
+### Page fault management
+
+What happens when a process tries to access a page that is not present in memory? The page table contains only the pages that are present in memory, but the process can have more pages that are not present, managed in the VMAs.
+There are 2 possibilities:
+
+- page valid but it's not mapped
+  - if so it needs to be loaded
+- page is invalid
+  - segmentation fault
+
+To add pages to the VMA a process needs to call `brk()` (but pages are actually allocated only on access --> demand pages)
+
+![page_fault_management](assets/page_fault_management.png)
+
+The `find_vma` function uses a RB-tree to find the corresponding VMA (uses tree instead of list for efficiency).
+
+- not found: SIGSEGV
+- found:
+  - check permissions
+    - SIGSEGV if doesn't have permission (e.g. write to a read only area)
+  - `handle_mm_fault` allocates a page table entry if needed
+  - `handle_pte_fault` load from disk
+
+New VMAs can be created by a process by calling `mmap()` on already open file descriptors. This allows to avoid copy of files in the space of the each process and share access to a *file cache* of already opened files.
+
+### Physical address space
+
+#### NUMA
+
+Physical memory can be in different NUMA nodes (e.g. on multiprocessor systems). Linux keeps a data structure `pg_data_t` for each node in a list (If a single NUMA node is present there is only one element). 
+
+![NUMA_nodes](assets/NUMA_nodes.png)
+
+For each node there is several information stored:
+
+- the memory of each node id divided in 3 zones:
+  - `ZONE_DMA`: what zones can be used for DMA by other devices
+  - `ZONE_NORMAL`: 
+  - `ZONE_HIGHMEMORY`: not considered here
+  Each zone has 
+    - `free_area` structure that keeps track of the areas that are free, grouped by the number of contiguous pages available
+    - `watermarks` 3 possible values (high, low, min), stating how many pages are free.
+      ![memory_zones_watermarks](assets/memory_zones_watermarks.png) 
+      - above `high`, pages are consumed by the buddy allocator
+      - between `high` and `low`, the allocator wakes up the `kswapd` to start freeing up pages
+      - between `low` and `min`, the allocator will swap pages itself
+      - below `min`, normally not allowed, only in specific cases
+- `node_mem_map` stores the whole available memory pages in that node
+- `lruvec` keeps track of the activity of each pages, used to decide which pages to swap in case of necessity
+
+#### Buddy allocator
+
+The idea is:
+
+- do not fragment contiguous blocks of pages too much
+- compact free large blocks with little overhead
+
+To allocate the blocks it works like this:
+
+![buddy_allocator](assets/buddy_allocator.png)
+
+- recursively split the block in half until the requested size is reached (minimum size is 1 page)
+- the unused half of each block is the *buddy* of the other
+- when merging back pages, a page can only be merged with its buddy
+
+NOTE: blocks are always a power of 2 number of pages and are tracked in the `free_area`
+
+### Page cache
+
+Set of pages that are:
+
+- in memory
+- swappable
+- file backed (i.e. have an associated backing store)
+
+The idea is to efficiently use memory by sharing some physical pages and mapping them on multiple processes' VMAs (e.g. shared library code, copy-on-write child process pages).
+
+Each page needs to keep a reference count (how many VMAs map to that page).
+
+```C
+struct page {
+  unsigned long flags;
+  atomic_t _count;
+  atomic_t _mapcount;
+  struct address_space *mapping;
+  pgoff_t index;
+  struct list_head lru;
+};
+```
+
+#### Page frame reclaim algorithm (PFRA)
+
+Based on the idea of the *clock algortithm*, an approximation of the LRU algorithm.
+
+- circular list of pages
+  - the clock head goes around the list to find some page to evict
+- each page has a reference bit
+  - R=1 --> recently used, don't evict but put R=0
+  - R=0 --> choose to evict
+    - may want to check if dirty to avoid writes if there are other candidates
+
+In Linux we need a more complex way of managing pages, using the `lruvec`.
+
+- INACTIVE_ANON and ACTIVE_ANON
+- INACTIVE_FILE and ACTIVE_FILE
+- UNEVICTABLE
+
+active and inactive lists, the top of the inactive list is the candidate page to be evicted. A page stays in the active as long as it gets referenced in by some process.
+
+![active_inactive_pages](assets/active_inactive_pages.png)
+
+### Object allocation
+
+Fast allocator for objects that are smaller. In general in the kernel fixed size data structures are ofter allocated and deallocated.
+The buddy system doesn't scale well, it will lead to fragmentation and inefficient use of the memory.
+
+There are two fast allocators in the kernel:
+
+- quicklists, used only for paging
+- slab allocator, used for other buffers
+  - for smaller structure, store many object in a single page
+  - for efficiency we have that frequently used structures are prepared and already initialized
+
+![slab_allocator_implementation](assets/slab_allocator_implementation.png)
+
+A `kmem_cache` structure is present for each type of data structure. It manages multiple caches, one for each CPU. When the page gets full it is swapped to another cache slab.
+`kmalloc` will look in the slab cache to find a suitable block.
+
+For more info can check `/proc/slabinfo`
+
+### Linux memory security
+
+Mitigation against common type of vulnerabilities.
+
+#### Address Space Layout Randomization (ASLR)
+
+Randomize the base address of the sections in memory to make it difficult to find code to execute. Also available in the kernel (KASLR) to randomize the .text section of the kernel at startup.
+
+#### kernel Page Table Isolation (KPTI)
+
+To protect against new attacks based on **Meltdown** that exploit the processor speculative execution to leak information.
+
+The idea is to use different PGDs for user mode and kernel mode. The two page tables are adjacent so that to switch mode it is sufficient to change the base.
+
+![KPTI](assets/KPTI.png)
