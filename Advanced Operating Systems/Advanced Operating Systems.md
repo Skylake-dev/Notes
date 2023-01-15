@@ -1428,3 +1428,107 @@ The idea is that an ISR need to be as short as possible. To do this the routine 
   - invoked at a particular reconciliation time
 
 Linux manages this mechanism using `softIRQs`
+
+- HI_SOFTIRQ
+- TIMER_SOFTIRQ
+- TASKLET_SOFTIRQ
+
+Actions are never interrupted but can run in parallel on multiple CPUs. This may require locking some shared structures.
+In order to avoid this Linux offers the TASKLET_SORTIRQ that forces execution of softirq routines to be serial (i.e. only one can run at a time). They are used to work that should have been done in the interrupt but for responsiveness reasons they are scheduled later.
+
+These tasks cannot sleep or wait for resources.
+
+![sotfIRQs](assets/sotfIRQs.png)
+
+The execution of deferred work can be done in two places:
+
+- on return from the interrupt itself (call `do_softirq()`), with interrupts enabled
+  - allowed to run only for a bounded period before returning to user mode
+- within the `ksoftirqd/cpun` thread at a later time.
+
+##### Work queues
+
+Used for deferred work when the deferred function can possibly block for some operation (for instance interacting with the device that generated the interrupt).
+
+A work queue is a schedulable entity that runs in process context to execute the bottom half of the interrupt and is submitted to a worker kernel thread `events/n` --> threads waken up by the kernel to do some operations.
+
+#### Timers
+
+Used to schedule some tasks. When some time has passed the timer sends an interrupt to notify that it has expired.
+
+- system timer: programmable piece of hw that issues interrupts at a fixed frequency (called `tick rate` 50-1000 Hz)
+  - the interrupt handler for this timer (`tick_periodic()`) updates the system time and performs periodic work like updating the `jiffies` and the timeslice of processes
+- dynamic timers: schedule events that run once (not periodically) after a specified time has passed
+  - for instance turn off a device after some inactivity
+  - can be registered by device drivers to schedule actions
+  ```C
+  struct timer_list my_timer;
+  init_timer(&my_timer);
+  ...
+  my_timer.expires = jiffies + delay; // timer expires in delay ticks 
+  my_timer.data = 0;                  // zero is passed to the timer handler 
+  my_timer.function = my_function;    // function to run when timer expires 
+  add_timer(&my_timer);               // GO! 
+  ```
+
+### Device management
+
+Linux integrates devices in special files, assigning them a path name under `/dev`. Devices are divided in two categories:
+
+- character device: no buffering, it's just a character stream. Reading and writing on the file directly impacts the device itself.
+- block device: seen as a sequence of numbered blocks that can be individually addressed and accessed through a cache.
+
+Each device has a special driver that handles it and it's identified by a *major device number* to identify it and a *minor device number* to distinguish between the multiple devices it can support. (typical example `/dev/sd*` for disks --> `/dev/sda, /dev/sda1, /dev/sda2`)
+
+![driver_major_minor_number](assets/driver_major_minor_number.png)
+
+Originally under `/dev` there were thousands of files that were there also for devices not currently plugged in. Later only connected devices showed up but there could be issues with devices changing name if the user changes how they are attached.
+
+![udev_and_sysfs](assets/udev_and_sysfs.png)
+
+In the modern approach there are two orthogonal ways of looking at the devices
+- `UDEV`, the user is given the power to customize the device names. Represents a kind of logical view over the attached devices
+- `SYSFS`, stored under `/sys`, shows through the file system how the devices are connected to the system, providing a topological view of the system. There are also other informations that are available via sysfs:
+  - state of devices
+  - which bus they are attached
+  - access to device driver
+
+#### Writing device drivers
+
+The process differs for character and block devices:
+
+- character devices: need to register functions to handle file operations (`open`, `close`, `read`, `write`, ...)
+
+  ![character_device_driver_structure](assets/character_device_driver_structure.png)
+
+- block devices: it's more complex since there are two structures that needs to be registered
+  - `block_device_operations` to specify an `open` and `release` operations.
+  - `gendisk` to provide a `request_queue` and a `queue_rq()` function to do the actual I/O operations
+
+  ![block_device_driver_structure](assets/block_device_driver_structure.png)
+
+  - block I/O requests are actually optimized and scheduled to make the best use of the device
+    - multiple policies are possible, see later
+
+##### Scheduling block I/O
+
+- NOOP scheduler: doesn't reorder, forwards directly to the device. It just merges requests for contiguous blocks.
+
+  ![NOOP_block_device_scheduler](assets/NOOP_block_device_scheduler.png)
+
+- Complete Fair Queue (CFQ): assign to each process a fair slice of disk bandwidth
+
+  ![budget_fair_block_device_scheduler](assets/budget_fair_block_device_scheduler.png)
+
+  - requests are grouped by process
+  - scheduler extracts a batch of requests from each queue, iterating over the queues in a round robin fashion
+  - also called Budget Fair Scheduler (BFS)
+- MQ-deadline I/O: coalesce block operation but also try to do some prioritization by serving first read requests that are starving.
+
+  ![deadline_block_device_scheduler](assets/deadline_block_device_scheduler.png)
+
+  - divide requests in 4 queues
+    - first two divide read and write operations and are sorted by block number
+    - second two, also divided by read and writes, ordered according to an expiration timer that is assigned to each requests at the arrival
+    - the logic is to favor reads over writes, unles some of them is expired (i.e. timer is up)
+    - the scheduler may wait a bit if the read queue becomes empty before issuing the writes
