@@ -18,6 +18,7 @@ A.Y 2021/2022
 
 A.Y. 2022/2023
 - 🟨 Advanced Operating Systems, teacher Vittorio Zaccaria
+- 🟩 Formal Languages and Compilers (only laboratory part), teacher Daniele Cattaneo
 
 ### Commit messages
 All commits regarging the notes start with an identifier of the course:
@@ -27,5 +28,6 @@ All commits regarging the notes start with an identifier of the course:
 - [DB2] Data Bases 2
 - [ES] Embedded Systems
 - [AOS] Advanced Operating Systems
+- [FLC] Formal Languages and Compilers
 
 Other commits (i.e. readme or other) do not have a prefix.
