@@ -9,7 +9,7 @@
 - process: instance of a program currently executing
 - thread: smallest schedulable unit of execution
   - process can contain multiple threads of execution (see later)
-- task: not unique definition, usually synonym of thread, but depends on contex
+- task: not unique definition, usually synonym of thread, but depends on context
 
 ### Process
 
@@ -17,24 +17,24 @@
 - has an isolated address space
 - can contain one or more threads
 
-### Threads
+### Thread
 
 - smallest schedulable execution unit
 - belong to the memory address space of a process
-- share memory address space with other threads of the same process
+- shares memory address space with other threads of the same process
   - can synchronize each other
-  - can access global aread (heap, data, ..)
-  - can access variables in other thread if address is known
+  - can access global aread (heap, data, ...)
+  - can access variables in other threads if address is known
 
 ## Communication betweeen processes
 
 How can we have different processes communicate with each other? They have different address space.
 
-OS offers inter process communication. There are different ways of doing . First we see how to spawn new processes and then how to communicate.
+OS offers inter process communication. There are different ways of doing so. First we see how to spawn new processes and then how to communicate.
 
 ### Forking
 
-`fork()` spawns a new child process which is a copy of itself. The child program will be exactly the same and will start from the instruction following the fork, except from the return value of the `fork()`:
+`fork()` spawns a new child process which is a copy of itself. The child program will be exactly the same and will start from the instruction following the fork, except for the return value of the `fork()`:
 
 - 0 in the child process
 - child PID in the parent process
@@ -45,7 +45,7 @@ We have no control over which one of the two processes will execute first a cert
 
 Each process has:
 
-- exactly one parent
+- exactly one parent process
 - zero or more child processes
 - PID: Process IDentifier
   - `pid_t`, currently 32 bit integer
@@ -57,14 +57,14 @@ Each process has:
 Load a new program and replace the current process image with it.
 
 It uses the `execve` syscall, C offers several interface to this with some slight variations:
-`exec,execlp,execle,execv,execvp,execve`
+`exec,execlp,execle,execv,execvp,execve`.
 
 structure is exec + options
 
-- -l accepts list of parameters, NULL terminated
-- -v accepts array of NULL terminated strings
-- -p search the PATH environment variable
-- -e allows to specify new environment variables
+- `-l` accepts list of parameters, NULL terminated
+- `-v` accepts array of NULL terminated strings
+- `-p` search the PATH environment variable
+- `-e` allows to specify new environment variables
 
 ### Inter-Process Communication (IPC)
 
@@ -89,11 +89,11 @@ We will see the following POSIX components:
 - no data transfer, contain only the signal type
 - asynchronous
 
-Used to signal some event (I/O operation done, exceptions):
+Used to signal some event (I/O operation done, exceptions, ...):
 
 - SIGCHLD, child sends to parent when it terminates
 - SIGILL, sent to a process by the OS if it tries to executes an illegal instruction
-- many other
+- many others
 
 Most signals by default cause the termination of the process, but the behaviour can be overridden with a custom signal handler.
 
@@ -104,7 +104,7 @@ Sending signal
 #include <sys/types.h>
 int kill(pid_t pid, int sig);
 // pid: pid of the receiving program
-// sign: the signal to send
+// sig: the signal to send
 // returns 0 on success -1 on fail
 ```
 
@@ -179,7 +179,7 @@ int mkfifo(const char *pathname, mode_t mode);
 
 #### Message queues
 
-Suitable for multiple writers and readers, based on a priority queue. Can be accessed via special files in the `/dev/mqueue/` directory. (requires POSIX real-time extension library)
+Suitable for multiple writers and readers, based on a priority queue. Can be accessed via special files in the `/dev/mqueue/` directory (requires POSIX real-time extension library).
 
 Creating a message queue
 
@@ -230,7 +230,7 @@ To use shared memory:
   ```
 
 - specify the size of the special object with `fd_truncate`
-- `mmap` the fd to an area of the memroy of the process
+- `mmap` the fd to an area of the memory of the process
 
 When the process is done, some cleanup is needed
 
@@ -251,18 +251,18 @@ The simplest mechanism is the `wait()` (and `waitpid(pid_t pid)`) primitive:
 - wait:  suspends the execution until one child completes
 - waitpid:  suspends execution until that specific child completes
 
-signatures:
+Signatures:
 
 ```C
 pid_t wait(int *status);
 pid_t waitpid(pid_t pid, int *status, int options);
 ```
 
-status is used to collect the return value from the child process (can be NULL if i don't care)
+`status` is used to collect the return value from the child process (can be NULL if i don't care).
 
-#### zombie processes
+#### Zombie processes
 
-If the parent process does't call `wait` before exiting the child processes will become zombies (they are ended but are waiting to return the exit value) and consume resources.
+If the parent process does't call `wait` before exiting, the child processes will become zombies (they are ended but are waiting to return the exit value) and consume resources.
 
 All orphan children are adopted by init that calls wait and frees memory and PID number.
 
@@ -278,7 +278,7 @@ The approach based on `wait` is very limited. POSIX provides inter-process semap
 
 There are 2 atomic functions to interact with the semaphore:
 
-- `wait()` blocks until counter > 0, then decrements and proceed
+- `wait()` blocks until counter becomes > 0, then decrements it and proceed
 - `post()` increment counter
 
 Similarly to pipes, they can be named or unnamed. `pthread` library is required to use those.
@@ -323,14 +323,14 @@ See [this link](https://www.cl.cam.ac.uk/research/srg/netos/projects/ipc-bench/)
 
 ## Task scheduling
 
-Scheduler: OS component responsible of establishing the order of execution of the tasks. The ordering alg. is called scheduling policy.
+Scheduler: OS component responsible for establishing the order of execution of the tasks. The ordering algorithm is called scheduling policy.
 
 Idea:
 
 - tasks are preeempted by the OS in order to dispatch another task
-  - can be task triggered also but it's unusual
+  - can also be task triggered (unusual)
   - the OS also dispatches another task when the current one is blocked waiting for I/O operations
-- preemption is performed via context switch: save current registers and load back the other task
+- preemption is performed via context switch: save current registers and load back another task
 
 Tasks can be in different states:
 
@@ -338,7 +338,7 @@ Tasks can be in different states:
 
 - new: task just created
 - ready: task can be dispatched at any time
-- running: currently using the CPu
+- running: currently using the CPU
 - blocked: waiting on an I/O request
 - terminated: the task has exited
 
@@ -346,14 +346,14 @@ In reality there are much more states defined in the Linux kernel, but those are
 
 ### Task model
 
-|[task_model](assets/task_model.png)
+![task_model](assets/task_model.png)
 
 - `a_i` arrival time, when the tasks is ready to be scheduled
 - `s_i` start time, starts execution
 - `W_i` wait time, time spent waiting in the queue `W_i = s_i - a_i`
 - `f_i` finishing time, when the execution terminates
 - `C_i` computation time (or burst time), time necessary for the processor to execute the task (without interruptions)
-- `Z_i` turnaround time, total time taken from whne the task is ready to when it completes `Z_i = f_i - a_i` (NOTE: not the same as `W_i + C_i` because there can be interruptions)
+- `Z_i` turnaround time, total time taken from when the task is ready to when it completes `Z_i = f_i - a_i` (NOTE: not the same as `W_i + C_i` because there can be interruptions)
 
 Based on the operation done by the task we distinguish between:
 
@@ -381,9 +381,9 @@ Given
 - a set of `m` PE
 - a set of resources `R`
 
-Compute an optimal schedule and allocation. (NP-complete problem)
+Compute an optimal schedule and resource allocation (NP-complete problem).
 
-This is very difficult: what does optimal mean? There can be different objective that require different policies to be in place in order to achieve it:
+This is very difficult: what does optimal mean? There can be different objectives that require different policies to be in place in order to achieve them:
 
 - maximize processor utilization
 - maximize throughput: number of tasks completing per time unit
@@ -397,7 +397,7 @@ These objective are generally in contrast with each other, we need to find a goo
 
 #### Starvation
 
-Undesirable condition in which one or more task cannot execute due to lack of resources (e.g. low priority task that always get pushed back in favor of higher priority tasks)
+Undesirable condition in which one or more task cannot execute due to lack of resources (e.g. low priority task that always get pushed back in favor of higher priority tasks).
 
 ### Scheduling algorithms classification
 
@@ -405,7 +405,7 @@ Undesirable condition in which one or more task cannot execute due to lack of re
   - preemptive schedulers, can interrupt tasks to allocate CPU to another task, required for responsive systems
   - not preemptive, a task when it's scheduled runs until completion. Has minimum overhead but bad for responsiveness
 - static vs dynamic
-  - static, scheduler decisions are based on fixed parameters known before task activation (not very realistic in general)
+  - static, scheduler decisions are based on fixed parameters known before task activation (not very realistic in general purpose systems)
   - dynamic, scheduler decisions are based on parameters that change at run time and new tasks can be added
 - offline vs online
   - offline, run once before activation, when the schedule is decided it doesn't change
@@ -424,7 +424,7 @@ First-In-First-Out (FIFO) scheduler:
 - tasks scheduled in order of arrival
 - non preemptive
 
-The advantage is that it is very simple to implement and doesn't need to know anything about processes but it is not good for responsive systems (long tasks monopolize the CPU, short tasks are penalized)
+The advantage is that it is very simple to implement and doesn't need to know anything about processes but it is not good for responsive systems (long tasks monopolize the CPU, short tasks are penalized).
 
 ![FIFO_scheduler](assets/FIFO_scheduler.png)
 
@@ -446,17 +446,17 @@ Shortest Remaining Time First (SRTF) scheduler:
 - preemptive variant of SJF
 - it uses the remaining execution time instead of the total to schedule next task
 
-It is more responsive than SJF but shares the same disadvantages
+It is more responsive than SJF but shares the same disadvantages.
 
 ![STRF_scheduler](assets/STRF_scheduler.png)
 
-The preemption occurs when a new tasks arrives but only if the new tasks has a shorter remaining time than the current task, otherwise the current task continues.
+The preemption occurs when a new task arrives but only if the new task has a shorter remaining time than the current task, otherwise the current task continues.
 
 #### Highest Response Ratio Next (HRRN)
 
 Highest Response Ratio Next (HRRN) scheduler:
 
-- select task with the highest response ration, computed as
+- select task with the highest response ratio, computed as
   - `RR_i = (W_i + C_i) / C_i`
 - not preemptive
 
@@ -484,7 +484,7 @@ However, it has a worse turnaround than SJF.
 
 Preemption occurs at the end of the time quantum that the task has allocated (or before if the tasks ends). The preempted task is put back at the end of the queue. New tasks are added to the ready queue in a FIFO fashion.
 
-NOTE: if a task is preempted at the same time a new arrives the order of operation is
+NOTE: if a task is preempted at the same time a new one arrives the order of operation is
 
 - add new tasks at the end of the queue
 - preempt the current task and put at the end of queue
@@ -501,7 +501,7 @@ The value of the quantum of time is very important:
   - good for responsiveness and fair scheduling
   - higher overhead (more context switches have to occur)
 
-In Linux the default time quantum for RR scheduler is stored in `/proc/sys/kernel/sched_rr_timeslice_ms` (default 100ms)
+In Linux the default time quantum for RR scheduler is stored in `/proc/sys/kernel/sched_rr_timeslice_ms` (default 100ms).
 
 ### Priority-based scheduling and multi-level scheduling
 
@@ -522,7 +522,7 @@ How can we determine if a task is CPU-bound?
 
 - information provided by the user
 - use some feedback mechanism in the scheduler using a dynamic priority (Multi-Level Feedback Queue Scheduling)
-  - new tasks are put in the highest priority
+  - new tasks are put in the highest priority queue
   - if the tasks uses the whole quantum, then when it's preempted move it to a lower priority queue
     - the idea is that CPU-bound tasks will use more CPU, so they will be moved to queues with longer quantums, while I/O-bound tasks, since they will block before finishing the quantum, will remain in high priority
 
@@ -542,7 +542,7 @@ Another option to prevent starvation is the concept of *aging*: the more a task 
 This problem is way harder, the scheduler also has to choose which CPU to assign the task:
 
 - task synchronization my occur across parallel executions
-- difficult to achieve high utilization of all CPU cores
+- it's difficult to achieve high utilization of all CPU cores
   - need to migrate tasks across cores to balance the load, but this leads to cache miss penalties (the data needs to be loaded in the cache of the new core)
 - simultaneous access to shared resources (e.g. chache memory)
   - task scheduled on the same core may trash each other data from the cache (i.e. they need two resources that maps on the same cache address) slowing each other down, it would be more efficient to schedule those on different cores
@@ -591,7 +591,7 @@ Concurrency is when a program is composed by activities where one activity can s
     - continuation passing (callbacks)
     - async/await constructs
 
-Why concurrency if it is harder? Because we are reaching the limits of single core improvements
+Why use concurrency if it is harder? Because we are reaching the limits of single core improvements.
 
 ![microprocessor_evolution](assets/microprocessor_evolution.png)
 
@@ -600,13 +600,13 @@ Why concurrency if it is harder? Because we are reaching the limits of single co
 We characterize concurrent programs with two properties:
 
 - safety (correctness): never reach error states. Possible issues are
-  - data race: program behaviour depends in an uncontrolled way from the memory model and the interleaving of threads. If it is not what the programmer wants it is a bug
-  - atomicity violation: operation supposed to be atomic in reality they are not and can lead to problems
+  - data race: program behaviour depends in an uncontrolled way from the memory model and the interleaving of threads. If it is not what the programmer wants it is a bug.
+  - atomicity violation: operations supposed to be atomic in reality they are not and can lead to problems
   ```C
     // Thread 1::
   if (thd->proc_info) {
-  fputs(thd->proc_info, ...);
-  // proc_info can become NULL after the check if interleaves with thread 2
+      // proc_info can become NULL after the check if interleaves with thread 2
+      fputs(thd->proc_info, ...);
   }
   ...
   // Thread 2::
@@ -616,21 +616,21 @@ We characterize concurrent programs with two properties:
 - liveness (progress): eventually all activities will be able to finish. Issues that concern liveness are
   - deadlocks: no task can take action because it is waiting for another task to take action (e.g. t1 waits for t2 and t2 waits for t1)
     - mutual exclusion, only one can access a specific resource
-      - preventable if there are some atomic instructions to read and act on the data (need to be supported by CPU)
+      - preventable if there are some atomic instructions to read and act on the data (needs to be supported by CPU)
     - hold-and-wait, threads hold some resource and wait for the release of another
       - preventable by using appropriate API to release a resource if the acquisition of further resources fails
       ```C
       lock(M1);  // blocks until the lock is obtained
       if(!try_lock(M2)) {  // doesn't block, if resource not available it returns
-      release(M1);  // if i cannot get M2, release the first resource
+          release(M1);  // if i cannot get M2, release the first resource
       }
       else {
-      update(R1);  // when i get them both, use them
-      update(R2);
-      release(M1,M2);  // and release those in the end
+          update(R1);  // when i get them both, use them
+          update(R2);
+          release(M1,M2);  // and release those in the end
       }
       ```
-    - no preemption, resources cannot be forcibly take away from a thread that is holding them
+    - no preemption, resources cannot be forcibly taken away from a thread that is holding them
     - circular wait, at the end this is the cause of all deadlocks
       - need to ensure a certain order in the locking of the resources (or exclude unwanted orders)
   - priority inversion: this causes higher priority tasks to be delayed because they need to wait for a lower priority task to release a lock on a resource. This doesn't cause deadlocks but dealys a high priority task and can lead to missing some deadline (see [1997 pathfinder mission](https://people.cs.ksu.edu/~hatcliff/842/Docs/Course-Overview/pathfinder-robotmag.pdf)). This can be solved in different ways:
@@ -665,20 +665,21 @@ This functionality is implemented like
 void futex_based_lock(int *mutex) {
   int v;
   if (atomic_bit_test_set(mutex, 31) == 0) 
-    return;
+      return;
   atomic_increment(mutex);
   while (1) {
-  if (atomic_bit_test_set(mutex, 31) == 0) {
-    atomic_decrement(mutex);
-  return;
+      if (atomic_bit_test_set(mutex, 31) == 0) {
+          atomic_decrement(mutex);
+      return;
   }
   v = *mutex;
   // technicality, if 32th bit is set the number is negative
   // i want to call the syscall only if i'm sure that the bit is set
   // v > 0 --> unlocked 
   // v < 0 --> locked
-  if (v >= 0) continue;
-    futex(mutex, FUTEX_WAIT, v); /* sleeps only if mutex still has v */
+  if (v >= 0) 
+      continue;
+  futex(mutex, FUTEX_WAIT, v); /* sleeps only if mutex still has v */
   }
 }
 
@@ -690,7 +691,7 @@ void futex_based_unlock(int *mutex) {
   // - other bits are 0 --> no more waiters
   // so it wakes up a thread only if there is something waiting
   if (atomic_add_zero(mutex, 0x80000000))
-    return;
+      return;
   futex(mutex, FUTEX_WAKE, 1); // wake up only one thread
 }
 ```
@@ -704,11 +705,11 @@ The classical example is some GUI-based program waiting for user interaction or 
 
 The general idea is:
 - wait for some event to occur
-- check what type of event arrived and identify which activity it belongs
+- check what type of event arrived and identify which activity it belongs to
 - do the small amount of work it requires (I/O requests, other events, ...)
 - repeat
 
-We want to avoid the cost of context switches if not necessary. To implement this we use an *event loop*: a single thread that blocks on all events and calls other activities as functions... sort of, because they need to restore the state that the activity had before. This is done using callbacks (continuation passing style)
+We want to avoid the cost of context switches if not necessary. To implement this we use an *event loop*: a single thread that blocks on all events and calls other activities as functions... sort of, because they need to restore the state that the activity had before. This is done using callbacks (continuation passing style).
 
 The advantages of this approach is that:
 - when a handler processes an event, it is the only activity taking place in the system (in the event loop thread)
@@ -717,7 +718,7 @@ The advantages of this approach is that:
 - network I/O via the `select` or `poll` API
 - ability to run blocking I/O in a separate thread pool and register a callback when to call when the data is ready (avoid blocking entire app). `libuv` offers an interface to do so
 
-Limits of event loops --> it runs in a single thread, it is difficult to extend to multicore  
+Limits of event loops --> it runs in a single thread, it is difficult to extend to multicore. 
 
 ### Linux kernel space concurrency
 
@@ -725,11 +726,11 @@ There are multiple sources of concurrency in the kernel:
 
 - interrupts
 - multiple processors
-- kernel preemption: multiple thread in the kernel can share the same resources
+- kernel preemption: multiple threads in the kernel can share the same resources
 
 #### Interrupts
 
-An interrupts can occur asynchronously almot at any time, interrupting the code currently executing in kernel mode. If the interrupt and the interrupted task need to use the same resource then access must be regulated.
+An interrupts can occur asynchronously almost at any time, interrupting the code currently executing in kernel mode. If the interrupt and the interrupted task need to use the same resource then access must be regulated.
 
 Code that is safe from concurrenct access from interrupt handler is said to be interrupt-safe (example the global variable `jiffies` that keeps track of the uptime).
 
@@ -737,7 +738,7 @@ Code that is safe from concurrenct access from interrupt handler is said to be i
 
 Kernel code must be able to simultaneously run on multiple processors, therefore there is the need to regulate access to resources that are shared (true concurrency).
 
-Code that is safe from true concurrency on symmetrical multiprocessor machines is sai to be SMP-safe.
+Code that is safe from true concurrency on symmetrical multiprocessor machines is said to be SMP-safe.
 
 Do all processor see the memory in the same way?
 
@@ -776,7 +777,7 @@ NOTES:
 
 #### Spinlocks
 
-Locking operation doesn't put to sleep the activity that is trying to lock, it's a busy wait. The thread keeps "spinning" on the lock variable until it can get the lock. It requires platform support to do the atomic operation on the locking variable.
+Locking operation doesn't put to sleep the activity that is trying to lock, it's a busy wait. The thread keeps "spinning" on the lock variable until it can get the lock. It requires platform support to do the atomic operations on the locking variable.
 
 For instance in [x86](https://en.wikipedia.org/wiki/Spinlock)
 
@@ -836,14 +837,14 @@ Variants:
   ```C
   // what the write does
   write_seqlock(&mr_seq_lock); // increment seq. counter
-  /* write lock is obtained... */
+  // write lock is obtained...
   write_sequnlock(&mr_seq_lock); // increment seq. counter
   
   // what the read does
   do {
   // loops if seq. counter odd
   seq = read_seqbegin(&mr_seq_lock);          // ^
-  /* read/copy data here ...              | check if seq. counter equal. */
+  // read/copy data here ...              | check if seq. counter equal.
   } while (read_seqretry(&mr_seq_lock, seq)); // V
   ```
 
@@ -851,19 +852,19 @@ Variants:
 
 #### Sleeping locks
 
-Tasks trying to lock and already locked resource are put to sleep. Implemented by a semaphore. Better choice if the time that we have to wait is unknown or expected to be long.
+Tasks trying to lock an already locked resource are put to sleep. Implemented with a semaphore. Better choice if the time that we have to wait is unknown or expected to be long.
 
 MEMO: semaphore, basically a counter, lock decrements, unlock increments, blocked when trying to lock a 0 semaphore.
 
 ```C
-/* define and declare a semaphore, named mr_sem, with a count of one */
+// define and declare a semaphore, named mr_sem, with a count of one
 static DECLARE_MUTEX(mr_sem);
-/* attempt to acquire the semaphore (can also specify interruptible) ... */
+// attempt to acquire the semaphore (can also specify interruptible)
 if (down_interruptible(&mr_sem)) {
-/* signal received, semaphore not acquired ... */
+// signal received, semaphore not acquired
 }
-/* critical region ... */
-/* release the given semaphore */
+// critical region
+// release the given semaphore
 up(&mr_sem);
 ```
 
@@ -894,7 +895,7 @@ So to recap:
 #### Locks and multiprocessing
 
 In a SMP system, an attempt to acquire a lock requires moving the cache line containing that lock to the local CPU cache. 
-If another CPU tries to check the lock it forces the value held in the cache of the first CPU to be written back to memory (to ensure consistency). If multiple processors are spinning on the same lock there is a overhead because of the need to ensure memory consistency
+If another CPU tries to check the lock it forces the value held in the cache of the first CPU to be written back to memory (to ensure consistency). If multiple processors are spinning on the same lock there is a overhead because of the need to ensure memory consistency.
 
 Mellor-Crummey and Scott lock (MCS or `queued spinlocks`) are a way to better implement spinlocks on multicore systems to avoid this overhead.
 
@@ -928,7 +929,7 @@ done = 1;
 while(done == 0) { /* loop */ }
 print(x);
 ```
-On an x86 machine it will always print `1` while on and ARM processor it can also print `0`.
+On an x86 machine it will always print `1` while on an ARM processor it can also print `0`.
 
 We can distinguish 2 types of ordering:
 
@@ -937,11 +938,12 @@ We can distinguish 2 types of ordering:
 
 We will cover 3 models:
 
-- sequential: strongest possible and more difficult to achieve, do not exist in practice
+- sequential: strongest possible and more difficult to achieve, does not exist in practice
   - if `i <_p j` then `i <_m j`, operations of each processor appear in the same order specified by the program that is running.
 - total store order (TSO): model of x86
 
   ![total_store_order](assets/total_store_order.png)
+  
   - each thread interfaces with the shared memory through a store buffer, so writes can be seen "delayed"
     - if the thread wants to read data that is still in the store buffer then it will read it from there --> the processor sees the data that it has written, even if other threads have not yet seen it
     - otherwise the data is pulled from the shared memory
@@ -951,6 +953,7 @@ We will cover 3 models:
 - partial store order (PSO): model of ARM, much weaker model
 
   ![partial_store_order](assets/partial_store_order.png)
+
   - each processor reads from and writes as if it had its own complete copy of the memory
     - writes can be reordered by out-of-order execution in the same processor
     - no mechanism to ensure that all other processors see the writes at the same time
@@ -961,7 +964,7 @@ The PSO model can allow something like this to happen
 
 ![data_race_in_PSO](assets/data_race_in_PSO.png)
 
-Because there is no enforcement of an happens before operation. We need to use some synchronization instructions. Not quite the same thing as a memory barrier, we just enforce that after a specific write, all the writes that happened before have been committed to the shared memory (note: doesn't mean that all the previous writes are committed in order, like TSO, just that they have been committed).
+Because there is no enforcement of an happens-before relation. We need to use some synchronization instructions. Not quite the same thing as a memory barrier, we just enforce that after a specific write, all the writes that happened before have been committed to the shared memory (note: doesn't mean that all the previous writes are committed in order, like TSO, just that they have been committed).
 That specific write is called a *release* and to exploit it when reading it is needed to do an *acquire* operation.
 
 This eliminates the data race.
@@ -978,10 +981,10 @@ If you write a data race free program then it will behave like a sequentially co
 
 ##### Linux Kernel Memory Model (LKMM)
 
-The model is essence the lowest common denominator of the guarantees of all the CPU families where the kernel can run.
+The model is essentially the lowest common denominator of the guarantees of all the CPU families where the kernel can run.
 
 - happens-before relationships can be enforced using `smp_store_release` and `smp_load_acquire`
-- provides `atomic_t` and `atomic64_t`. Operations on this type are guaranteed to be non interruptible
+- provides `atomic_t` and `atomic64_t`. Operations on this types are guaranteed to be non interruptible.
   
   ```C
   atomic_t v = ATOMIC_INIT(0);
@@ -1020,11 +1023,11 @@ A user mode process memory is composed of many Virtual Memory Areas (VMAs) and a
 A VMA can be:
 
 - anonymous: exists only in memory, not corresponding to a file (until they need to be swapped)
-- file_backed (backing store): there is a corresponding file on disk, for instance the code for a program, a library
+- file_backed (backing store): there is a corresponding file on disk, for instance the code for a program, a library, ...
 
-Also there are flags to specify what action can be done on them (read/write/exec/...)
+Also there are flags to specify what action can be done on them (read/write/exec/...).
 
-Multiple VMA can point to the same physical pages to share resources (for instance library code)
+Multiple VMAs can point to the same physical pages to share resources (for instance library code).
 
 ### Page fault management
 
@@ -1042,10 +1045,10 @@ To add pages to the VMA a process needs to call `brk()` (but pages are actually 
 
 The `find_vma` function uses a RB-tree to find the corresponding VMA (uses tree instead of list for efficiency).
 
-- not found: SIGSEGV
+- not found: `SIGSEGV`
 - found:
   - check permissions
-    - SIGSEGV if doesn't have permission (e.g. write to a read only area)
+    - `SIGSEGV` if doesn't have permission (e.g. write to a read only area)
   - `handle_mm_fault` allocates a page table entry if needed
   - `handle_pte_fault` load from disk
 
@@ -1073,7 +1076,7 @@ For each node there is several information stored:
       - between `high` and `low`, the allocator wakes up the `kswapd` to start freeing up pages
       - between `low` and `min`, the allocator will swap pages itself
       - below `min`, normally not allowed, only in specific cases
-- `node_mem_map` stores the whole available memory pages in that node
+- `node_mem_map` stores all the available memory pages in that node
 - `lruvec` keeps track of the activity of each pages, used to decide which pages to swap in case of necessity
 
 #### Buddy allocator
@@ -1091,7 +1094,7 @@ To allocate the blocks it works like this:
 - the unused half of each block is the *buddy* of the other
 - when merging back pages, a page can only be merged with its buddy
 
-NOTE: blocks are always a power of 2 number of pages and are tracked in the `free_area`
+NOTE: blocks are always a power of 2 number of pages and are tracked in the `free_area`.
 
 ### Page cache
 
@@ -1116,7 +1119,7 @@ struct page {
 };
 ```
 
-#### Page frame reclaim algorithm (PFRA)
+#### Page Frame Reclaim Algorithm (PFRA)
 
 Based on the idea of the *clock algortithm*, an approximation of the LRU algorithm.
 
@@ -1133,7 +1136,7 @@ In Linux we need a more complex way of managing pages, using the `lruvec`.
 - INACTIVE_FILE and ACTIVE_FILE
 - UNEVICTABLE
 
-active and inactive lists, the top of the inactive list is the candidate page to be evicted. A page stays in the active as long as it gets referenced in by some process.
+There is an active and an inactive list, the top of the inactive list is the candidate page to be evicted. A page stays in the active list as long as it gets referenced in by some process.
 
 ![active_inactive_pages](assets/active_inactive_pages.png)
 
@@ -1146,7 +1149,7 @@ There are two fast allocators in the kernel:
 
 - quicklists, used only for paging
 - slab allocator, used for other buffers
-  - for smaller structure, store many object in a single page
+  - for smaller structures, store many object in a single page
   - for efficiency we have that frequently used structures are prepared and already initialized
 
 ![slab_allocator_implementation](assets/slab_allocator_implementation.png)
@@ -1154,17 +1157,17 @@ There are two fast allocators in the kernel:
 A `kmem_cache` structure is present for each type of data structure. It manages multiple caches, one for each CPU. When the page gets full it is swapped to another cache slab.
 `kmalloc` will look in the slab cache to find a suitable block.
 
-For more info can check `/proc/slabinfo`
+For more info can check `/proc/slabinfo`.
 
 ### Linux memory security
 
-Mitigation against common type of vulnerabilities.
+Mitigation against common types of vulnerabilities.
 
 #### Address Space Layout Randomization (ASLR)
 
 Randomize the base address of the sections in memory to make it difficult to find code to execute. Also available in the kernel (KASLR) to randomize the .text section of the kernel at startup.
 
-#### kernel Page Table Isolation (KPTI)
+#### Kernel Page Table Isolation (KPTI)
 
 To protect against new attacks based on **Meltdown** that exploit the processor speculative execution to leak information.
 
@@ -1176,7 +1179,7 @@ The idea is to use different PGDs for user mode and kernel mode. The two page ta
 
 An efficient, isolated duplicate of the real machine dedicated to an OS. It is based on a virtual machine monitor (hypervisor) that creates an environment for an OS and is in complete control of the system resources.
 
-The requisites that the virtual machine must have are:
+The requisites that the Virtual Machine (VM) must have are:
 
 - fidelity: behaviour equivalent to a real machine
 - safety: the VM cannot override the hypervisor's control over the resources
@@ -1205,14 +1208,14 @@ Some definitions:
   - type 2 --> runs in the context of another OS (KVM, VirtualBox)
     - note: sometimes KVM is categorized as type 1 because when enabled it basically turns the OS in an hypervisor (so it's not running in an OS but it is itself the OS)
 
-The idea of virtualization is to execute all instruction (and so also privileged instructions that would normally trap in user mode) in user mode and thus allowing an OS to be executed on top of another.
+The idea of virtualization is to execute all instructions (and so also privileged instructions that would normally trap in user mode) in user mode and thus allowing an OS to be executed on top of another.
 
 Instructions that are important for virtualization are those ones that are:
 
-- control-sensitive: if it modifies directly the machine status (e.g. interrupt disabling, modify IVT, ...)
+- control-sensitive: it modifies directly the machine status (e.g. interrupt disabling, modify IVT, ...)
 - behaviour-sensitive: instructions that behave differently when used in supervisor mode, those may affect fidelity
 
-THEOREM (Popek and Goldberg): For any computer a VMM can be built if the set of sensitive instructions is a subset of the privileged instructions.
+THEOREM (Popek and Goldberg): For any computer a VMM can be built if the set of sensitive instructions is a subset of the privileged instructions (note: this is just a sufficient condition, a VMM can be built even if this is not satisfied but it's more difficult).
 
 (basically if there is a way for the hypervisor to catch and manage all actions that could change the machine status or behaviour, i.e. have the complete control of the machine, then it is possible to build it)
 ### Software based virtualization
@@ -1224,7 +1227,7 @@ Based on the ideas of *deprivileging* and *shadowing*
 - shadowing: used when the guest needs to access the page table or interrupt descriptor table
   - VMM intercepts this calls and redirects the access to a virtual (shadow) copy that is presented to the guest
 
-privileged instructions are trapped and intercepted by the hypervisor that regulates access or presents a shadow copy of that resource
+Privileged instructions are trapped and intercepted by the hypervisor that regulates access or presents a shadow copy of that resource.
 
 #### Page table access
 
@@ -1257,7 +1260,7 @@ The goals of adding hw support to virtualization:
 - adapt x86 to obey the Popek-Goldberg
 - improve performance
   - reduce number of traps
-  - avoid shadown paging overhead
+  - avoid shadow paging overhead
 
 ![hw_assisted_virtualization](assets/hw_assisted_virtualization.png)
 #### Speeding it up
@@ -1273,7 +1276,7 @@ This allows to reduce the number of traps caused by shadowing.
 
 - I/O passthrough
 
-Make the guest OS access directly a device withouth going through the hypervisor.
+Make the guest OS access directly a device without going through the hypervisor.
 This can be done by placing a IOMMU (I/O Memory Management Unit) between the OS and the devices to allow them to write directly in the memory of the guest OS by translating to the correct addresses.
 
 ### KVM
@@ -1305,7 +1308,7 @@ cout << regs.rax << endl;
 
 ### Paravirtualization
 
-Instead of trying to run an unmodified OS, what if i modified it to make it work better with an hypervisor?
+Instead of trying to run an unmodified OS, what if i modify it to make it work better with an hypervisor?
 From an implementation point of view is like porting the kernel to a new platform, the hypervisor, and explicitly cooperate with it (e.g. instead of accessing the MMU call the hypervisor).
 
 This is also useful to write device driver that are installed in the guest too cooperate with the host and avoid excessive trapping --> `virtio`
@@ -1335,8 +1338,8 @@ There are 2 main mechanism to do communication with devices:
 
 ### Interacting with a device
 
-- polling, periodically check some status flag is raised in the device to signal that some data is ready to be taken. Better suited for fast devices (i.e. low wait time) since polling too much is going to waste many cycles.
-- interrupt, the device itself raises an interrupt when there is some operation to be done. Better to use with slower devices (i.e. that require longer wait) because it requires a switch to kernel mode to be handled by an Interrupt Service Routine (IRS).
+- polling, periodically check if some status flag is raised in the device to signal that some data is ready to be taken. Better suited for fast devices (i.e. low wait time) since polling too much is going to waste many cycles.
+- interrupt, the device itself raises an interrupt when there is some operation to be done. Better to use with slower devices (i.e. that require longer wait) because it requires a switch to kernel mode to be handled by an Interrupt Service Routine (ISR).
 
 Interrupts can have very high overhead for trivial tasks (e.g. send bytes of data to a device) so for some application it is better to allow the device to directly access the memory and grab the data itself
 This is done using DMA (Direct Memory Access), that manages the communication process with the device and interrupt the CPU only when the data transfer is completed.
@@ -1357,9 +1360,9 @@ Interrupts can be
 ![interrupt_handling](assets/interrupt_handling.png)
 
 In hardware, when an interrupt arrives, the CPU looks for its handler in the Interrupt Descriptor Table (IDT), that is used to map it to its Interrupt Service Routine (ISR).
-These routines are stored by the kernel at the location where the CPU expects them to find it and contains all the actions that where registered to be done (for instance by driver) to handle that specific interrupt.
+These routines are stored by the kernel at the location where the CPU expects to find them and contain all the actions that where registered to be done (for instance by driver) to handle that specific interrupt.
 
-All of these actions are done in kernel mode. The handling is usually divided in 3 parts
+All of these actions are done in kernel mode. The handling is usually divided in 3 parts:S
 
 ![ISR](assets/ISR.png)
 
@@ -1369,7 +1372,7 @@ All of these actions are done in kernel mode. The handling is usually divided in
 
 Ideally the routines to serve an interrupt are very fast to execute (sell [defer work](#defer-work)).
 
-Actions can be registered by device drivers,
+Actions can be registered by device drivers:
 
 ```C
 static irqreturn_t handler(int irq, void *mydata) {
@@ -1419,7 +1422,7 @@ The devices send interrupts over the PCIe bus. Up to 32 interrupts per devices c
 
 #### Defer work
 
-The idea is that an ISR need to be as short as possible. To do this the routine can be divided in two parts
+The idea is that an ISR need to be as short as possible. To do this the routine can be divided in two parts:
 
 - top half: executed during the interrupt handling
   - minimal work to manage the interrupt
@@ -1486,9 +1489,9 @@ Originally under `/dev` there were thousands of files that were there also for d
 
 ![udev_and_sysfs](assets/udev_and_sysfs.png)
 
-In the modern approach there are two orthogonal ways of looking at the devices
+In the modern approach there are two orthogonal ways of looking at the devices:
 - `UDEV`, the user is given the power to customize the device names. Represents a kind of logical view over the attached devices
-- `SYSFS`, stored under `/sys`, shows through the file system how the devices are connected to the system, providing a topological view of the system. There are also other informations that are available via sysfs:
+- `SYSFS`, stored under `/sys`, shows through the file system how the devices are connected to the system, providing a topological view of the system. There is also more information that is available via sysfs:
   - state of devices
   - which bus they are attached
   - access to device driver
