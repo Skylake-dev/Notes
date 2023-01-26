@@ -1,5 +1,6 @@
 # C++
 
+NOTE: code from these notes is taken either from the lecture slides or from the main repository of the course, that can be found [here](https://github.com/vzaccaria/aos-playground).
 ## Multithreaded programming in C++
 
 Why multi-threading?
