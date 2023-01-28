@@ -4,7 +4,7 @@
 
 ### Definitions
 
-- program: sequence of instruction stored somewhere, not in execution
+- program: sequence of instructions stored somewhere, not in execution
 - application: user-oriented concept of program, describe programs with GUI
 - process: instance of a program currently executing
 - thread: smallest schedulable unit of execution
@@ -49,14 +49,14 @@ Each process has:
 - zero or more child processes
 - PID: Process IDentifier
   - `pid_t`, currently 32 bit integer
-  - limeted by `/proc/sys/pid_max`
+  - limited by `/proc/sys/pid_max`
 - PPID: Parent PID
 
 ### Executing
 
 Load a new program and replace the current process image with it.
 
-It uses the `execve` syscall, C offers several interface to this with some slight variations:
+It uses the `execve` syscall, C offers several interfaces to do this with some slight variations:
 `exec,execlp,execle,execv,execvp,execve`.
 
 structure is exec + options
@@ -97,7 +97,7 @@ Used to signal some event (I/O operation done, exceptions, ...):
 
 Most signals by default cause the termination of the process, but the behaviour can be overridden with a custom signal handler.
 
-Sending signal
+Sending signal:
 
 ```C
 #include <signal.h>
@@ -108,7 +108,7 @@ int kill(pid_t pid, int sig);
 // returns 0 on success -1 on fail
 ```
 
-Handling signal
+Handling signal:
 
 ```C
 #include <signal.h>
@@ -119,7 +119,7 @@ int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact)
 // returns 0 on success -1 on fail
 ```
 
-The `act` structure contains all the info on handling the signal
+The `act` structure contains all the info on handling the signal:
 
 ```C
 struct sigaction {
@@ -133,7 +133,7 @@ void (*sa_restorer)(void);
 
 - `sa_handler`: function to handle the signal (or `SIG_IGN` to ignore it)
 - `sa_sigaction`: alternative handler that accepts input data
-- `sa_mask`: set a mask to block certain signals (Not all signals can be blocked or ignored)*
+- `sa_mask`: set a mask to block certain signals (not all signals can be blocked or ignored)*
 - `sa_flags`: various options, see docs
 - `sa_restore`: not in POSIX, not for user use, don't use
 
@@ -190,7 +190,7 @@ mqd_t mq_open(const char *name, int oflag, mode_t mode, struct mq_attr *attr);
 
 - `name`: a unique name for the message queue, starting with `/`
 - `oflag`: opening flag O_RDONLY, etc
-- `mode`: the permission to give the file
+- `mode`: the permissions of the file
 - `attrs`: attributes (see struct)
 
   ```C
@@ -202,7 +202,7 @@ mqd_t mq_open(const char *name, int oflag, mode_t mode, struct mq_attr *attr);
   };
   ```
 
-A process can use the queue using these functions (args are self explainatory, priority is 0-31, same priority messages follow FIFO logic)
+A process can use the queue using these functions (args are self explainatory, priority is 0-31, same priority messages follow FIFO logic):
 
 ```C
 #include <mqueue.h>
@@ -232,7 +232,7 @@ To use shared memory:
 - specify the size of the special object with `fd_truncate`
 - `mmap` the fd to an area of the memory of the process
 
-When the process is done, some cleanup is needed
+When the process is done, some cleanup is needed:
 
 ```C
 #include <sys/mman.h>
@@ -279,7 +279,7 @@ The approach based on `wait` is very limited. POSIX provides inter-process semap
 There are 2 atomic functions to interact with the semaphore:
 
 - `wait()` blocks until counter becomes > 0, then decrements it and proceed
-- `post()` increment counter
+- `post()` increments counter
 
 Similarly to pipes, they can be named or unnamed. `pthread` library is required to use those.
 
@@ -351,11 +351,12 @@ In reality there are much more states defined in the Linux kernel, but those are
 - `a_i` arrival time, when the tasks is ready to be scheduled
 - `s_i` start time, starts execution
 - `W_i` wait time, time spent waiting in the queue `W_i = s_i - a_i`
+  - NOTE: many times in the exercises this is the total wait (initial delay + other waits due to preemptions)
 - `f_i` finishing time, when the execution terminates
 - `C_i` computation time (or burst time), time necessary for the processor to execute the task (without interruptions)
-- `Z_i` turnaround time, total time taken from when the task is ready to when it completes `Z_i = f_i - a_i` (NOTE: not the same as `W_i + C_i` because there can be interruptions)
+- `Z_i` turnaround time, total time taken from when the task is ready to when it completes `Z_i = f_i - a_i` (NOTE: not the same as `W_i + C_i` because there can be interruptions (well, it is ``W_i + C_i` if `W_i` is the total wait))
 
-Based on the operation done by the task we distinguish between:
+Based on the operations done by the task we distinguish between:
 
 - CPU-bound
   - spends most of the time executing stuff
@@ -456,7 +457,7 @@ The preemption occurs when a new task arrives but only if the new task has a sho
 
 Highest Response Ratio Next (HRRN) scheduler:
 
-- select task with the highest response ratio, computed as
+- select task with the highest response ratio, computed as:
   - `RR_i = (W_i + C_i) / C_i`
 - not preemptive
 
@@ -484,7 +485,7 @@ However, it has a worse turnaround than SJF.
 
 Preemption occurs at the end of the time quantum that the task has allocated (or before if the tasks ends). The preempted task is put back at the end of the queue. New tasks are added to the ready queue in a FIFO fashion.
 
-NOTE: if a task is preempted at the same time a new one arrives the order of operation is
+NOTE: if a task is preempted at the same time a new one arrives the order of operation is:
 
 - add new tasks at the end of the queue
 - preempt the current task and put at the end of queue
@@ -539,16 +540,16 @@ Another option to prevent starvation is the concept of *aging*: the more a task 
 
 ### Multi-processor scheduling
 
-This problem is way harder, the scheduler also has to choose which CPU to assign the task:
+This problem is way harder, the scheduler also has to choose which CPU to assign the task to:
 
-- task synchronization my occur across parallel executions
+- task synchronization may occur across parallel executions
 - it's difficult to achieve high utilization of all CPU cores
   - need to migrate tasks across cores to balance the load, but this leads to cache miss penalties (the data needs to be loaded in the cache of the new core)
-- simultaneous access to shared resources (e.g. chache memory)
+- simultaneous access to shared resources (e.g. cache memory)
   - task scheduled on the same core may trash each other data from the cache (i.e. they need two resources that maps on the same cache address) slowing each other down, it would be more efficient to schedule those on different cores
   - they could still interfere on higher level caches that are shared across cores...
 
-There could be different design choiches for the scheduler:
+There could be different design choices for the scheduler:
 
 - single queues vs multiple queues
   - single queue:
@@ -560,7 +561,7 @@ There could be different design choiches for the scheduler:
   - multiple queues:
     - ready queue for each processor
     - more scalable
-    - easier to exploit more easily data locality in caches
+    - easier to exploit data locality in caches
     - can use one global scheduler or a per-CPU scheduler
     - potentially more overhead (more data structures to manage)
     - needs load balancing --> rebalance queues if necessary to achieve good utilization and reduce waiting time (i.e. move waiting tasks to idling or less loaded cores)
@@ -599,7 +600,7 @@ Why use concurrency if it is harder? Because we are reaching the limits of singl
 
 We characterize concurrent programs with two properties:
 
-- safety (correctness): never reach error states. Possible issues are
+- safety (correctness): never reach error states. Possible issues are:
   - data race: program behaviour depends in an uncontrolled way from the memory model and the interleaving of threads. If it is not what the programmer wants it is a bug.
   - atomicity violation: operations supposed to be atomic in reality they are not and can lead to problems
   ```C
@@ -613,7 +614,7 @@ We characterize concurrent programs with two properties:
   thd->proc_info = NULL;
   ```
   - order violation: assume a specific order of execution when there is no guarantee that it will be that way
-- liveness (progress): eventually all activities will be able to finish. Issues that concern liveness are
+- liveness (progress): eventually all activities will be able to finish. Issues that concern liveness are:
   - deadlocks: no task can take action because it is waiting for another task to take action (e.g. t1 waits for t2 and t2 waits for t1)
     - mutual exclusion, only one can access a specific resource
       - preventable if there are some atomic instructions to read and act on the data (needs to be supported by CPU)
@@ -640,7 +641,7 @@ We characterize concurrent programs with two properties:
 
 ### Linux user space concurrency
 
-Based on the concept of *futex* (fast user-level lock) and have the following objectives:
+Based on the concept of *futex* (fast user-level lock) and has the following objectives:
 
 - avoid unnecessary system calls (they are expensive)
 - avoid unnecessary context switches
@@ -659,7 +660,7 @@ For this to work the lock needs to stay in the runtime instead of the kernel, it
     - set --> syscall to put the thread in waiting, call `futex` with `FUTEX_WAIT` flag
   - remember that the check and set is done in an atomic operation (depends on the platform)
 
-This functionality is implemented like
+This functionality is implemented like this:
 
 ```C
 void futex_based_lock(int *mutex) {
@@ -670,16 +671,16 @@ void futex_based_lock(int *mutex) {
   while (1) {
       if (atomic_bit_test_set(mutex, 31) == 0) {
           atomic_decrement(mutex);
-      return;
-  }
-  v = *mutex;
-  // technicality, if 32th bit is set the number is negative
-  // i want to call the syscall only if i'm sure that the bit is set
-  // v > 0 --> unlocked 
-  // v < 0 --> locked
-  if (v >= 0) 
-      continue;
-  futex(mutex, FUTEX_WAIT, v); /* sleeps only if mutex still has v */
+          return;
+      }
+      v = *mutex;
+      // technicality, if 32th bit is set the number is negative
+      // i want to call the syscall only if i'm sure that the bit is set
+      // v > 0 --> unlocked 
+      // v < 0 --> locked
+      if (v >= 0) 
+          continue;
+      futex(mutex, FUTEX_WAIT, v); /* sleeps only if mutex still has v */
   }
 }
 
@@ -716,7 +717,7 @@ The advantages of this approach is that:
   - no locking needed
   - no context switch needed
 - network I/O via the `select` or `poll` API
-- ability to run blocking I/O in a separate thread pool and register a callback when to call when the data is ready (avoid blocking entire app). `libuv` offers an interface to do so
+- ability to run blocking I/O in a separate thread pool and register a callback when to call when the data is ready (avoid blocking entire app). `libuv` offers an interface to do so.
 
 Limits of event loops --> it runs in a single thread, it is difficult to extend to multicore. 
 
@@ -811,7 +812,7 @@ spin_unlock:
      ret                     ; The lock has been released.
 ```
 
-Of course if the wait is long the spinlock becomes a wasteful way of locking since the thread keeps the CPU without doing anything except waiting. On uniprocessor machines this is just a call to `preempt_disable`, only on multiprocessor system the thread actually spins.
+Of course if the wait is long the spinlock becomes a wasteful way of locking since the thread keeps the CPU without doing anything except waiting. On uniprocessor machines this is just a call to `preempt_disable()`, only on multiprocessor system the thread actually spins.
 
 Variants:
 
@@ -820,9 +821,23 @@ Variants:
   Distinguish between readers and writers, multiple readers can access the object but only a writer at a time is allowed. 
   This is used to maximize concurrent access when there is no risk of concurrent modification.
 
+  ```C
+  // create the lock
+  DEFINE_RWLOCK(mr_rwlock);
+  // reader
+  read_lock(&mr_rwlock);
+  // critical section (read only), concurrent reads allowed
+  read_unlock(&mr_rwlock);
+
+  // writer
+  write_lock(&mr_rwlock);
+  // critical section (read and write), only holder of the lock
+  write_unlock(&mr_lock);
+  ```
+
 - Seqlocks
 
-  Similar to readwrite locks but want to prevent the starvation of writers. The idea is
+  Similar to readwrite locks but want to prevent the starvation of writers. The idea is:
 
   - when writer acquire lock it increments a counter (starting from 0)
   - when it releases it, the counter is incremented again
@@ -842,9 +857,9 @@ Variants:
   
   // what the read does
   do {
-  // loops if seq. counter odd
-  seq = read_seqbegin(&mr_seq_lock);          // ^
-  // read/copy data here ...              | check if seq. counter equal.
+      // loops if seq. counter odd
+      seq = read_seqbegin(&mr_seq_lock);          // ^
+      // read/copy data here ...              | check if seq. counter equal.
   } while (read_seqretry(&mr_seq_lock, seq)); // V
   ```
 
@@ -861,7 +876,7 @@ MEMO: semaphore, basically a counter, lock decrements, unlock increments, blocke
 static DECLARE_MUTEX(mr_sem);
 // attempt to acquire the semaphore (can also specify interruptible)
 if (down_interruptible(&mr_sem)) {
-// signal received, semaphore not acquired
+  // signal received, semaphore not acquired
 }
 // critical region
 // release the given semaphore
@@ -880,7 +895,7 @@ The goal is to have low latency reads to shared data that is read often but upda
   - create a new copy of the data structure
   - publish new version with a single atomic operation
 
-Basically the idea is that writers update the data "offline" and then commit the changes atomically when they are done. The reader can read old data while the writer is modifying but not committed the data.
+Basically the idea is that writers update the data "offline" and then commit the changes atomically when they are done. The reader can read old data while the writer is modifying the data but has not committed yet.
 
 Of course, the writer needs to wait some *grace period* to allow all readers of the old structure to finish their work on the old struct before deallocating it.
 
@@ -910,10 +925,10 @@ The idea is:
 - if P3 arrives an tries to take the lock
   -  gets it's own copy of the struct
   - the P1 struct will point to P3 as `next locker`
-- this way we have two advantages
+- this way we have several advantages
   - each CPU spins on its own lock variable
   - when one CPU releases the lock it notifies the next one in line
-  - no coherency needs to be enforced because each CPU is on a different variable and are given the lock in order on release
+  - no coherency needs to be enforced because each CPU is on a different variable and, on release, they are given the lock in order
 
 ### Memory models
 
@@ -944,7 +959,7 @@ We will cover 3 models:
 
   ![total_store_order](assets/total_store_order.png)
   
-  - each thread interfaces with the shared memory through a store buffer, so writes can be seen "delayed"
+  - each thread interfaces with the shared memory through a FIFO store buffer, so writes can be seen "delayed"
     - if the thread wants to read data that is still in the store buffer then it will read it from there --> the processor sees the data that it has written, even if other threads have not yet seen it
     - otherwise the data is pulled from the shared memory
     - all other threads see the write at the same time when it is written back to the shared memory
@@ -954,9 +969,9 @@ We will cover 3 models:
 
   ![partial_store_order](assets/partial_store_order.png)
 
-  - each processor reads from and writes as if it had its own complete copy of the memory
+  - each processor reads and writes as if it had its own complete copy of the memory
     - writes can be reordered by out-of-order execution in the same processor
-    - no mechanism to ensure that all other processors see the writes at the same time
+    - no mechanism to ensure that all other processors see the writes at the same time and in the same ordering
 
 #### Data races
 
@@ -996,7 +1011,7 @@ The model is essentially the lowest common denominator of the guarantees of all 
 
 Linux (as any other modern OS) uses virtual memory.
 
-Physical pages are mapped to virtual pages, each process has a memory structure `mm_struct` that is used by the kernel to keep track of the mapping. 
+Virtual pages are mapped to physical pages, each process has a memory structure `mm_struct` that is used by the kernel to keep track of the mapping. 
 Each task has it's own value for the register that points to the base of the page directory (`RC3` in x86).
 
 Both kernel and user space code use virtual memory:
@@ -1011,12 +1026,12 @@ How it this managed?
 
 Virtual pages can be mapped:
 
-- directly to a physical memory pages
+- directly to physical memory pages
 - not mapped to physical (e.g. swapped out to disk)
   - used to manage data that doesn't fit in memory
 - neither of those, for instance pages allocated via `brk` to expand some area that are not mapped until they are used
 
-A user mode process memory is composed of many Virtual Memory Areas (VMAs) and are stored in the `mm_struct` of the process and can be inspected in the `/proc/<name>/maps`.
+A user mode process memory is composed of many Virtual Memory Areas (VMAs) and they are stored in the `mm_struct` of the process and can be inspected in the `/proc/<pid>/maps` file.
 
 ![process_VMA](assets/process_VMA.png)
 
@@ -1039,7 +1054,7 @@ There are 2 possibilities:
 - page is invalid
   - segmentation fault
 
-To add pages to the VMA a process needs to call `brk()` (but pages are actually allocated only on access --> demand pages)
+To add pages to the VMA a process needs to call `brk()` (but pages are actually allocated only on access --> demand paging)
 
 ![page_fault_management](assets/page_fault_management.png)
 
@@ -1068,6 +1083,7 @@ For each node there is several information stored:
   - `ZONE_DMA`: what zones can be used for DMA by other devices
   - `ZONE_NORMAL`: 
   - `ZONE_HIGHMEMORY`: not considered here
+
   Each zone has 
     - `free_area` structure that keeps track of the areas that are free, grouped by the number of contiguous pages available
     - `watermarks` 3 possible values (high, low, min), stating how many pages are free.
@@ -1132,9 +1148,9 @@ Based on the idea of the *clock algortithm*, an approximation of the LRU algorit
 
 In Linux we need a more complex way of managing pages, using the `lruvec`.
 
-- INACTIVE_ANON and ACTIVE_ANON
-- INACTIVE_FILE and ACTIVE_FILE
-- UNEVICTABLE
+- `INACTIVE_ANON` and `ACTIVE_ANON`
+- `INACTIVE_FILE` and `ACTIVE_FILE`
+- `UNEVICTABLE`
 
 There is an active and an inactive list, the top of the inactive list is the candidate page to be evicted. A page stays in the active list as long as it gets referenced in by some process.
 
@@ -1149,7 +1165,7 @@ There are two fast allocators in the kernel:
 
 - quicklists, used only for paging
 - slab allocator, used for other buffers
-  - for smaller structures, store many object in a single page
+  - for smaller structures, store many objects in a single page
   - for efficiency we have that frequently used structures are prepared and already initialized
 
 ![slab_allocator_implementation](assets/slab_allocator_implementation.png)
@@ -1165,7 +1181,7 @@ Mitigation against common types of vulnerabilities.
 
 #### Address Space Layout Randomization (ASLR)
 
-Randomize the base address of the sections in memory to make it difficult to find code to execute. Also available in the kernel (KASLR) to randomize the .text section of the kernel at startup.
+Randomize the base address of the sections in memory to make it difficult to find code to execute. Also available in the kernel (KASLR) to randomize the `.text` section of the kernel at startup.
 
 #### Kernel Page Table Isolation (KPTI)
 
@@ -1177,7 +1193,7 @@ The idea is to use different PGDs for user mode and kernel mode. The two page ta
 
 ## Virtualization
 
-An efficient, isolated duplicate of the real machine dedicated to an OS. It is based on a virtual machine monitor (hypervisor) that creates an environment for an OS and is in complete control of the system resources.
+An efficient, isolated duplicate of the real machine dedicated to an OS. It is based on a Virtual Machine Monitor (VMM or hypervisor) that creates an environment for an OS and is in complete control of the system resources.
 
 The requisites that the Virtual Machine (VM) must have are:
 
@@ -1212,7 +1228,7 @@ The idea of virtualization is to execute all instructions (and so also privilege
 
 Instructions that are important for virtualization are those ones that are:
 
-- control-sensitive: it modifies directly the machine status (e.g. interrupt disabling, modify IVT, ...)
+- control-sensitive: instructions that modify directly the machine status (e.g. interrupt disabling, modify IVT, ...)
 - behaviour-sensitive: instructions that behave differently when used in supervisor mode, those may affect fidelity
 
 THEOREM (Popek and Goldberg): For any computer a VMM can be built if the set of sensitive instructions is a subset of the privileged instructions (note: this is just a sufficient condition, a VMM can be built even if this is not satisfied but it's more difficult).
@@ -1267,17 +1283,17 @@ The goals of adding hw support to virtualization:
 
 - Extended page table
 
-![extended_page_table](assets/extended_page_table.png)
-
-Using the extended page table there are still two page tables but the guest OS is able to manipulate directly its table.
-The composition of the two level of indirection is done directly in hw. 
-
-This allows to reduce the number of traps caused by shadowing.
+  ![extended_page_table](assets/extended_page_table.png)
+  
+  Using the extended page table there are still two page tables but the guest OS is able to manipulate directly its table.
+  The composition of the two level of indirection is done directly in hw. 
+  
+  This allows to reduce the number of traps caused by shadowing.
 
 - I/O passthrough
 
-Make the guest OS access directly a device without going through the hypervisor.
-This can be done by placing a IOMMU (I/O Memory Management Unit) between the OS and the devices to allow them to write directly in the memory of the guest OS by translating to the correct addresses.
+  Make the guest OS access directly a device without going through the hypervisor.
+  This can be done by placing a IOMMU (I/O Memory Management Unit) between the OS and the devices to allow them to write directly in the memory of the guest OS by translating to the correct addresses.
 
 ### KVM
 
@@ -1341,7 +1357,7 @@ There are 2 main mechanism to do communication with devices:
 - polling, periodically check if some status flag is raised in the device to signal that some data is ready to be taken. Better suited for fast devices (i.e. low wait time) since polling too much is going to waste many cycles.
 - interrupt, the device itself raises an interrupt when there is some operation to be done. Better to use with slower devices (i.e. that require longer wait) because it requires a switch to kernel mode to be handled by an Interrupt Service Routine (ISR).
 
-Interrupts can have very high overhead for trivial tasks (e.g. send bytes of data to a device) so for some application it is better to allow the device to directly access the memory and grab the data itself
+Interrupts can have very high overhead for trivial tasks (e.g. send bytes of data to a device) so for some application it is better to allow the device to directly access the memory and grab the data itself.
 This is done using DMA (Direct Memory Access), that manages the communication process with the device and interrupt the CPU only when the data transfer is completed.
 
 ![interrupt_with_and_without_DMA](assets/interrupt_with_and_without_DMA.png)
@@ -1362,7 +1378,7 @@ Interrupts can be
 In hardware, when an interrupt arrives, the CPU looks for its handler in the Interrupt Descriptor Table (IDT), that is used to map it to its Interrupt Service Routine (ISR).
 These routines are stored by the kernel at the location where the CPU expects to find them and contain all the actions that where registered to be done (for instance by driver) to handle that specific interrupt.
 
-All of these actions are done in kernel mode. The handling is usually divided in 3 parts:S
+All of these actions are done in kernel mode. The handling is usually divided in 3 parts:
 
 ![ISR](assets/ISR.png)
 
@@ -1370,24 +1386,23 @@ All of these actions are done in kernel mode. The handling is usually divided in
 - execute the handler
 - re-enable the interrupt
 
-Ideally the routines to serve an interrupt are very fast to execute (sell [defer work](#defer-work)).
+Ideally the routines to serve an interrupt are very fast to execute (see [defer work](#defer-work)).
 
 Actions can be registered by device drivers:
 
 ```C
 static irqreturn_t handler(int irq, void *mydata) {
-...
-// acquire locks on shared data
-// read/write from peripherals through MMIO
-// defer work
-// release lock
-return IRQ_HANDLED;
+    // acquire locks on shared data
+    // read/write from peripherals through MMIO
+    // defer work
+    // release lock
+    return IRQ_HANDLED;
 }
 
 static int __init mydriver_init_module(void) {
-// allocate space for mydata
-ret = request_irq(irqnum, handler, IRQF_SHA, mydata);
-// code
+    // allocate space for mydata
+    ret = request_irq(irqnum, handler, IRQF_SHA, mydata);
+    // code
 }
 ```
 
@@ -1395,7 +1410,7 @@ ret = request_irq(irqnum, handler, IRQF_SHA, mydata);
 
 ![PIC](assets/PIC.png)
 
-In hardware interrupt are handled by a cotroller. Originally on uniprocessors systems there was a single PIC that could handle few interrupts and remapped the interrupt number to the correct interrupt vector on the CPU. This approach is very limited and is now superseeded.
+In hardware interrupt are handled by a controller. Originally on uniprocessors systems there was a single PIC that could handle few interrupts and remapped the interrupt number to the correct interrupt vector on the CPU. This approach is very limited and is now superseeded.
 
 ![APIC](assets/APIC.png)
 
@@ -1404,8 +1419,8 @@ In the APIC it is possible to decide for each Interrupt Request (IRQ)
 
 - which CPU to send it to
 - what vector it needs to be mapped to
-- the policy of dispatch in case multiple CPU can handle the same interrupt
-  - for instance, to balance load, a certain interrupt could be sent to all CPU in a round robin way
+- the policy of dispatch in case multiple CPUs can handle the same interrupt
+  - for instance, to balance load, a certain interrupt could be sent to all CPUs in a round robin way
 
 APIC and the multiple CPUs communicate through a shared bus. Also the CPUs themeselves can send interrupts to other CPUs (Inter-Processor Interrupt IPI) using the same bus.
 
@@ -1430,11 +1445,18 @@ The idea is that an ISR need to be as short as possible. To do this the routine 
 - bottom half: finalizes work by executing the deferred functions
   - invoked at a particular reconciliation time
 
-Linux manages this mechanism using `softIRQs`
+Linux manages deferred work with two mechanisms:
 
-- HI_SOFTIRQ
-- TIMER_SOFTIRQ
-- TASKLET_SOFTIRQ
+- softIRQs
+- work queues
+
+##### SoftIRQ
+
+There are different types of softirq:
+
+- `HI_SOFTIRQ`
+- `TIMER_SOFTIRQ`
+- `TASKLET_SOFTIRQ`
 
 Actions are never interrupted but can run in parallel on multiple CPUs. This may require locking some shared structures.
 In order to avoid this Linux offers the TASKLET_SORTIRQ that forces execution of softirq routines to be serial (i.e. only one can run at a time). They are used to work that should have been done in the interrupt but for responsiveness reasons they are scheduled later.
@@ -1490,7 +1512,7 @@ Originally under `/dev` there were thousands of files that were there also for d
 ![udev_and_sysfs](assets/udev_and_sysfs.png)
 
 In the modern approach there are two orthogonal ways of looking at the devices:
-- `UDEV`, the user is given the power to customize the device names. Represents a kind of logical view over the attached devices
+- `UDEV`, the user is given the power to customize the device names. Represents a kind of logical view over the attached devices.
 - `SYSFS`, stored under `/sys`, shows through the file system how the devices are connected to the system, providing a topological view of the system. There is also more information that is available via sysfs:
   - state of devices
   - which bus they are attached
@@ -1519,19 +1541,19 @@ The process differs for character and block devices:
 
   ![NOOP_block_device_scheduler](assets/NOOP_block_device_scheduler.png)
 
-- Complete Fair Queue (CFQ): assign to each process a fair slice of disk bandwidth
+- Complete Fair Queue (CFQ): the goal is to assign to each process a fair slice of disk bandwidth
 
   ![budget_fair_block_device_scheduler](assets/budget_fair_block_device_scheduler.png)
 
   - requests are grouped by process
   - scheduler extracts a batch of requests from each queue, iterating over the queues in a round robin fashion
   - also called Budget Fair Scheduler (BFS)
-- MQ-deadline I/O: coalesce block operation but also try to do some prioritization by serving first read requests that are starving.
+- MQ-deadline I/O: coalesces block operations but also try to do some prioritization by serving first read requests that are starving.
 
   ![deadline_block_device_scheduler](assets/deadline_block_device_scheduler.png)
 
-  - divide requests in 4 queues
+  - divide requests in 4 queues:
     - first two divide read and write operations and are sorted by block number
-    - second two, also divided by read and writes, ordered according to an expiration timer that is assigned to each requests at the arrival
-    - the logic is to favor reads over writes, unles some of them is expired (i.e. timer is up)
+    - second two, also divided by read and write, ordered according to an expiration timer that is assigned to each requests upon arrival
+    - the logic is to favor reads over writes, unless some of them is expired (i.e. timer is up)
     - the scheduler may wait a bit if the read queue becomes empty before issuing the writes
