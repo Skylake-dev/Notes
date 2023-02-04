@@ -17,7 +17,7 @@ A.Y 2021/2022
 - 🟩 Embedded Systems, teacher William Fornaciari
 
 A.Y. 2022/2023
-- 🟨 Advanced Operating Systems, teacher Vittorio Zaccaria
+- 🟩 Advanced Operating Systems, teacher Vittorio Zaccaria
 - 🟩 Formal Languages and Compilers (only laboratory part), teacher Daniele Cattaneo
 
 ### Commit messages
